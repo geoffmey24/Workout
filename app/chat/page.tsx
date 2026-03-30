@@ -1,16 +1,22 @@
 'use client';
 
-import { useState, useRef, useEffect, Suspense } from 'react';
+import { useState, useRef, useEffect, Suspense, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Plus } from 'lucide-react';
 import Link from 'next/link';
 import ChatMessage from '@/components/ChatMessage';
 import ChatInput from '@/components/ChatInput';
+import ChatHistory from '@/components/ChatHistory';
 import LoadingDots from '@/components/LoadingDots';
-import Navigation from '@/components/Navigation';
 import { Message, ContentBlock, ApiMessage } from '@/types';
 import { WORKOUTS, DAYS } from '@/lib/workout-data';
 import { MOCK_WHOOP_DATA } from '@/lib/whoop-data';
+import {
+  Conversation,
+  saveConversation,
+  generateTitle,
+  createConversation,
+} from '@/lib/chat-history';
 
 const SUGGESTIONS = [
   'Check my form on this exercise',
@@ -19,6 +25,8 @@ const SUGGESTIONS = [
   'What should I eat post-workout?',
   'Explain creatine supplementation',
   "Modify today's workout for low recovery",
+  'How should I warm up before deadlifts?',
+  'Analyze my sleep and recovery trends',
 ];
 
 function buildWhoopContext(): string {
@@ -44,6 +52,7 @@ function ChatPageInner() {
   const searchParams = useSearchParams();
   const topic = searchParams.get('topic');
 
+  const [convo, setConvo] = useState<Conversation>(createConversation);
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -51,6 +60,21 @@ function ChatPageInner() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
+
+  // Save conversation when messages change
+  useEffect(() => {
+    if (messages.length > 0) {
+      const updated = {
+        ...convo,
+        messages,
+        title: generateTitle(messages),
+        updatedAt: Date.now(),
+      };
+      setConvo(updated);
+      saveConversation(updated);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messages]);
 
   // Auto-send context message if navigated with a topic
   useEffect(() => {
@@ -67,24 +91,24 @@ function ChatPageInner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [topic]);
 
-  const handleSend = async (text: string, image?: string, imageType?: string) => {
+  const handleSend = useCallback(async (text: string, image?: string, imageType?: string) => {
     const userMessage: Message = { role: 'user', content: text, image, imageType };
     setMessages((prev) => [...prev, userMessage]);
     setLoading(true);
 
     try {
-      // Build API messages with context
       const contextSuffix = buildWhoopContext() + (topic?.match(/day(\d+)/) ? buildDayContext(parseInt(topic.match(/day(\d+)/)![1])) : '');
 
-      const apiMessages: ApiMessage[] = [...messages, userMessage].map((msg, idx) => {
+      const allMessages = [...messages, userMessage];
+      const apiMessages: ApiMessage[] = allMessages.map((msg, idx) => {
         if (msg.role === 'user' && msg.image) {
           const blocks: ContentBlock[] = [
             { type: 'image', source: { type: 'base64', media_type: msg.imageType || 'image/jpeg', data: msg.image } },
-            { type: 'text', text: msg.content + (idx === messages.length ? contextSuffix : '') },
+            { type: 'text', text: msg.content + (idx === allMessages.length - 1 ? contextSuffix : '') },
           ];
           return { role: 'user' as const, content: blocks };
         }
-        const content = idx === messages.length ? msg.content + contextSuffix : msg.content;
+        const content = idx === allMessages.length - 1 ? msg.content + contextSuffix : msg.content;
         return { role: msg.role, content };
       });
 
@@ -107,6 +131,16 @@ function ChatPageInner() {
     } finally {
       setLoading(false);
     }
+  }, [messages, topic]);
+
+  const startNewChat = () => {
+    setConvo(createConversation());
+    setMessages([]);
+  };
+
+  const loadConversation = (c: Conversation) => {
+    setConvo(c);
+    setMessages(c.messages);
   };
 
   return (
@@ -122,11 +156,27 @@ function ChatPageInner() {
           </h1>
           <p className="text-xs text-[#a3a3a3]">AI Performance Coach</p>
         </div>
-        <div className="ml-auto flex items-center gap-1.5">
-          <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-          <span className="text-xs text-green-500">Online</span>
+        <div className="ml-auto flex items-center gap-3">
+          <button
+            onClick={startNewChat}
+            className="p-1.5 rounded-lg bg-[#171717] text-[#a3a3a3] hover:text-white hover:bg-[#262626] transition-colors"
+            title="New Chat"
+          >
+            <Plus size={16} />
+          </button>
+          <div className="flex items-center gap-1.5">
+            <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+            <span className="text-xs text-green-500">Online</span>
+          </div>
         </div>
       </div>
+
+      {/* Chat History */}
+      <ChatHistory
+        activeId={convo.id}
+        onSelect={loadConversation}
+        onNew={startNewChat}
+      />
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-4">

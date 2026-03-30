@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { ArrowLeft, Check, RotateCcw } from 'lucide-react';
 import Link from 'next/link';
 import Navigation from '@/components/Navigation';
+import WorkoutTimer from '@/components/WorkoutTimer';
 import { DAYS, WORKOUTS } from '@/lib/workout-data';
 
 export default function ProgressPage() {
@@ -67,6 +68,11 @@ export default function ProgressPage() {
             style={{ width: `${progress}%` }}
           />
         </div>
+      </div>
+
+      {/* Timer */}
+      <div className="px-4 mb-4">
+        <WorkoutTimer />
       </div>
 
       {/* Exercises */}

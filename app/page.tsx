@@ -58,6 +58,23 @@ export default function HomePage() {
         </Link>
       </div>
 
+      {/* Coach's Daily Insight */}
+      <div className="px-4 mb-6">
+        <div className="rounded-2xl border border-[#262626] bg-[#171717] p-4">
+          <p className="text-xs font-medium uppercase tracking-wider text-red-500 mb-2">Coach&apos;s Insight</p>
+          <p className="text-sm text-[#a3a3a3] leading-relaxed">
+            {today.color === 'green'
+              ? "Recovery is green — your nervous system is primed for intensity. Don't waste a good day. Attack your compound lifts and push progressive overload."
+              : today.color === 'yellow'
+              ? "Moderate recovery today. Train smart: keep the intensity but drop total volume by ~30%. Focus on quality reps over quantity."
+              : "Your body is asking for recovery. Light movement only — mobility work, stretching, easy walk. The gains happen when you rest as hard as you train."}
+          </p>
+          <Link href="/chat" className="inline-block mt-2 text-xs text-red-500 hover:text-red-400">
+            Ask coach for more details &rarr;
+          </Link>
+        </div>
+      </div>
+
       {/* Workout Days */}
       <div className="px-4">
         <h2 className="text-lg font-bold mb-3">This Week</h2>
