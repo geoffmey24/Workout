@@ -9,7 +9,7 @@ export const WHOOP_CONFIG = {
   authUrl: 'https://api.prod.whoop.com/oauth/oauth2/auth',
   tokenUrl: 'https://api.prod.whoop.com/oauth/oauth2/token',
   apiBase: 'https://api.prod.whoop.com/developer',
-  scopes: ['read:recovery', 'read:sleep', 'read:workout', 'read:cycles', 'read:profile', 'read:body_measurement'],
+  scopes: ['offline', 'read:recovery', 'read:sleep', 'read:workout', 'read:cycles', 'read:profile', 'read:body_measurement'],
 };
 
 export function getAuthorizationUrl(state: string): string {
@@ -72,26 +72,26 @@ async function whoopFetch(endpoint: string, accessToken: string) {
 }
 
 export async function fetchWhoopProfile(accessToken: string) {
-  return whoopFetch('/v1/user/profile/basic', accessToken);
+  return whoopFetch('/v2/user/profile/basic', accessToken);
 }
 
 export async function fetchWhoopRecovery(accessToken: string, limit = 7) {
-  const data = await whoopFetch(`/v1/recovery?limit=${limit}&order=t`, accessToken);
+  const data = await whoopFetch(`/v2/recovery?limit=${limit}`, accessToken);
   return data.records || [];
 }
 
 export async function fetchWhoopSleep(accessToken: string, limit = 7) {
-  const data = await whoopFetch(`/v1/activity/sleep?limit=${limit}&order=t`, accessToken);
+  const data = await whoopFetch(`/v2/activity/sleep?limit=${limit}`, accessToken);
   return data.records || [];
 }
 
 export async function fetchWhoopWorkouts(accessToken: string, limit = 7) {
-  const data = await whoopFetch(`/v1/activity/workout?limit=${limit}&order=t`, accessToken);
+  const data = await whoopFetch(`/v2/activity/workout?limit=${limit}`, accessToken);
   return data.records || [];
 }
 
 export async function fetchWhoopCycles(accessToken: string, limit = 7) {
-  const data = await whoopFetch(`/v1/cycle?limit=${limit}&order=t`, accessToken);
+  const data = await whoopFetch(`/v2/cycle?limit=${limit}`, accessToken);
   return data.records || [];
 }
 
@@ -125,6 +125,8 @@ export function transformWhoopData(
     spo2: Math.round(latest?.score?.spo2_percentage ?? 97),
     skin_temp: parseFloat((latest?.score?.skin_temp_celsius ?? 33.0).toFixed(1)),
   };
+
+  // v2 API uses cycle.start for timestamps; fall back to created_at
 
   const recovery = recoveryRecords.map((r: any) => ({
     date: formatDate(r.cycle?.start || r.created_at || new Date().toISOString()),
