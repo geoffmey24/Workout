@@ -1,10 +1,12 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Clock, ChevronRight, Zap, Activity, MessageSquare } from 'lucide-react';
+import { Clock, ChevronRight, Zap, Activity, MessageSquare, Flame, Trophy, Calendar } from 'lucide-react';
 import Navigation from '@/components/Navigation';
 import { DAYS } from '@/lib/workout-data';
 import { MOCK_WHOOP_DATA } from '@/lib/whoop-data';
+import { getWorkoutStats, getWeeklyStats } from '@/lib/workout-stats';
 
 const recoveryColor = {
   green: 'text-green-500 bg-green-500/10 border-green-500/30',
@@ -14,6 +16,13 @@ const recoveryColor = {
 
 export default function HomePage() {
   const today = MOCK_WHOOP_DATA.today;
+  const [stats, setStats] = useState<{ streak: number; totalWorkouts: number; longestStreak: number } | null>(null);
+  const [weekly, setWeekly] = useState({ workoutsThisWeek: 0, daysActive: 0 });
+
+  useEffect(() => {
+    setStats(getWorkoutStats());
+    setWeekly(getWeeklyStats());
+  }, []);
 
   return (
     <div className="min-h-screen">
@@ -41,6 +50,27 @@ export default function HomePage() {
           </div>
         </Link>
       </div>
+
+      {/* Weekly Stats */}
+      {stats && (
+        <div className="px-4 mb-6 flex gap-3">
+          <div className="flex-1 rounded-xl bg-[#171717] border border-[#262626] p-3 text-center">
+            <Flame size={16} className="mx-auto text-orange-500 mb-1" />
+            <p className="text-lg font-bold">{stats.streak}</p>
+            <p className="text-[10px] text-[#a3a3a3] uppercase">Day Streak</p>
+          </div>
+          <div className="flex-1 rounded-xl bg-[#171717] border border-[#262626] p-3 text-center">
+            <Calendar size={16} className="mx-auto text-blue-500 mb-1" />
+            <p className="text-lg font-bold">{weekly.daysActive}<span className="text-xs text-[#a3a3a3]">/{DAYS.length}</span></p>
+            <p className="text-[10px] text-[#a3a3a3] uppercase">This Week</p>
+          </div>
+          <div className="flex-1 rounded-xl bg-[#171717] border border-[#262626] p-3 text-center">
+            <Trophy size={16} className="mx-auto text-yellow-500 mb-1" />
+            <p className="text-lg font-bold">{stats.totalWorkouts}</p>
+            <p className="text-[10px] text-[#a3a3a3] uppercase">Total</p>
+          </div>
+        </div>
+      )}
 
       {/* Quick Actions */}
       <div className="px-4 mb-6 flex gap-3">

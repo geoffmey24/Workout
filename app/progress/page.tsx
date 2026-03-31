@@ -1,15 +1,24 @@
 'use client';
 
-import { useState } from 'react';
-import { ArrowLeft, Check, RotateCcw } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { ArrowLeft, Check, RotateCcw, Flame, Trophy, Calendar } from 'lucide-react';
 import Link from 'next/link';
 import Navigation from '@/components/Navigation';
 import WorkoutTimer from '@/components/WorkoutTimer';
 import { DAYS, WORKOUTS } from '@/lib/workout-data';
+import { getWorkoutStats, recordWorkoutCompletion, getWeeklyStats, WorkoutStats } from '@/lib/workout-stats';
 
 export default function ProgressPage() {
   const [selectedDay, setSelectedDay] = useState(1);
   const [completed, setCompleted] = useState<Record<string, boolean>>({});
+  const [stats, setStats] = useState<WorkoutStats | null>(null);
+  const [weeklyStats, setWeeklyStats] = useState({ workoutsThisWeek: 0, daysActive: 0 });
+  const [workoutDone, setWorkoutDone] = useState(false);
+
+  useEffect(() => {
+    setStats(getWorkoutStats());
+    setWeeklyStats(getWeeklyStats());
+  }, []);
 
   const workout = WORKOUTS[selectedDay];
   const day = DAYS.find((d) => d.id === selectedDay)!;
@@ -22,6 +31,16 @@ export default function ProgressPage() {
   const completedCount = Object.values(completed).filter(Boolean).length;
   const progress = totalExercises > 0 ? (completedCount / totalExercises) * 100 : 0;
 
+  // Mark workout complete when all exercises done
+  useEffect(() => {
+    if (completedCount === totalExercises && totalExercises > 0 && !workoutDone) {
+      setWorkoutDone(true);
+      const updated = recordWorkoutCompletion(selectedDay);
+      setStats(updated);
+      setWeeklyStats(getWeeklyStats());
+    }
+  }, [completedCount, totalExercises, selectedDay, workoutDone]);
+
   return (
     <div className="min-h-screen pb-24">
       {/* Header */}
@@ -31,7 +50,7 @@ export default function ProgressPage() {
         </Link>
         <h1 className="font-bold text-sm">Workout Tracker</h1>
         <button
-          onClick={() => setCompleted({})}
+          onClick={() => { setCompleted({}); setWorkoutDone(false); }}
           className="ml-auto text-[#a3a3a3] hover:text-white"
           title="Reset"
         >
@@ -39,12 +58,39 @@ export default function ProgressPage() {
         </button>
       </div>
 
+      {/* Streak & Stats Bar */}
+      {stats && (
+        <div className="px-4 py-3 flex gap-3">
+          <div className="flex-1 rounded-xl bg-[#171717] border border-[#262626] p-3 text-center">
+            <div className="flex items-center justify-center gap-1.5 mb-1">
+              <Flame size={14} className="text-orange-500" />
+              <span className="text-xs text-[#a3a3a3]">Streak</span>
+            </div>
+            <p className="text-lg font-bold">{stats.streak}<span className="text-xs text-[#a3a3a3] ml-0.5">d</span></p>
+          </div>
+          <div className="flex-1 rounded-xl bg-[#171717] border border-[#262626] p-3 text-center">
+            <div className="flex items-center justify-center gap-1.5 mb-1">
+              <Calendar size={14} className="text-blue-500" />
+              <span className="text-xs text-[#a3a3a3]">This Week</span>
+            </div>
+            <p className="text-lg font-bold">{weeklyStats.daysActive}<span className="text-xs text-[#a3a3a3] ml-0.5">/{DAYS.length}</span></p>
+          </div>
+          <div className="flex-1 rounded-xl bg-[#171717] border border-[#262626] p-3 text-center">
+            <div className="flex items-center justify-center gap-1.5 mb-1">
+              <Trophy size={14} className="text-yellow-500" />
+              <span className="text-xs text-[#a3a3a3]">Total</span>
+            </div>
+            <p className="text-lg font-bold">{stats.totalWorkouts}</p>
+          </div>
+        </div>
+      )}
+
       {/* Day Selector */}
-      <div className="flex gap-2 px-4 py-4 overflow-x-auto">
+      <div className="flex gap-2 px-4 py-3 overflow-x-auto">
         {DAYS.map((d) => (
           <button
             key={d.id}
-            onClick={() => { setSelectedDay(d.id); setCompleted({}); }}
+            onClick={() => { setSelectedDay(d.id); setCompleted({}); setWorkoutDone(false); }}
             className={`flex-shrink-0 rounded-xl px-4 py-2 text-xs font-semibold transition-colors ${
               selectedDay === d.id
                 ? 'bg-red-600 text-white'
@@ -64,10 +110,15 @@ export default function ProgressPage() {
         </div>
         <div className="h-2 rounded-full bg-[#262626]">
           <div
-            className="h-full rounded-full bg-red-600 transition-all duration-300"
+            className={`h-full rounded-full transition-all duration-300 ${
+              progress === 100 ? 'bg-green-500' : 'bg-red-600'
+            }`}
             style={{ width: `${progress}%` }}
           />
         </div>
+        {progress === 100 && (
+          <p className="text-xs text-green-500 font-semibold mt-1 text-center">Workout Complete!</p>
+        )}
       </div>
 
       {/* Timer */}
@@ -110,7 +161,7 @@ export default function ProgressPage() {
                         {ex.name}
                       </p>
                       <p className="text-xs text-[#a3a3a3]">
-                        {ex.sets}×{ex.reps} · Rest: {ex.rest}
+                        {ex.sets}x{ex.reps} · Rest: {ex.rest}
                       </p>
                     </div>
                   </button>
