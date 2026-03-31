@@ -32,8 +32,8 @@ export default function ChatMessage({ message }: { message: Message }) {
       <div
         className={`max-w-[85%] rounded-2xl px-4 py-3 ${
           isUser
-            ? 'bg-red-600 text-white'
-            : 'bg-[#171717] border border-[#262626] text-[#f5f5f5]'
+            ? 'bg-blue-600 text-white'
+            : 'bg-white border border-[#e5e7eb] text-[#111827] shadow-sm'
         }`}
       >
         {message.image && (

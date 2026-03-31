@@ -31,7 +31,6 @@ export default function ProgressPage() {
   const completedCount = Object.values(completed).filter(Boolean).length;
   const progress = totalExercises > 0 ? (completedCount / totalExercises) * 100 : 0;
 
-  // Mark workout complete when all exercises done
   useEffect(() => {
     if (completedCount === totalExercises && totalExercises > 0 && !workoutDone) {
       setWorkoutDone(true);
@@ -44,14 +43,14 @@ export default function ProgressPage() {
   return (
     <div className="min-h-screen pb-24">
       {/* Header */}
-      <div className="flex items-center gap-3 border-b border-[#262626] px-4 py-3">
-        <Link href="/" className="text-[#a3a3a3] hover:text-white">
+      <div className="flex items-center gap-3 border-b border-[#e5e7eb] bg-white px-4 py-3">
+        <Link href="/" className="text-[#6b7280] hover:text-[#111827]">
           <ArrowLeft size={20} />
         </Link>
-        <h1 className="font-bold text-sm">Workout Tracker</h1>
+        <h1 className="font-bold text-sm text-[#111827]">Workout Tracker</h1>
         <button
           onClick={() => { setCompleted({}); setWorkoutDone(false); }}
-          className="ml-auto text-[#a3a3a3] hover:text-white"
+          className="ml-auto text-[#6b7280] hover:text-[#111827]"
           title="Reset"
         >
           <RotateCcw size={16} />
@@ -61,26 +60,26 @@ export default function ProgressPage() {
       {/* Streak & Stats Bar */}
       {stats && (
         <div className="px-4 py-3 flex gap-3">
-          <div className="flex-1 rounded-xl bg-[#171717] border border-[#262626] p-3 text-center">
+          <div className="flex-1 rounded-xl bg-white border border-[#e5e7eb] p-3 text-center shadow-sm">
             <div className="flex items-center justify-center gap-1.5 mb-1">
               <Flame size={14} className="text-orange-500" />
-              <span className="text-xs text-[#a3a3a3]">Streak</span>
+              <span className="text-xs text-[#6b7280]">Streak</span>
             </div>
-            <p className="text-lg font-bold">{stats.streak}<span className="text-xs text-[#a3a3a3] ml-0.5">d</span></p>
+            <p className="text-lg font-bold text-[#111827]">{stats.streak}<span className="text-xs text-[#6b7280] ml-0.5">d</span></p>
           </div>
-          <div className="flex-1 rounded-xl bg-[#171717] border border-[#262626] p-3 text-center">
+          <div className="flex-1 rounded-xl bg-white border border-[#e5e7eb] p-3 text-center shadow-sm">
             <div className="flex items-center justify-center gap-1.5 mb-1">
               <Calendar size={14} className="text-blue-500" />
-              <span className="text-xs text-[#a3a3a3]">This Week</span>
+              <span className="text-xs text-[#6b7280]">This Week</span>
             </div>
-            <p className="text-lg font-bold">{weeklyStats.daysActive}<span className="text-xs text-[#a3a3a3] ml-0.5">/{DAYS.length}</span></p>
+            <p className="text-lg font-bold text-[#111827]">{weeklyStats.daysActive}<span className="text-xs text-[#6b7280] ml-0.5">/{DAYS.length}</span></p>
           </div>
-          <div className="flex-1 rounded-xl bg-[#171717] border border-[#262626] p-3 text-center">
+          <div className="flex-1 rounded-xl bg-white border border-[#e5e7eb] p-3 text-center shadow-sm">
             <div className="flex items-center justify-center gap-1.5 mb-1">
               <Trophy size={14} className="text-yellow-500" />
-              <span className="text-xs text-[#a3a3a3]">Total</span>
+              <span className="text-xs text-[#6b7280]">Total</span>
             </div>
-            <p className="text-lg font-bold">{stats.totalWorkouts}</p>
+            <p className="text-lg font-bold text-[#111827]">{stats.totalWorkouts}</p>
           </div>
         </div>
       )}
@@ -93,8 +92,8 @@ export default function ProgressPage() {
             onClick={() => { setSelectedDay(d.id); setCompleted({}); setWorkoutDone(false); }}
             className={`flex-shrink-0 rounded-xl px-4 py-2 text-xs font-semibold transition-colors ${
               selectedDay === d.id
-                ? 'bg-red-600 text-white'
-                : 'bg-[#171717] border border-[#262626] text-[#a3a3a3]'
+                ? 'bg-blue-600 text-white'
+                : 'bg-white border border-[#e5e7eb] text-[#6b7280] shadow-sm'
             }`}
           >
             {d.icon} {d.name}
@@ -104,20 +103,20 @@ export default function ProgressPage() {
 
       {/* Progress Bar */}
       <div className="px-4 mb-4">
-        <div className="flex justify-between text-xs text-[#a3a3a3] mb-1">
+        <div className="flex justify-between text-xs text-[#6b7280] mb-1">
           <span>{day.subtitle}</span>
           <span>{completedCount}/{totalExercises}</span>
         </div>
-        <div className="h-2 rounded-full bg-[#262626]">
+        <div className="h-2 rounded-full bg-[#e5e7eb]">
           <div
             className={`h-full rounded-full transition-all duration-300 ${
-              progress === 100 ? 'bg-green-500' : 'bg-red-600'
+              progress === 100 ? 'bg-green-500' : 'bg-blue-600'
             }`}
             style={{ width: `${progress}%` }}
           />
         </div>
         {progress === 100 && (
-          <p className="text-xs text-green-500 font-semibold mt-1 text-center">Workout Complete!</p>
+          <p className="text-xs text-green-600 font-semibold mt-1 text-center">Workout Complete!</p>
         )}
       </div>
 
@@ -130,7 +129,7 @@ export default function ProgressPage() {
       <div className="px-4 space-y-4">
         {workout.sections.map((section) => (
           <div key={section.title}>
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-red-500 mb-2">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-blue-600 mb-2">
               {section.title}
             </h3>
             <div className="space-y-1.5">
@@ -143,24 +142,24 @@ export default function ProgressPage() {
                     onClick={() => toggleExercise(key)}
                     className={`w-full flex items-center gap-3 rounded-xl border p-3 text-left transition-all ${
                       done
-                        ? 'border-green-600/30 bg-green-600/10'
-                        : 'border-[#262626] bg-[#171717] hover:border-[#404040]'
+                        ? 'border-green-200 bg-green-50'
+                        : 'border-[#e5e7eb] bg-white hover:border-gray-300 shadow-sm'
                     }`}
                   >
                     <div
                       className={`flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full border transition-colors ${
                         done
-                          ? 'border-green-500 bg-green-500 text-black'
-                          : 'border-[#404040]'
+                          ? 'border-green-500 bg-green-500 text-white'
+                          : 'border-gray-300'
                       }`}
                     >
                       {done && <Check size={14} strokeWidth={3} />}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className={`text-sm font-medium ${done ? 'line-through text-[#a3a3a3]' : ''}`}>
+                      <p className={`text-sm font-medium ${done ? 'line-through text-[#9ca3af]' : 'text-[#111827]'}`}>
                         {ex.name}
                       </p>
-                      <p className="text-xs text-[#a3a3a3]">
+                      <p className="text-xs text-[#6b7280]">
                         {ex.sets}x{ex.reps} · Rest: {ex.rest}
                       </p>
                     </div>

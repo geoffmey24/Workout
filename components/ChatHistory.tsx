@@ -36,10 +36,10 @@ export default function ChatHistory({ activeId, onSelect, onNew }: ChatHistoryPr
   if (conversations.length === 0) return null;
 
   return (
-    <div className="border-b border-[#262626]">
+    <div className="border-b border-[#e5e7eb]">
       <button
         onClick={() => setExpanded(!expanded)}
-        className="flex items-center justify-between w-full px-4 py-2 text-xs text-[#a3a3a3] hover:text-white"
+        className="flex items-center justify-between w-full px-4 py-2 text-xs text-[#6b7280] hover:text-[#111827]"
       >
         <span className="flex items-center gap-1.5">
           <Clock size={12} />
@@ -51,7 +51,7 @@ export default function ChatHistory({ activeId, onSelect, onNew }: ChatHistoryPr
         <div className="px-2 pb-2 space-y-1 max-h-48 overflow-y-auto">
           <button
             onClick={onNew}
-            className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-xs text-[#a3a3a3] hover:bg-[#171717] hover:text-white"
+            className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-xs text-[#6b7280] hover:bg-gray-50 hover:text-[#111827]"
           >
             <Plus size={12} /> New Chat
           </button>
@@ -61,15 +61,15 @@ export default function ChatHistory({ activeId, onSelect, onNew }: ChatHistoryPr
               onClick={() => onSelect(c)}
               className={`flex items-center gap-2 w-full rounded-lg px-3 py-2 text-xs transition-colors ${
                 activeId === c.id
-                  ? 'bg-red-600/10 text-red-500 border border-red-600/30'
-                  : 'text-[#a3a3a3] hover:bg-[#171717] hover:text-white'
+                  ? 'bg-blue-50 text-blue-600 border border-blue-200'
+                  : 'text-[#6b7280] hover:bg-gray-50 hover:text-[#111827]'
               }`}
             >
               <span className="flex-1 text-left truncate">{c.title}</span>
               <span className="text-[10px] opacity-60 flex-shrink-0">{formatTime(c.updatedAt)}</span>
               <button
                 onClick={(e) => handleDelete(e, c.id)}
-                className="flex-shrink-0 p-0.5 rounded hover:bg-red-600/20 hover:text-red-500"
+                className="flex-shrink-0 p-0.5 rounded hover:bg-red-50 hover:text-red-500"
               >
                 <Trash2 size={10} />
               </button>

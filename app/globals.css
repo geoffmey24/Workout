@@ -3,12 +3,13 @@
 @tailwind utilities;
 
 :root {
-  --background: #0a0a0a;
-  --card: #171717;
-  --border: #262626;
-  --accent: #dc2626;
-  --text-primary: #f5f5f5;
-  --text-secondary: #a3a3a3;
+  --background: #f8f9fa;
+  --card: #ffffff;
+  --border: #e5e7eb;
+  --accent: #2563eb;
+  --accent-light: #dbeafe;
+  --text-primary: #111827;
+  --text-secondary: #6b7280;
 }
 
 body {
@@ -27,11 +28,11 @@ body {
   background: var(--background);
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--border);
+  background: #d1d5db;
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #404040;
+  background: #9ca3af;
 }
 
 /* Chat messages markdown */
@@ -39,6 +40,7 @@ body {
   font-weight: 700;
   margin-top: 1rem;
   margin-bottom: 0.5rem;
+  color: var(--text-primary);
 }
 .chat-message h1 { font-size: 1.25rem; }
 .chat-message h2 { font-size: 1.125rem; }
@@ -57,19 +59,21 @@ body {
 }
 
 .chat-message code {
-  background: #262626;
+  background: #f3f4f6;
   padding: 0.125rem 0.375rem;
   border-radius: 0.25rem;
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.875rem;
+  color: #1f2937;
 }
 
 .chat-message pre {
-  background: #1a1a1a;
+  background: #f3f4f6;
   padding: 1rem;
   border-radius: 0.5rem;
   overflow-x: auto;
   margin: 0.75rem 0;
+  border: 1px solid var(--border);
 }
 
 .chat-message pre code {
@@ -89,7 +93,7 @@ body {
   font-size: 0.875rem;
 }
 .chat-message th {
-  background: #1a1a1a;
+  background: #f9fafb;
   font-weight: 600;
 }
 

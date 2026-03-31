@@ -16,7 +16,7 @@ export default function Navigation() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-[#262626] bg-[#0a0a0a]/95 backdrop-blur-sm">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-[#e5e7eb] bg-white/95 backdrop-blur-sm">
       <div className="mx-auto flex max-w-lg items-center justify-around py-2">
         {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
           const active = pathname === href || (href !== '/' && pathname.startsWith(href));
@@ -25,7 +25,7 @@ export default function Navigation() {
               key={href}
               href={href}
               className={`flex flex-col items-center gap-0.5 px-3 py-1 text-xs transition-colors ${
-                active ? 'text-red-500' : 'text-[#a3a3a3] hover:text-[#f5f5f5]'
+                active ? 'text-blue-600' : 'text-[#6b7280] hover:text-[#111827]'
               }`}
             >
               <Icon size={20} strokeWidth={active ? 2.5 : 1.5} />

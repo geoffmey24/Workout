@@ -81,7 +81,7 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
     ((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition);
 
   return (
-    <div className="border-t border-[#262626] bg-[#0a0a0a] p-3">
+    <div className="border-t border-[#e5e7eb] bg-white p-3">
       {image && (
         <div className="mb-2 flex items-center gap-2">
           <img
@@ -91,7 +91,7 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
           />
           <button
             onClick={() => { setImage(null); setImageType(''); }}
-            className="rounded-full bg-[#262626] p-1 hover:bg-[#404040]"
+            className="rounded-full bg-gray-100 p-1 hover:bg-gray-200"
           >
             <X size={14} />
           </button>
@@ -100,7 +100,7 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
       <div className="flex items-end gap-2">
         <button
           onClick={() => fileRef.current?.click()}
-          className="rounded-lg bg-[#171717] p-2.5 text-[#a3a3a3] hover:text-white transition-colors"
+          className="rounded-lg bg-gray-100 p-2.5 text-[#6b7280] hover:text-[#111827] hover:bg-gray-200 transition-colors"
           disabled={disabled}
         >
           <Image size={20} />
@@ -118,8 +118,8 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
             disabled={disabled}
             className={`rounded-lg p-2.5 transition-colors ${
               isListening
-                ? 'bg-red-600 text-white animate-pulse'
-                : 'bg-[#171717] text-[#a3a3a3] hover:text-white'
+                ? 'bg-blue-600 text-white animate-pulse'
+                : 'bg-gray-100 text-[#6b7280] hover:text-[#111827] hover:bg-gray-200'
             }`}
             title={isListening ? 'Stop listening' : 'Voice input'}
           >
@@ -133,14 +133,14 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
           placeholder={isListening ? 'Listening...' : 'Ask your coach...'}
           rows={1}
           disabled={disabled}
-          className={`flex-1 resize-none rounded-xl border bg-[#171717] px-4 py-2.5 text-sm text-[#f5f5f5] placeholder-[#a3a3a3] focus:border-red-600 focus:outline-none disabled:opacity-50 ${
-            isListening ? 'border-red-600' : 'border-[#262626]'
+          className={`flex-1 resize-none rounded-xl border bg-gray-50 px-4 py-2.5 text-sm text-[#111827] placeholder-[#9ca3af] focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50 ${
+            isListening ? 'border-blue-500 ring-1 ring-blue-500' : 'border-[#e5e7eb]'
           }`}
         />
         <button
           onClick={handleSend}
           disabled={disabled || (!text.trim() && !image)}
-          className="rounded-lg bg-red-600 p-2.5 text-white transition-colors hover:bg-red-700 disabled:opacity-40"
+          className="rounded-lg bg-blue-600 p-2.5 text-white transition-colors hover:bg-blue-700 disabled:opacity-40"
         >
           <Send size={20} />
         </button>

@@ -61,7 +61,6 @@ function ChatPageInner() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
 
-  // Save conversation when messages change
   useEffect(() => {
     if (messages.length > 0) {
       const updated = {
@@ -76,7 +75,6 @@ function ChatPageInner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages]);
 
-  // Auto-send context message if navigated with a topic
   useEffect(() => {
     if (topic && messages.length === 0) {
       const dayMatch = topic.match(/day(\d+)/);
@@ -144,34 +142,33 @@ function ChatPageInner() {
   };
 
   return (
-    <div className="flex flex-col h-screen">
+    <div className="flex flex-col h-screen bg-[#f8f9fa]">
       {/* Header */}
-      <div className="flex items-center gap-3 border-b border-[#262626] bg-[#0a0a0a] px-4 py-3">
-        <Link href="/" className="text-[#a3a3a3] hover:text-white">
+      <div className="flex items-center gap-3 border-b border-[#e5e7eb] bg-white px-4 py-3">
+        <Link href="/" className="text-[#6b7280] hover:text-[#111827]">
           <ArrowLeft size={20} />
         </Link>
         <div>
-          <h1 className="font-bold text-sm">
-            ELITE <span className="text-red-500">COACH</span>
+          <h1 className="font-bold text-sm text-[#111827]">
+            ELITE <span className="text-blue-600">COACH</span>
           </h1>
-          <p className="text-xs text-[#a3a3a3]">AI Performance Coach</p>
+          <p className="text-xs text-[#6b7280]">AI Performance Coach</p>
         </div>
         <div className="ml-auto flex items-center gap-3">
           <button
             onClick={startNewChat}
-            className="p-1.5 rounded-lg bg-[#171717] text-[#a3a3a3] hover:text-white hover:bg-[#262626] transition-colors"
+            className="p-1.5 rounded-lg bg-gray-100 text-[#6b7280] hover:text-[#111827] hover:bg-gray-200 transition-colors"
             title="New Chat"
           >
             <Plus size={16} />
           </button>
           <div className="flex items-center gap-1.5">
             <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-            <span className="text-xs text-green-500">Online</span>
+            <span className="text-xs text-green-600">Online</span>
           </div>
         </div>
       </div>
 
-      {/* Chat History */}
       <ChatHistory
         activeId={convo.id}
         onSelect={loadConversation}
@@ -183,10 +180,10 @@ function ChatPageInner() {
         {messages.length === 0 && !loading && (
           <div className="flex flex-col items-center justify-center h-full text-center">
             <div className="text-4xl mb-4">🏋️</div>
-            <h2 className="text-lg font-bold mb-2">
-              ELITE <span className="text-red-500">COACH</span>
+            <h2 className="text-lg font-bold mb-2 text-[#111827]">
+              ELITE <span className="text-blue-600">COACH</span>
             </h2>
-            <p className="text-sm text-[#a3a3a3] mb-6 max-w-xs">
+            <p className="text-sm text-[#6b7280] mb-6 max-w-xs">
               Your AI performance coach. Ask about training, nutrition, recovery, form — or upload a photo for analysis.
             </p>
             <div className="flex flex-wrap gap-2 justify-center max-w-sm">
@@ -194,7 +191,7 @@ function ChatPageInner() {
                 <button
                   key={s}
                   onClick={() => handleSend(s)}
-                  className="rounded-full border border-[#262626] bg-[#171717] px-3 py-1.5 text-xs text-[#a3a3a3] hover:border-red-600/50 hover:text-white transition-colors"
+                  className="rounded-full border border-[#e5e7eb] bg-white px-3 py-1.5 text-xs text-[#6b7280] hover:border-blue-300 hover:text-blue-600 transition-colors shadow-sm"
                 >
                   {s}
                 </button>
@@ -210,7 +207,6 @@ function ChatPageInner() {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input */}
       <ChatInput onSend={handleSend} disabled={loading} />
     </div>
   );
@@ -218,7 +214,7 @@ function ChatPageInner() {
 
 export default function ChatPage() {
   return (
-    <Suspense fallback={<div className="flex items-center justify-center h-screen text-[#a3a3a3]">Loading...</div>}>
+    <Suspense fallback={<div className="flex items-center justify-center h-screen text-[#6b7280]">Loading...</div>}>
       <ChatPageInner />
     </Suspense>
   );
