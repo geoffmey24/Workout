@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { MessageSquare, Zap, Flame, Trophy, Calendar, Play, Pause, RotateCcw, Timer, Dumbbell, Heart, SkipForward, ChevronDown, ChevronUp } from 'lucide-react';
+import { MessageSquare, Zap, Flame, Trophy, Calendar, Play, Pause, RotateCcw, Timer, Dumbbell, Heart, SkipForward, ChevronDown, ChevronUp, Trash2 } from 'lucide-react';
 import Navigation from '@/components/Navigation';
 import ProgramMarkdown from '@/components/ProgramMarkdown';
 import { useAuth } from '@/components/AuthProvider';
-import { dbGetWorkoutStats, dbGetWeeklyStats, dbGetActiveProgram, DbWorkoutStats } from '@/lib/db';
+import { dbGetWorkoutStats, dbGetWeeklyStats, dbGetActiveProgram, dbDeleteProgram, DbWorkoutStats } from '@/lib/db';
 import { SavedProgram } from '@/lib/program-history';
 
 interface ProgramDay {
@@ -64,6 +64,7 @@ export default function HomePage() {
   const [dayPickerOpen, setDayPickerOpen] = useState(false);
   const [skippedDays, setSkippedDays] = useState<{ day: string; date: string }[]>([]);
   const [showDayContent, setShowDayContent] = useState(false);
+  const [confirmDeleteProgram, setConfirmDeleteProgram] = useState(false);
 
   // Timer state
   const [timerSeconds, setTimerSeconds] = useState(0);
@@ -147,8 +148,31 @@ export default function HomePage() {
     // Don't advance — keep showing the same day so they do it next time
   };
 
+  const handleDeleteActiveProgram = async () => {
+    if (!activeProgram) return;
+    await dbDeleteProgram(activeProgram.id);
+    setActiveProgram(null);
+    setConfirmDeleteProgram(false);
+  };
+
   return (
     <div className="min-h-screen pb-24">
+      {/* Delete confirmation dialog */}
+      {confirmDeleteProgram && activeProgram && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+          <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-xl">
+            <h3 className="font-bold text-lg text-[#111827] mb-2">Delete Program?</h3>
+            <p className="text-sm text-[#6b7280] mb-1">
+              Are you sure you want to delete <strong>{activeProgram.title}</strong>?
+            </p>
+            <p className="text-xs text-[#9ca3af] mb-6">This can&apos;t be undone.</p>
+            <div className="flex gap-3">
+              <button onClick={() => setConfirmDeleteProgram(false)} className="flex-1 rounded-xl border border-[#e5e7eb] py-2.5 text-sm font-medium text-[#6b7280] hover:bg-gray-50 transition-colors">Cancel</button>
+              <button onClick={handleDeleteActiveProgram} className="flex-1 rounded-xl bg-red-600 py-2.5 text-sm font-bold text-white hover:bg-red-700 transition-colors">Delete</button>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="px-4 pt-12 pb-6">
         <h1 className="text-3xl font-extrabold tracking-tight text-[#111827]">
           ELITE <span className="text-blue-600">COACH</span>
@@ -237,7 +261,10 @@ export default function HomePage() {
                 <h2 className="text-xs font-medium uppercase tracking-wider text-blue-600">
                   {selectedDay?.isRecovery ? "Today's Recovery" : "Today's Workout"}
                 </h2>
-                <Link href="/progress" className="text-xs text-blue-600 font-medium">Track Progress &rarr;</Link>
+                <div className="flex items-center gap-3">
+                  <Link href="/progress" className="text-xs text-blue-600 font-medium">Track Progress &rarr;</Link>
+                  <button onClick={() => setConfirmDeleteProgram(true)} className="text-[#9ca3af] hover:text-red-500 transition-colors" title="Delete program"><Trash2 size={14} /></button>
+                </div>
               </div>
 
               {/* Selected day display */}

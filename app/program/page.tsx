@@ -70,6 +70,7 @@ export default function ProgramPage() {
   const [savedPrograms, setSavedPrograms] = useState<SavedProgram[]>([]);
   const [viewingProgram, setViewingProgram] = useState<SavedProgram | null>(null);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   const refreshPrograms = async () => {
     if (user) setSavedPrograms(await dbGetSavedPrograms(user.id));
@@ -257,16 +258,49 @@ Build a full weekly program. For each day, include: warm-up, main lifts (sets x 
 
   const handleDeleteProgram = async (id: string) => {
     await dbDeleteProgram(id);
+    setConfirmDelete(null);
     await refreshPrograms();
     if (viewingProgram?.id === id) { setViewingProgram(null); setView('menu'); }
   };
 
   const formatDate = (ts: number) => new Date(ts).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
 
+  // Delete confirmation dialog
+  const DeleteConfirmDialog = () => {
+    if (!confirmDelete) return null;
+    const prog = savedPrograms.find(p => p.id === confirmDelete);
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+        <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-xl">
+          <h3 className="font-bold text-lg text-[#111827] mb-2">Delete Program?</h3>
+          <p className="text-sm text-[#6b7280] mb-1">
+            Are you sure you want to delete <strong>{prog?.title || 'this program'}</strong>?
+          </p>
+          <p className="text-xs text-[#9ca3af] mb-6">This can&apos;t be undone.</p>
+          <div className="flex gap-3">
+            <button
+              onClick={() => setConfirmDelete(null)}
+              className="flex-1 rounded-xl border border-[#e5e7eb] py-2.5 text-sm font-medium text-[#6b7280] hover:bg-gray-50 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => handleDeleteProgram(confirmDelete)}
+              className="flex-1 rounded-xl bg-red-600 py-2.5 text-sm font-bold text-white hover:bg-red-700 transition-colors"
+            >
+              Delete
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   // Viewing a saved program
   if (viewingProgram) {
     return (
       <div className="min-h-screen pb-24 bg-[#f8f9fa]">
+        <DeleteConfirmDialog />
         <div className="flex items-center gap-3 border-b border-[#e5e7eb] bg-white px-4 py-3">
           <button onClick={() => { setViewingProgram(null); setView('saved'); }} className="text-[#6b7280] hover:text-[#111827]"><ArrowLeft size={20} /></button>
           <div className="flex-1 min-w-0">
@@ -279,6 +313,7 @@ Build a full weekly program. For each day, include: warm-up, main lifts (sets x 
           >
             <Star size={14} /> Set Active
           </button>
+          <button onClick={() => setConfirmDelete(viewingProgram.id)} className="p-1.5 rounded-lg text-[#9ca3af] hover:text-red-500 hover:bg-red-50 transition-colors"><Trash2 size={16} /></button>
         </div>
         <div className="px-4 py-6"><ProgramMarkdown content={viewingProgram.content} /></div>
         <Navigation />
@@ -327,6 +362,7 @@ Build a full weekly program. For each day, include: warm-up, main lifts (sets x 
   if (view === 'saved') {
     return (
       <div className="min-h-screen pb-24 bg-[#f8f9fa]">
+        <DeleteConfirmDialog />
         <div className="flex items-center gap-3 border-b border-[#e5e7eb] bg-white px-4 py-3">
           <button onClick={() => setView('menu')} className="text-[#6b7280] hover:text-[#111827]"><ArrowLeft size={20} /></button>
           <h1 className="font-bold text-sm text-[#111827]">Saved Programs</h1>
@@ -350,7 +386,7 @@ Build a full weekly program. For each day, include: warm-up, main lifts (sets x 
                 </div>
               </button>
               {!p.isActive && <button onClick={() => handleSetActive(p)} className="p-2 rounded-lg text-blue-600 hover:bg-blue-50 transition-colors" title="Set as active workout"><Star size={16} /></button>}
-              <button onClick={() => handleDeleteProgram(p.id)} className="p-2 rounded-lg text-[#9ca3af] hover:text-red-500 hover:bg-red-50 transition-colors"><Trash2 size={16} /></button>
+              <button onClick={() => setConfirmDelete(p.id)} className="p-2 rounded-lg text-[#9ca3af] hover:text-red-500 hover:bg-red-50 transition-colors"><Trash2 size={16} /></button>
             </div>
           ))}
         </div>
@@ -470,6 +506,7 @@ Build a full weekly program. For each day, include: warm-up, main lifts (sets x 
   // Menu (default view)
   return (
     <div className="min-h-screen pb-24 bg-[#f8f9fa]">
+      <DeleteConfirmDialog />
       <div className="flex items-center gap-3 border-b border-[#e5e7eb] bg-white px-4 py-3">
         <Link href="/" className="text-[#6b7280] hover:text-[#111827]"><ArrowLeft size={20} /></Link>
         <h1 className="font-bold text-sm text-[#111827]">Programs</h1>
@@ -509,7 +546,7 @@ Build a full weekly program. For each day, include: warm-up, main lifts (sets x 
                     </div>
                   </button>
                   {!p.isActive && <button onClick={() => handleSetActive(p)} className="p-2 rounded-lg text-blue-600 hover:bg-blue-50 transition-colors" title="Set as active"><Star size={16} /></button>}
-                  <button onClick={() => handleDeleteProgram(p.id)} className="p-2 rounded-lg text-[#9ca3af] hover:text-red-500 hover:bg-red-50 transition-colors"><Trash2 size={16} /></button>
+                  <button onClick={() => setConfirmDelete(p.id)} className="p-2 rounded-lg text-[#9ca3af] hover:text-red-500 hover:bg-red-50 transition-colors"><Trash2 size={16} /></button>
                 </div>
               ))}
             </div>

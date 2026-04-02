@@ -23,15 +23,40 @@ export function useAuth() {
   return useContext(AuthContext);
 }
 
+// Check if Supabase is properly configured (not placeholder values)
+function isSupabaseConfigured(): boolean {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  return !!url && !url.includes('your-project');
+}
+
+// Fake user for when Supabase isn't configured
+const LOCAL_USER: User = {
+  id: 'local-user',
+  email: 'local@elitecoach.app',
+  app_metadata: {},
+  user_metadata: {},
+  aud: 'authenticated',
+  created_at: new Date().toISOString(),
+} as User;
+
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const pathname = usePathname();
   const router = useRouter();
-  const supabase = createClient();
 
   useEffect(() => {
+    // If Supabase isn't configured, use local mode (no auth required)
+    if (!isSupabaseConfigured()) {
+      setUser(LOCAL_USER);
+      setSession(null);
+      setLoading(false);
+      return;
+    }
+
+    const supabase = createClient();
+
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
@@ -47,17 +72,20 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     });
 
     return () => subscription.unsubscribe();
-  }, [supabase.auth]);
+  }, []);
 
-  // Redirect to login if not authenticated
+  // Redirect to login if not authenticated (only when Supabase is configured)
   useEffect(() => {
-    if (!loading && !user && pathname !== '/login') {
+    if (!loading && !user && pathname !== '/login' && isSupabaseConfigured()) {
       router.replace('/login');
     }
   }, [loading, user, pathname, router]);
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    if (isSupabaseConfigured()) {
+      const supabase = createClient();
+      await supabase.auth.signOut();
+    }
     router.replace('/login');
   };
 
