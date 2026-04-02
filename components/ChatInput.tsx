@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Send, Image, X, Mic, MicOff } from 'lucide-react';
 
 interface ChatInputProps {
@@ -13,8 +13,16 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
   const [image, setImage] = useState<string | null>(null);
   const [imageType, setImageType] = useState<string>('');
   const [isListening, setIsListening] = useState(false);
+  const [speechSupported, setSpeechSupported] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const recognitionRef = useRef<any>(null);
+
+  useEffect(() => {
+    setSpeechSupported(
+      typeof window !== 'undefined' &&
+      !!((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition)
+    );
+  }, []);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -55,30 +63,48 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
       (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) return;
 
-    const recognition = new SpeechRecognition();
-    recognition.continuous = false;
-    recognition.interimResults = true;
-    recognition.lang = 'en-US';
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = true;
+      recognition.lang = 'en-US';
 
-    recognition.onresult = (event: any) => {
-      let transcript = '';
-      for (let i = 0; i < event.results.length; i++) {
-        transcript += event.results[i][0].transcript;
-      }
-      setText(transcript);
-    };
+      let finalTranscript = '';
 
-    recognition.onend = () => setIsListening(false);
-    recognition.onerror = () => setIsListening(false);
+      recognition.onresult = (event: any) => {
+        let interim = '';
+        for (let i = 0; i < event.results.length; i++) {
+          if (event.results[i].isFinal) {
+            finalTranscript += event.results[i][0].transcript;
+          } else {
+            interim += event.results[i][0].transcript;
+          }
+        }
+        setText(finalTranscript + interim);
+      };
 
-    recognitionRef.current = recognition;
-    recognition.start();
-    setIsListening(true);
+      recognition.onend = () => {
+        setIsListening(false);
+        // Auto-populate the final transcript
+        if (finalTranscript) {
+          setText(finalTranscript);
+        }
+      };
+
+      recognition.onerror = (event: any) => {
+        setIsListening(false);
+        if (event.error === 'not-allowed') {
+          alert('Microphone access denied. Please allow microphone access in your browser settings.');
+        }
+      };
+
+      recognitionRef.current = recognition;
+      recognition.start();
+      setIsListening(true);
+    } catch {
+      setIsListening(false);
+    }
   };
-
-  const hasSpeechSupport =
-    typeof window !== 'undefined' &&
-    ((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition);
 
   return (
     <div className="border-t border-[#e5e7eb] bg-white p-3">
@@ -112,13 +138,13 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
           onChange={handleImageUpload}
           className="hidden"
         />
-        {hasSpeechSupport && (
+        {speechSupported && (
           <button
             onClick={toggleVoice}
             disabled={disabled}
             className={`rounded-lg p-2.5 transition-colors ${
               isListening
-                ? 'bg-blue-600 text-white animate-pulse'
+                ? 'bg-red-500 text-white animate-pulse'
                 : 'bg-gray-100 text-[#6b7280] hover:text-[#111827] hover:bg-gray-200'
             }`}
             title={isListening ? 'Stop listening' : 'Voice input'}
@@ -134,7 +160,7 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
           rows={1}
           disabled={disabled}
           className={`flex-1 resize-none rounded-xl border bg-gray-50 px-4 py-2.5 text-sm text-[#111827] placeholder-[#9ca3af] focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50 ${
-            isListening ? 'border-blue-500 ring-1 ring-blue-500' : 'border-[#e5e7eb]'
+            isListening ? 'border-red-400 ring-1 ring-red-400' : 'border-[#e5e7eb]'
           }`}
         />
         <button

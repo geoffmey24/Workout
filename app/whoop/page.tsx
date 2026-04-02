@@ -1,12 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { ArrowLeft, Loader2, Link2, Link2Off, Wifi, WifiOff } from 'lucide-react';
+import { ArrowLeft, Loader2, Link2, Link2Off, Wifi, WifiOff, Activity } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import Navigation from '@/components/Navigation';
-import { MOCK_WHOOP_DATA } from '@/lib/whoop-data';
 import { WhoopData } from '@/types';
 import {
   ResponsiveContainer,
@@ -43,8 +42,8 @@ function WhoopPageInner() {
   const justConnected = searchParams.get('connected');
   const authError = searchParams.get('error');
 
-  const [whoopData, setWhoopData] = useState<WhoopData>(MOCK_WHOOP_DATA);
-  const [dataSource, setDataSource] = useState<string>('mock');
+  const [whoopData, setWhoopData] = useState<WhoopData | null>(null);
+  const [dataSource, setDataSource] = useState<string>('none');
   const [loading, setLoading] = useState(true);
   // HIDDEN: Requires native app — re-enable when building React Native version
   // { id: 'apple', name: 'Apple Health', icon: 'A', description: 'Steps, heart rate, workouts, sleep', authUrl: '', dataUrl: '', disconnectUrl: '', color: '#ef4444', connected: false },
@@ -84,12 +83,12 @@ function WhoopPageInner() {
         return;
       }
 
-      // Fall back to mock
-      setWhoopData(MOCK_WHOOP_DATA);
-      setDataSource('mock');
+      // No data available
+      setWhoopData(null);
+      setDataSource('none');
     } catch {
-      setWhoopData(MOCK_WHOOP_DATA);
-      setDataSource('mock');
+      setWhoopData(null);
+      setDataSource('none');
     } finally {
       setLoading(false);
     }
@@ -104,12 +103,7 @@ function WhoopPageInner() {
     } catch { /* ignore */ }
   };
 
-  const { today, recovery, sleep, strain } = whoopData;
-
-  const recoveryChartData = recovery.map((d) => ({
-    ...d,
-    fill: recoveryColors[d.color],
-  }));
+  const hasData = whoopData !== null && dataSource !== 'none';
 
   return (
     <div className="min-h-screen pb-24 bg-[#f8f9fa]">
@@ -120,13 +114,13 @@ function WhoopPageInner() {
         </Link>
         <h1 className="font-bold text-sm text-[#111827]">Recovery Dashboard</h1>
         <div className="ml-auto flex items-center gap-2">
-          {dataSource !== 'mock' ? (
+          {hasData ? (
             <span className="flex items-center gap-1 text-xs text-green-600">
               <Wifi size={12} /> {dataSource}
             </span>
           ) : (
             <span className="flex items-center gap-1 text-xs text-[#6b7280]">
-              <WifiOff size={12} /> Demo
+              <WifiOff size={12} /> Not connected
             </span>
           )}
         </div>
@@ -146,7 +140,7 @@ function WhoopPageInner() {
 
       {/* Health Sources */}
       <div className="px-4 pt-4">
-        <h2 className="text-xs font-medium uppercase tracking-wider text-[#6b7280] mb-3">Connected Sources</h2>
+        <h2 className="text-xs font-medium uppercase tracking-wider text-[#6b7280] mb-3">Health Sources</h2>
         <div className="grid grid-cols-2 gap-2">
           {sources.map((source) => (
             <div key={source.id} className="rounded-xl bg-white border border-[#e5e7eb] p-3 shadow-sm">
@@ -183,25 +177,37 @@ function WhoopPageInner() {
         <div className="flex items-center justify-center py-20">
           <Loader2 size={32} className="animate-spin text-blue-600" />
         </div>
+      ) : !hasData ? (
+        /* Empty state — no data connected */
+        <div className="px-4 py-16 text-center">
+          <Activity size={56} className="mx-auto text-gray-300 mb-4" />
+          <h2 className="text-lg font-bold text-[#111827] mb-2">No recovery data yet</h2>
+          <p className="text-sm text-[#6b7280] max-w-xs mx-auto mb-6">
+            Connect your WHOOP or Oura Ring above to see your recovery scores, sleep data, and strain metrics.
+          </p>
+          <p className="text-xs text-[#9ca3af]">
+            Your coach will use this data to personalize your training recommendations.
+          </p>
+        </div>
       ) : (
         <div className="px-4 py-6">
           {/* Today's Stats */}
           <div className="rounded-2xl border border-[#e5e7eb] bg-white p-5 mb-6 shadow-sm">
             <h2 className="text-xs font-medium uppercase tracking-wider text-[#6b7280] mb-3">Today&apos;s Recovery</h2>
             <div className="flex items-center gap-4 mb-4">
-              <span className="text-5xl font-extrabold" style={{ color: recoveryColors[today.color] }}>
-                {today.recovery_score}%
+              <span className="text-5xl font-extrabold" style={{ color: recoveryColors[whoopData!.today.color] }}>
+                {whoopData!.today.recovery_score}%
               </span>
-              <span className="rounded-full px-3 py-1 text-xs font-semibold uppercase" style={{ color: recoveryColors[today.color], backgroundColor: `${recoveryColors[today.color]}15` }}>
-                {today.color === 'green' ? 'Recovered' : today.color === 'yellow' ? 'Moderate' : 'Rest'}
+              <span className="rounded-full px-3 py-1 text-xs font-semibold uppercase" style={{ color: recoveryColors[whoopData!.today.color], backgroundColor: `${recoveryColors[whoopData!.today.color]}15` }}>
+                {whoopData!.today.color === 'green' ? 'Recovered' : whoopData!.today.color === 'yellow' ? 'Moderate' : 'Rest'}
               </span>
             </div>
             <div className="grid grid-cols-2 gap-3">
               {[
-                { label: 'Resting HR', value: `${today.resting_hr} bpm` },
-                { label: 'HRV', value: `${today.hrv} ms` },
-                { label: 'SpO2', value: `${today.spo2}%` },
-                { label: 'Skin Temp', value: `${today.skin_temp}°C` },
+                { label: 'Resting HR', value: `${whoopData!.today.resting_hr} bpm` },
+                { label: 'HRV', value: `${whoopData!.today.hrv} ms` },
+                { label: 'SpO2', value: `${whoopData!.today.spo2}%` },
+                { label: 'Skin Temp', value: `${whoopData!.today.skin_temp}°C` },
               ].map((stat) => (
                 <div key={stat.label} className="rounded-lg bg-[#f8f9fa] p-3">
                   <p className="text-xs text-[#6b7280]">{stat.label}</p>
@@ -211,31 +217,15 @@ function WhoopPageInner() {
             </div>
           </div>
 
-          {/* AI Recovery Insight */}
-          <div className="rounded-2xl border border-[#e5e7eb] bg-white p-5 mb-6 shadow-sm">
-            <h2 className="text-xs font-medium uppercase tracking-wider text-blue-600 mb-3">Coach&apos;s Take</h2>
-            <p className="text-sm text-[#6b7280] leading-relaxed">
-              {today.color === 'green'
-                ? `Recovery at ${today.recovery_score}% — you're primed. HRV of ${today.hrv}ms shows strong parasympathetic tone. Go after it today. Full volume, chase progressive overload.`
-                : today.color === 'yellow'
-                ? `Recovery at ${today.recovery_score}% — moderate zone. HRV of ${today.hrv}ms suggests your nervous system is still processing. Train today but drop volume ~30%.`
-                : `Recovery at ${today.recovery_score}% — your body is asking for rest. HRV of ${today.hrv}ms is suppressed. Today: mobility work, light cardio, stretching.`}
-            </p>
-          </div>
-
           {/* Recovery Chart */}
           <div className="rounded-2xl border border-[#e5e7eb] bg-white p-5 mb-6 shadow-sm">
             <h2 className="text-xs font-medium uppercase tracking-wider text-[#6b7280] mb-4">7-Day Recovery</h2>
             <ResponsiveContainer width="100%" height={180}>
-              <BarChart data={recoveryChartData}>
+              <BarChart data={whoopData!.recovery.map(d => ({ ...d, fill: recoveryColors[d.color] }))}>
                 <XAxis dataKey="date" tick={{ fill: '#6b7280', fontSize: 11 }} axisLine={false} tickLine={false} />
                 <YAxis domain={[0, 100]} tick={{ fill: '#6b7280', fontSize: 11 }} axisLine={false} tickLine={false} width={30} />
                 <Tooltip contentStyle={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, fontSize: 12 }} labelStyle={{ color: '#6b7280' }} />
-                <Bar dataKey="score" radius={[4, 4, 0, 0]} fill="#2563eb">
-                  {recoveryChartData.map((entry, i) => (
-                    <rect key={i} fill={entry.fill} />
-                  ))}
-                </Bar>
+                <Bar dataKey="score" radius={[4, 4, 0, 0]} fill="#2563eb" />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -244,7 +234,7 @@ function WhoopPageInner() {
           <div className="rounded-2xl border border-[#e5e7eb] bg-white p-5 mb-6 shadow-sm">
             <h2 className="text-xs font-medium uppercase tracking-wider text-[#6b7280] mb-4">Sleep Duration (hrs)</h2>
             <ResponsiveContainer width="100%" height={180}>
-              <BarChart data={sleep}>
+              <BarChart data={whoopData!.sleep}>
                 <XAxis dataKey="date" tick={{ fill: '#6b7280', fontSize: 11 }} axisLine={false} tickLine={false} />
                 <YAxis domain={[0, 10]} tick={{ fill: '#6b7280', fontSize: 11 }} axisLine={false} tickLine={false} width={30} />
                 <Tooltip contentStyle={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 8, fontSize: 12 }} labelStyle={{ color: '#6b7280' }} />
@@ -271,7 +261,7 @@ function WhoopPageInner() {
           <div className="rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-sm">
             <h2 className="text-xs font-medium uppercase tracking-wider text-[#6b7280] mb-4">Daily Strain</h2>
             <ResponsiveContainer width="100%" height={180}>
-              <LineChart data={strain}>
+              <LineChart data={whoopData!.strain}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                 <XAxis dataKey="date" tick={{ fill: '#6b7280', fontSize: 11 }} axisLine={false} tickLine={false} />
                 <YAxis domain={[0, 21]} tick={{ fill: '#6b7280', fontSize: 11 }} axisLine={false} tickLine={false} width={30} />

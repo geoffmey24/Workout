@@ -2,27 +2,64 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Clock, ChevronRight, Zap, Activity, MessageSquare, Flame, Trophy, Calendar } from 'lucide-react';
+import { MessageSquare, Zap, Flame, Trophy, Calendar, Play, Pause, RotateCcw, Timer, Dumbbell } from 'lucide-react';
 import Navigation from '@/components/Navigation';
-import { DAYS } from '@/lib/workout-data';
-import { MOCK_WHOOP_DATA } from '@/lib/whoop-data';
 import { getWorkoutStats, getWeeklyStats } from '@/lib/workout-stats';
-
-const recoveryColor = {
-  green: 'text-green-600 bg-green-50 border-green-200',
-  yellow: 'text-yellow-600 bg-yellow-50 border-yellow-200',
-  red: 'text-red-600 bg-red-50 border-red-200',
-};
+import { getActiveProgram } from '@/lib/active-program';
+import { SavedProgram } from '@/lib/program-history';
 
 export default function HomePage() {
-  const today = MOCK_WHOOP_DATA.today;
   const [stats, setStats] = useState<{ streak: number; totalWorkouts: number; longestStreak: number } | null>(null);
   const [weekly, setWeekly] = useState({ workoutsThisWeek: 0, daysActive: 0 });
+  const [activeProgram, setActiveProgram] = useState<SavedProgram | null>(null);
+
+  // Timer state
+  const [timerSeconds, setTimerSeconds] = useState(0);
+  const [timerRunning, setTimerRunning] = useState(false);
+  const [timerMode, setTimerMode] = useState<'stopwatch' | 'rest'>('stopwatch');
+  const [restPreset, setRestPreset] = useState(90);
 
   useEffect(() => {
     setStats(getWorkoutStats());
     setWeekly(getWeeklyStats());
+    setActiveProgram(getActiveProgram());
   }, []);
+
+  // Timer tick
+  useEffect(() => {
+    if (!timerRunning) return;
+    const interval = setInterval(() => {
+      setTimerSeconds(prev => {
+        if (timerMode === 'rest' && prev <= 1) {
+          setTimerRunning(false);
+          if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+          return 0;
+        }
+        return timerMode === 'rest' ? prev - 1 : prev + 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [timerRunning, timerMode]);
+
+  const formatTime = (s: number) => {
+    const mins = Math.floor(s / 60);
+    const secs = s % 60;
+    return `${mins}:${String(secs).padStart(2, '0')}`;
+  };
+
+  const startRest = (preset: number) => {
+    setTimerMode('rest');
+    setRestPreset(preset);
+    setTimerSeconds(preset);
+    setTimerRunning(true);
+  };
+
+  const resetTimer = () => {
+    setTimerRunning(false);
+    setTimerSeconds(timerMode === 'rest' ? restPreset : 0);
+  };
+
+  const isTimerFinished = timerMode === 'rest' && timerSeconds === 0 && !timerRunning;
 
   return (
     <div className="min-h-screen">
@@ -32,23 +69,6 @@ export default function HomePage() {
           ELITE <span className="text-blue-600">COACH</span>
         </h1>
         <p className="mt-1 text-sm text-[#6b7280]">Your AI performance coach</p>
-      </div>
-
-      {/* Recovery Banner */}
-      <div className="px-4 mb-6">
-        <Link href="/whoop">
-          <div className={`rounded-2xl border p-4 ${recoveryColor[today.color]} flex items-center justify-between`}>
-            <div>
-              <p className="text-xs font-medium uppercase tracking-wider opacity-80">Today&apos;s Recovery</p>
-              <p className="text-3xl font-bold mt-1">{today.recovery_score}%</p>
-              <div className="flex gap-4 mt-2 text-xs opacity-80">
-                <span>HR {today.resting_hr} bpm</span>
-                <span>HRV {today.hrv} ms</span>
-              </div>
-            </div>
-            <Activity size={40} className="opacity-30" />
-          </div>
-        </Link>
       </div>
 
       {/* Weekly Stats */}
@@ -61,7 +81,7 @@ export default function HomePage() {
           </div>
           <div className="flex-1 rounded-xl bg-white border border-[#e5e7eb] p-3 text-center shadow-sm">
             <Calendar size={16} className="mx-auto text-blue-500 mb-1" />
-            <p className="text-lg font-bold text-[#111827]">{weekly.daysActive}<span className="text-xs text-[#6b7280]">/{DAYS.length}</span></p>
+            <p className="text-lg font-bold text-[#111827]">{weekly.daysActive}</p>
             <p className="text-[10px] text-[#6b7280] uppercase">This Week</p>
           </div>
           <div className="flex-1 rounded-xl bg-white border border-[#e5e7eb] p-3 text-center shadow-sm">
@@ -72,12 +92,80 @@ export default function HomePage() {
         </div>
       )}
 
+      {/* Workout Timer — prominent on home page */}
+      <div className="px-4 mb-6">
+        <div className="rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Timer size={16} className="text-blue-600" />
+              <h2 className="text-xs font-medium uppercase tracking-wider text-[#6b7280]">
+                {timerMode === 'rest' ? 'Rest Timer' : 'Workout Timer'}
+              </h2>
+            </div>
+            <div className="flex gap-1">
+              <button
+                onClick={() => { setTimerMode('stopwatch'); setTimerSeconds(0); setTimerRunning(false); }}
+                className={`px-2.5 py-1 rounded-lg text-xs font-medium ${timerMode === 'stopwatch' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-[#6b7280]'}`}
+              >
+                Stopwatch
+              </button>
+              <button
+                onClick={() => { setTimerMode('rest'); setTimerSeconds(restPreset); setTimerRunning(false); }}
+                className={`px-2.5 py-1 rounded-lg text-xs font-medium ${timerMode === 'rest' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-[#6b7280]'}`}
+              >
+                Rest
+              </button>
+            </div>
+          </div>
+
+          <div className={`text-center text-5xl font-mono font-extrabold mb-4 ${isTimerFinished ? 'text-green-600 animate-pulse' : 'text-[#111827]'}`}>
+            {formatTime(timerSeconds)}
+          </div>
+
+          {isTimerFinished && (
+            <p className="text-center text-sm text-green-600 mb-3 font-semibold">Time to work!</p>
+          )}
+
+          <div className="flex gap-2 justify-center mb-3">
+            <button
+              onClick={() => setTimerRunning(!timerRunning)}
+              className="flex items-center gap-2 rounded-xl bg-blue-600 px-8 py-3 text-sm font-semibold text-white hover:bg-blue-700 transition-colors"
+            >
+              {timerRunning ? <Pause size={18} /> : <Play size={18} />}
+              {timerRunning ? 'Pause' : 'Start Workout'}
+            </button>
+            <button
+              onClick={resetTimer}
+              className="rounded-xl bg-gray-100 p-3 hover:bg-gray-200 transition-colors text-[#6b7280]"
+            >
+              <RotateCcw size={18} />
+            </button>
+          </div>
+
+          {timerMode === 'rest' && (
+            <div className="flex gap-2 justify-center">
+              {[30, 60, 90, 120, 180].map((s) => (
+                <button
+                  key={s}
+                  onClick={() => startRest(s)}
+                  className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+                    restPreset === s && !timerRunning ? 'bg-blue-600 text-white' : 'bg-gray-100 text-[#6b7280] hover:bg-gray-200'
+                  }`}
+                >
+                  {s < 60 ? `${s}s` : `${s / 60}m`}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Quick Actions */}
       <div className="px-4 mb-6 flex gap-3">
         <Link href="/chat" className="flex-1">
           <div className="rounded-xl bg-blue-600 p-4 flex items-center gap-3 text-white hover:bg-blue-700 transition-colors shadow-sm">
             <MessageSquare size={20} />
-            <span className="font-semibold text-sm">Ask Coach</span>
+            <span className="font-semibold text-sm">Talk to Coach</span>
           </div>
         </Link>
         <Link href="/program" className="flex-1">
@@ -88,44 +176,33 @@ export default function HomePage() {
         </Link>
       </div>
 
-      {/* Coach's Daily Insight */}
+      {/* Active Program or Create Prompt */}
       <div className="px-4 mb-6">
-        <div className="rounded-2xl border border-[#e5e7eb] bg-white p-4 shadow-sm">
-          <p className="text-xs font-medium uppercase tracking-wider text-blue-600 mb-2">Coach&apos;s Insight</p>
-          <p className="text-sm text-[#6b7280] leading-relaxed">
-            {today.color === 'green'
-              ? "Recovery is green — your nervous system is primed for intensity. Don't waste a good day. Attack your compound lifts and push progressive overload."
-              : today.color === 'yellow'
-              ? "Moderate recovery today. Train smart: keep the intensity but drop total volume by ~30%. Focus on quality reps over quantity."
-              : "Your body is asking for recovery. Light movement only — mobility work, stretching, easy walk. The gains happen when you rest as hard as you train."}
-          </p>
-          <Link href="/chat" className="inline-block mt-2 text-xs text-blue-600 hover:text-blue-500 font-medium">
-            Ask coach for more details &rarr;
-          </Link>
-        </div>
-      </div>
-
-      {/* Workout Days */}
-      <div className="px-4">
-        <h2 className="text-lg font-bold mb-3 text-[#111827]">This Week</h2>
-        <div className="space-y-3">
-          {DAYS.map((day) => (
-            <Link key={day.id} href={`/chat?topic=day${day.id}`}>
-              <div className="flex items-center gap-4 rounded-xl bg-white border border-[#e5e7eb] p-4 hover:border-blue-300 transition-colors shadow-sm">
-                <span className="text-2xl">{day.icon}</span>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-sm text-[#111827]">{day.name}</p>
-                  <p className="text-xs text-[#6b7280] truncate">{day.subtitle}</p>
-                </div>
-                <div className="flex items-center gap-2 text-[#9ca3af]">
-                  <Clock size={14} />
-                  <span className="text-xs">{day.time}</span>
-                  <ChevronRight size={16} />
-                </div>
-              </div>
+        {activeProgram ? (
+          <div className="rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-xs font-medium uppercase tracking-wider text-blue-600">Active Program</h2>
+              <Link href="/progress" className="text-xs text-blue-600 font-medium">Track Progress &rarr;</Link>
+            </div>
+            <p className="font-bold text-sm text-[#111827] mb-1">{activeProgram.title}</p>
+            <p className="text-xs text-[#6b7280] line-clamp-3 leading-relaxed">
+              {activeProgram.content.slice(0, 200)}...
+            </p>
+            <Link href="/progress" className="inline-block mt-3 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 transition-colors">
+              Start Workout
             </Link>
-          ))}
-        </div>
+          </div>
+        ) : (
+          <Link href="/program">
+            <div className="rounded-2xl border-2 border-dashed border-[#d1d5db] bg-white p-8 text-center hover:border-blue-300 transition-colors">
+              <Dumbbell size={40} className="mx-auto text-gray-300 mb-3" />
+              <h2 className="text-lg font-bold text-[#111827] mb-1">Create Your First Program</h2>
+              <p className="text-sm text-[#6b7280]">
+                Generate a personalized training plan or add your existing workout to get started.
+              </p>
+            </div>
+          </Link>
+        )}
       </div>
 
       <Navigation />

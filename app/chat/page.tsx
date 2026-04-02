@@ -9,8 +9,6 @@ import ChatInput from '@/components/ChatInput';
 import ChatHistory from '@/components/ChatHistory';
 import LoadingDots from '@/components/LoadingDots';
 import { Message, ContentBlock, ApiMessage } from '@/types';
-import { WORKOUTS, DAYS } from '@/lib/workout-data';
-import { MOCK_WHOOP_DATA } from '@/lib/whoop-data';
 import {
   Conversation,
   saveConversation,
@@ -19,34 +17,13 @@ import {
 } from '@/lib/chat-history';
 
 const SUGGESTIONS = [
-  'Check my form on this exercise',
+  'How should I bench press?',
   'I have knee pain during squats',
-  'Build me a 4-day program',
   'What should I eat post-workout?',
-  'Explain creatine supplementation',
-  "Modify today's workout for low recovery",
-  'How should I warm up before deadlifts?',
-  'Analyze my sleep and recovery trends',
+  'Best warm-up for deadlifts?',
+  'How much protein do I need?',
+  'Help me fix my squat depth',
 ];
-
-function buildWhoopContext(): string {
-  const t = MOCK_WHOOP_DATA.today;
-  return `\n\n[WHOOP DATA] Recovery: ${t.recovery_score}% (${t.color}), Resting HR: ${t.resting_hr}, HRV: ${t.hrv}ms, SpO2: ${t.spo2}%, Skin Temp: ${t.skin_temp}°C`;
-}
-
-function buildDayContext(dayId: number): string {
-  const day = DAYS.find((d) => d.id === dayId);
-  const workout = WORKOUTS[dayId];
-  if (!day || !workout) return '';
-  let ctx = `\n\n[TODAY'S WORKOUT: ${day.name} - ${day.subtitle}]\n`;
-  workout.sections.forEach((s) => {
-    ctx += `\n${s.title}:\n`;
-    s.exercises.forEach((e) => {
-      ctx += `- ${e.name}: ${e.sets}x${e.reps} (rest: ${e.rest})\n`;
-    });
-  });
-  return ctx;
-}
 
 function ChatPageInner() {
   const searchParams = useSearchParams();
@@ -77,14 +54,7 @@ function ChatPageInner() {
 
   useEffect(() => {
     if (topic && messages.length === 0) {
-      const dayMatch = topic.match(/day(\d+)/);
-      if (dayMatch) {
-        const dayId = parseInt(dayMatch[1]);
-        const day = DAYS.find((d) => d.id === dayId);
-        if (day) {
-          handleSend(`Let's go through ${day.name}: ${day.subtitle}. Give me a quick overview and any tips based on my recovery.`);
-        }
-      }
+      handleSend(topic);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [topic]);
@@ -95,19 +65,16 @@ function ChatPageInner() {
     setLoading(true);
 
     try {
-      const contextSuffix = buildWhoopContext() + (topic?.match(/day(\d+)/) ? buildDayContext(parseInt(topic.match(/day(\d+)/)![1])) : '');
-
       const allMessages = [...messages, userMessage];
-      const apiMessages: ApiMessage[] = allMessages.map((msg, idx) => {
+      const apiMessages: ApiMessage[] = allMessages.map((msg) => {
         if (msg.role === 'user' && msg.image) {
           const blocks: ContentBlock[] = [
             { type: 'image', source: { type: 'base64', media_type: msg.imageType || 'image/jpeg', data: msg.image } },
-            { type: 'text', text: msg.content + (idx === allMessages.length - 1 ? contextSuffix : '') },
+            { type: 'text', text: msg.content },
           ];
           return { role: 'user' as const, content: blocks };
         }
-        const content = idx === allMessages.length - 1 ? msg.content + contextSuffix : msg.content;
-        return { role: msg.role, content };
+        return { role: msg.role, content: msg.content };
       });
 
       const res = await fetch('/api/chat', {
@@ -129,7 +96,7 @@ function ChatPageInner() {
     } finally {
       setLoading(false);
     }
-  }, [messages, topic]);
+  }, [messages]);
 
   const startNewChat = () => {
     setConvo(createConversation());

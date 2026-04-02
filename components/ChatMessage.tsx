@@ -3,27 +3,6 @@
 import ReactMarkdown from 'react-markdown';
 import { Message } from '@/types';
 
-function extractSvgBlocks(text: string): { parts: Array<{ type: 'text' | 'svg'; content: string }> } {
-  const parts: Array<{ type: 'text' | 'svg'; content: string }> = [];
-  const svgRegex = /```svg\s*\n([\s\S]*?)```/g;
-  let lastIndex = 0;
-  let match;
-
-  while ((match = svgRegex.exec(text)) !== null) {
-    if (match.index > lastIndex) {
-      parts.push({ type: 'text', content: text.slice(lastIndex, match.index) });
-    }
-    parts.push({ type: 'svg', content: match[1].trim() });
-    lastIndex = match.index + match[0].length;
-  }
-
-  if (lastIndex < text.length) {
-    parts.push({ type: 'text', content: text.slice(lastIndex) });
-  }
-
-  return { parts: parts.length > 0 ? parts : [{ type: 'text', content: text }] };
-}
-
 export default function ChatMessage({ message }: { message: Message }) {
   const isUser = message.role === 'user';
 
@@ -47,17 +26,42 @@ export default function ChatMessage({ message }: { message: Message }) {
           <p className="text-sm whitespace-pre-wrap">{message.content}</p>
         ) : (
           <div className="chat-message text-sm">
-            {extractSvgBlocks(message.content).parts.map((part, i) =>
-              part.type === 'svg' ? (
-                <div
-                  key={i}
-                  className="svg-diagram"
-                  dangerouslySetInnerHTML={{ __html: part.content }}
-                />
-              ) : (
-                <ReactMarkdown key={i}>{part.content}</ReactMarkdown>
-              )
-            )}
+            <ReactMarkdown
+              components={{
+                // Clean rendering: paragraphs as simple text
+                p: ({ children }) => <p className="mb-2 last:mb-0 leading-relaxed">{children}</p>,
+                // Numbered lists for form cues
+                ol: ({ children }) => <ol className="mb-2 pl-5 list-decimal space-y-1">{children}</ol>,
+                ul: ({ children }) => <ul className="mb-2 pl-5 list-disc space-y-1">{children}</ul>,
+                li: ({ children }) => <li className="leading-relaxed">{children}</li>,
+                // Headers only for programs/structured content
+                h1: ({ children }) => <h2 className="font-bold text-base mt-3 mb-1">{children}</h2>,
+                h2: ({ children }) => <h3 className="font-bold text-sm mt-3 mb-1">{children}</h3>,
+                h3: ({ children }) => <h4 className="font-semibold text-sm mt-2 mb-1">{children}</h4>,
+                // Clean bold/italic
+                strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+                em: ({ children }) => <em>{children}</em>,
+                // Tables for programs
+                table: ({ children }) => (
+                  <div className="overflow-x-auto mb-2">
+                    <table className="w-full border-collapse text-xs">{children}</table>
+                  </div>
+                ),
+                th: ({ children }) => <th className="border border-[#e5e7eb] bg-gray-50 px-2 py-1.5 text-left font-semibold">{children}</th>,
+                td: ({ children }) => <td className="border border-[#e5e7eb] px-2 py-1.5">{children}</td>,
+                // Code blocks (rare but clean)
+                code: ({ children, className }) => {
+                  const isBlock = className?.includes('language-');
+                  if (isBlock) {
+                    return <code className="block bg-gray-50 rounded-lg p-3 text-xs font-mono overflow-x-auto my-2">{children}</code>;
+                  }
+                  return <code className="bg-gray-100 px-1 py-0.5 rounded text-xs font-mono">{children}</code>;
+                },
+                pre: ({ children }) => <>{children}</>,
+              }}
+            >
+              {message.content}
+            </ReactMarkdown>
           </div>
         )}
       </div>
