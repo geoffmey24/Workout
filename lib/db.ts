@@ -33,6 +33,7 @@ function lsSet(key: string, value: unknown): void {
 // ── Saved Programs ──────────────────────────────────────
 
 export async function dbGetSavedPrograms(userId: string): Promise<SavedProgram[]> {
+  console.log('[dbGetSavedPrograms] fetching for user:', userId, 'supabase configured:', isSupabaseConfigured());
   if (isSupabaseConfigured()) {
     try {
       const { data, error } = await getSupabase()
@@ -42,6 +43,7 @@ export async function dbGetSavedPrograms(userId: string): Promise<SavedProgram[]
         .order('created_at', { ascending: false })
         .limit(20);
       if (!error && data && data.length > 0) {
+        console.log('[dbGetSavedPrograms] got', data.length, 'from Supabase');
         return data.map(row => ({
           id: row.id,
           title: row.title,
@@ -51,16 +53,21 @@ export async function dbGetSavedPrograms(userId: string): Promise<SavedProgram[]
           isActive: row.is_active || false,
         }));
       }
-    } catch { /* fall through to localStorage */ }
+      console.log('[dbGetSavedPrograms] Supabase returned empty or error:', error?.message);
+    } catch (e) {
+      console.log('[dbGetSavedPrograms] Supabase exception, falling through:', e);
+    }
   }
 
   // localStorage fallback
   const programs: SavedProgram[] = lsGet(LS_PROGRAMS_KEY, []);
   const activeId = lsGet<string | null>(LS_ACTIVE_KEY, null);
+  console.log('[dbGetSavedPrograms] localStorage has', programs.length, 'programs, activeId:', activeId);
   return programs.map(p => ({ ...p, isActive: p.id === activeId }));
 }
 
 export async function dbSaveProgram(userId: string, program: SavedProgram): Promise<void> {
+  console.log('[dbSaveProgram] saving program:', program.id, program.title, 'for user:', userId);
   if (isSupabaseConfigured()) {
     try {
       const { error } = await getSupabase().from('saved_programs').insert({
@@ -70,15 +77,24 @@ export async function dbSaveProgram(userId: string, program: SavedProgram): Prom
         answers: program.answers,
         content: program.content,
       });
-      if (!error) return;
-      console.warn('Supabase save failed, using localStorage:', error.message);
-    } catch { /* fall through */ }
+      if (!error) {
+        console.log('[dbSaveProgram] saved to Supabase successfully');
+        return;
+      }
+      console.warn('[dbSaveProgram] Supabase save failed, using localStorage:', error.message);
+    } catch (e) {
+      console.warn('[dbSaveProgram] Supabase exception, falling through to localStorage:', e);
+    }
   }
 
   // localStorage fallback
+  console.log('[dbSaveProgram] saving to localStorage');
   const programs: SavedProgram[] = lsGet(LS_PROGRAMS_KEY, []);
   programs.unshift(program);
   lsSet(LS_PROGRAMS_KEY, programs.slice(0, 20));
+  // Verify the save worked
+  const verify = lsGet<SavedProgram[]>(LS_PROGRAMS_KEY, []);
+  console.log('[dbSaveProgram] localStorage now has', verify.length, 'programs, ids:', verify.map(p => p.id));
 }
 
 export async function dbDeleteProgram(programId: string): Promise<void> {

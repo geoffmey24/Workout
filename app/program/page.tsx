@@ -212,7 +212,11 @@ Build a full weekly program. For each day, include: warm-up, main lifts (sets x 
   };
 
   const handleSaveProgram = async () => {
-    if (!program || !user || saveStatus === 'saving') return;
+    console.log('[handleSaveProgram] called, program length:', program?.length, 'user:', user?.id, 'status:', saveStatus);
+    if (!program || !user || saveStatus === 'saving') {
+      console.log('[handleSaveProgram] early return — missing program/user or already saving');
+      return;
+    }
     setSaveStatus('saving');
     try {
       const saved: SavedProgram = {
@@ -222,13 +226,17 @@ Build a full weekly program. For each day, include: warm-up, main lifts (sets x 
         content: program,
         createdAt: Date.now(),
       };
+      console.log('[handleSaveProgram] saving program:', saved.id, saved.title);
       await dbSaveProgram(user.id, saved);
+      console.log('[handleSaveProgram] dbSaveProgram completed');
       await dbSetActiveProgram(user.id, saved.id);
+      console.log('[handleSaveProgram] dbSetActiveProgram completed');
       await refreshPrograms();
+      console.log('[handleSaveProgram] refreshPrograms completed, savedPrograms count:', savedPrograms.length);
       setSaveStatus('saved');
       setTimeout(() => setSaveStatus('idle'), 3000);
     } catch (err) {
-      console.error('Failed to save program:', err);
+      console.error('[handleSaveProgram] FAILED:', err);
       setSaveStatus('error');
       setTimeout(() => setSaveStatus('idle'), 3000);
     }

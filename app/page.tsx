@@ -21,7 +21,7 @@ function parseProgramDays(content: string): ProgramDay[] {
   let currentHeader = '';
   let currentLines: string[] = [];
 
-  const dayPattern = /^\*\*.*(?:day\s*\d|monday|tuesday|wednesday|thursday|friday|saturday|sunday)/i;
+  const dayPattern = /^\*\*.*(?:day\s*\d|day\s+\w|monday|tuesday|wednesday|thursday|friday|saturday|sunday|week\s*\d)/i;
 
   for (const line of lines) {
     if (dayPattern.test(line.trim())) {
@@ -130,12 +130,21 @@ export default function HomePage() {
   const programDays = activeProgram ? parseProgramDays(activeProgram.content) : [];
   const selectedDay = programDays[selectedDayIdx] || null;
 
-  // Default to first non-recovery day
+  // Restore selected day from localStorage, or default to first non-recovery day
   useEffect(() => {
-    if (programDays.length > 0 && selectedDayIdx === 0) {
-      const firstTraining = programDays.findIndex(d => !d.isRecovery);
-      if (firstTraining > 0) setSelectedDayIdx(firstTraining);
-    }
+    if (programDays.length === 0) return;
+    try {
+      const savedIdx = localStorage.getItem('elite-coach-selected-day-idx');
+      if (savedIdx !== null) {
+        const idx = parseInt(savedIdx, 10);
+        if (idx >= 0 && idx < programDays.length) {
+          setSelectedDayIdx(idx);
+          return;
+        }
+      }
+    } catch { /* ignore */ }
+    const firstTraining = programDays.findIndex(d => !d.isRecovery);
+    if (firstTraining > 0) setSelectedDayIdx(firstTraining);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeProgram]);
 
@@ -180,7 +189,7 @@ export default function HomePage() {
         <p className="mt-1 text-sm text-[#6b7280]">Your AI performance coach</p>
       </div>
 
-      {stats && (
+      {stats && stats.totalWorkouts > 0 && (
         <div className="px-4 mb-6 flex gap-3">
           <div className="flex-1 rounded-xl bg-white border border-[#e5e7eb] p-3 text-center shadow-sm">
             <Flame size={16} className="mx-auto text-orange-500 mb-1" />
@@ -263,7 +272,6 @@ export default function HomePage() {
                 </h2>
                 <div className="flex items-center gap-3">
                   <Link href="/progress" className="text-xs text-blue-600 font-medium">Track Progress &rarr;</Link>
-                  <button onClick={() => setConfirmDeleteProgram(true)} className="text-[#9ca3af] hover:text-red-500 transition-colors" title="Delete program"><Trash2 size={14} /></button>
                 </div>
               </div>
 
@@ -289,7 +297,7 @@ export default function HomePage() {
                   {programDays.map((day, idx) => (
                     <button
                       key={idx}
-                      onClick={() => { setSelectedDayIdx(idx); setDayPickerOpen(false); setShowDayContent(false); }}
+                      onClick={() => { setSelectedDayIdx(idx); setDayPickerOpen(false); setShowDayContent(false); try { localStorage.setItem('elite-coach-selected-day-idx', String(idx)); } catch {} }}
                       className={`w-full text-left rounded-lg px-4 py-2.5 text-sm transition-colors flex items-center gap-2 ${
                         idx === selectedDayIdx
                           ? 'bg-blue-600 text-white'
@@ -332,6 +340,14 @@ export default function HomePage() {
                   <ProgramMarkdown content={selectedDay.content} />
                 </div>
               )}
+
+              {/* Delete program button */}
+              <button
+                onClick={() => setConfirmDeleteProgram(true)}
+                className="mt-3 w-full rounded-xl border border-red-200 bg-red-50 py-2.5 text-sm font-medium text-red-600 hover:bg-red-100 transition-colors flex items-center justify-center gap-2"
+              >
+                <Trash2 size={16} /> Delete Program
+              </button>
             </div>
           </div>
         ) : activeProgram ? (
