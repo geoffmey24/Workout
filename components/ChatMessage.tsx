@@ -3,54 +3,6 @@
 import ReactMarkdown from 'react-markdown';
 import { Message } from '@/types';
 
-// Convert markdown table rows into clean bullet-point exercise lines
-function cleanRawTables(text: string): string {
-  const lines = text.split('\n');
-  const result: string[] = [];
-  let inTable = false;
-  let headers: string[] = [];
-
-  for (const line of lines) {
-    const trimmed = line.trim();
-
-    // Detect separator rows like |---|---|---|
-    if (/^\|[\s\-:]+\|/.test(trimmed) && trimmed.replace(/[\s\-:|]/g, '') === '') {
-      inTable = true;
-      continue;
-    }
-
-    // Detect table rows (lines starting and ending with |)
-    if (/^\|.*\|$/.test(trimmed)) {
-      const cells = trimmed.split('|').slice(1, -1).map(c => c.trim()).filter(Boolean);
-
-      if (!inTable) {
-        // This is a header row — store headers for context
-        headers = cells;
-        inTable = true;
-        continue;
-      }
-
-      // Data row — format as a clean bullet point
-      if (cells.length > 0) {
-        // Try to create "Exercise — sets x reps, rest" format
-        const parts = cells.filter(c => c && c !== '-' && c !== '—');
-        result.push(`• ${parts.join(' — ')}`);
-      }
-      continue;
-    }
-
-    // End of table
-    if (inTable && !trimmed.startsWith('|')) {
-      inTable = false;
-      headers = [];
-    }
-
-    result.push(line);
-  }
-
-  return result.join('\n');
-}
-
 export default function ChatMessage({ message }: { message: Message }) {
   const isUser = message.role === 'user';
 
@@ -85,27 +37,30 @@ export default function ChatMessage({ message }: { message: Message }) {
                 h3: ({ children }) => <h4 className="font-semibold text-sm mt-2 mb-1">{children}</h4>,
                 strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
                 em: ({ children }) => <em>{children}</em>,
-                // Render tables as clean bullet lists (fallback if Claude still generates tables)
-                table: ({ children }) => <div className="mb-2">{children}</div>,
-                thead: () => null,
-                tbody: ({ children }) => <>{children}</>,
-                tr: ({ children }) => {
-                  // Extract cell text content and join as a bullet line
-                  const cells: string[] = [];
-                  const childArr = Array.isArray(children) ? children : [children];
-                  childArr.forEach((child: any) => {
-                    if (child?.props?.children) {
-                      const text = typeof child.props.children === 'string'
-                        ? child.props.children
-                        : String(child.props.children);
-                      if (text && text.trim()) cells.push(text.trim());
-                    }
-                  });
-                  if (cells.length === 0) return null;
-                  return <p className="mb-1 leading-relaxed">• {cells.join(' — ')}</p>;
-                },
-                th: ({ children }) => <span>{children}</span>,
-                td: ({ children }) => <span>{children}</span>,
+                table: ({ children }) => (
+                  <div className="mb-3 overflow-x-auto -mx-1">
+                    <table className="w-full text-sm border-collapse rounded-lg overflow-hidden shadow-sm">
+                      {children}
+                    </table>
+                  </div>
+                ),
+                thead: ({ children }) => (
+                  <thead className="bg-[#1e3a5f] text-white text-xs uppercase tracking-wider">
+                    {children}
+                  </thead>
+                ),
+                tbody: ({ children }) => <tbody className="divide-y divide-[#e5e7eb]">{children}</tbody>,
+                tr: ({ children }) => (
+                  <tr className="even:bg-[#f8fafc] odd:bg-white hover:bg-blue-50/50 transition-colors">
+                    {children}
+                  </tr>
+                ),
+                th: ({ children }) => (
+                  <th className="px-3 py-2 text-left font-semibold whitespace-nowrap">{children}</th>
+                ),
+                td: ({ children }) => (
+                  <td className="px-3 py-2 text-[#374151] whitespace-nowrap">{children}</td>
+                ),
                 code: ({ children, className }) => {
                   const isBlock = className?.includes('language-');
                   if (isBlock) {
@@ -116,7 +71,7 @@ export default function ChatMessage({ message }: { message: Message }) {
                 pre: ({ children }) => <>{children}</>,
               }}
             >
-              {cleanRawTables(message.content)}
+              {message.content}
             </ReactMarkdown>
           </div>
         )}

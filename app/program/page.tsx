@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { ArrowLeft, ArrowRight, Loader2, Dumbbell, Save, Trash2, Clock, BookOpen, ClipboardPaste, Star } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Loader2, Dumbbell, Save, Trash2, Clock, BookOpen, ClipboardPaste, Star, Check } from 'lucide-react';
 import Link from 'next/link';
-import ReactMarkdown from 'react-markdown';
 import Navigation from '@/components/Navigation';
+import ProgramMarkdown from '@/components/ProgramMarkdown';
 import { SavedProgram } from '@/lib/program-history';
 import { useAuth } from '@/components/AuthProvider';
 import { dbGetSavedPrograms, dbSaveProgram, dbDeleteProgram, dbSetActiveProgram } from '@/lib/db';
@@ -69,6 +69,7 @@ export default function ProgramPage() {
   const [pasteInput, setPasteInput] = useState('');
   const [savedPrograms, setSavedPrograms] = useState<SavedProgram[]>([]);
   const [viewingProgram, setViewingProgram] = useState<SavedProgram | null>(null);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
 
   const refreshPrograms = async () => {
     if (user) setSavedPrograms(await dbGetSavedPrograms(user.id));
@@ -176,16 +177,26 @@ Build a full weekly program. For each day, include: warm-up, main lifts (sets x 
   };
 
   const handleSaveProgram = async () => {
-    if (!program || !user) return;
-    const saved: SavedProgram = {
-      id: crypto.randomUUID(),
-      title: `${answers.goal || 'Custom'} - ${answers.days || '?'} days/wk`,
-      answers,
-      content: program,
-      createdAt: Date.now(),
-    };
-    await dbSaveProgram(user.id, saved);
-    await refreshPrograms();
+    if (!program || !user || saveStatus === 'saving') return;
+    setSaveStatus('saving');
+    try {
+      const saved: SavedProgram = {
+        id: crypto.randomUUID(),
+        title: `${answers.goal || 'Custom'} - ${answers.days || '?'} days/wk`,
+        answers,
+        content: program,
+        createdAt: Date.now(),
+      };
+      await dbSaveProgram(user.id, saved);
+      await dbSetActiveProgram(user.id, saved.id);
+      await refreshPrograms();
+      setSaveStatus('saved');
+      setTimeout(() => setSaveStatus('idle'), 3000);
+    } catch (err) {
+      console.error('Failed to save program:', err);
+      setSaveStatus('error');
+      setTimeout(() => setSaveStatus('idle'), 3000);
+    }
   };
 
   const handleSetActive = async (p: SavedProgram) => {
@@ -234,7 +245,7 @@ Build a full weekly program. For each day, include: warm-up, main lifts (sets x 
             <Star size={14} /> Set Active
           </button>
         </div>
-        <div className="px-4 py-6 chat-message text-sm"><ReactMarkdown>{viewingProgram.content}</ReactMarkdown></div>
+        <div className="px-4 py-6"><ProgramMarkdown content={viewingProgram.content} /></div>
         <Navigation />
       </div>
     );
@@ -247,9 +258,31 @@ Build a full weekly program. For each day, include: warm-up, main lifts (sets x 
         <div className="flex items-center gap-3 border-b border-[#e5e7eb] bg-white px-4 py-3">
           <button onClick={() => { setProgram(null); setView('menu'); setStep(0); setAnswers({}); }} className="text-[#6b7280] hover:text-[#111827]"><ArrowLeft size={20} /></button>
           <h1 className="font-bold text-sm flex-1 text-[#111827]">Your Custom Program</h1>
-          <button onClick={handleSaveProgram} className="flex items-center gap-1.5 rounded-lg bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-700 transition-colors"><Save size={14} /> Save</button>
+          <button
+            onClick={handleSaveProgram}
+            disabled={saveStatus === 'saving' || saveStatus === 'saved'}
+            className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition-colors ${
+              saveStatus === 'saved' ? 'bg-green-600' : saveStatus === 'error' ? 'bg-red-500 hover:bg-red-600' : 'bg-green-600 hover:bg-green-700'
+            } disabled:opacity-70`}
+          >
+            {saveStatus === 'saving' ? (<><Loader2 size={14} className="animate-spin" /> Saving...</>) :
+             saveStatus === 'saved' ? (<><Check size={14} /> Saved!</>) :
+             saveStatus === 'error' ? (<><Save size={14} /> Retry</>) :
+             (<><Save size={14} /> Save</>)}
+          </button>
         </div>
-        <div className="px-4 py-6 chat-message text-sm"><ReactMarkdown>{program}</ReactMarkdown></div>
+        {saveStatus === 'saved' && (
+          <div className="mx-4 mb-2 rounded-lg bg-green-50 border border-green-200 px-4 py-2.5 flex items-center gap-2">
+            <Check size={16} className="text-green-600" />
+            <span className="text-sm text-green-700 font-medium">Program saved and set as your active workout!</span>
+          </div>
+        )}
+        {saveStatus === 'error' && (
+          <div className="mx-4 mb-2 rounded-lg bg-red-50 border border-red-200 px-4 py-2.5">
+            <span className="text-sm text-red-700">Failed to save. Please try again.</span>
+          </div>
+        )}
+        <div className="px-4 py-6"><ProgramMarkdown content={program} /></div>
         <Navigation />
       </div>
     );

@@ -25,17 +25,19 @@ export async function dbGetSavedPrograms(userId: string): Promise<SavedProgram[]
 }
 
 export async function dbSaveProgram(userId: string, program: SavedProgram): Promise<void> {
-  await getSupabase().from('saved_programs').insert({
+  const { error } = await getSupabase().from('saved_programs').insert({
     id: program.id,
     user_id: userId,
     title: program.title,
     answers: program.answers,
     content: program.content,
   });
+  if (error) throw new Error(error.message);
 }
 
 export async function dbDeleteProgram(programId: string): Promise<void> {
-  await getSupabase().from('saved_programs').delete().eq('id', programId);
+  const { error } = await getSupabase().from('saved_programs').delete().eq('id', programId);
+  if (error) throw new Error(error.message);
 }
 
 export async function dbGetActiveProgram(userId: string): Promise<SavedProgram | null> {
@@ -64,10 +66,11 @@ export async function dbSetActiveProgram(userId: string, programId: string): Pro
     .eq('user_id', userId)
     .eq('is_active', true);
   // Set new active
-  await getSupabase()
+  const { error } = await getSupabase()
     .from('saved_programs')
     .update({ is_active: true })
     .eq('id', programId);
+  if (error) throw new Error(error.message);
 }
 
 // ── Chat Conversations ──────────────────────────────────
