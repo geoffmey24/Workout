@@ -85,21 +85,68 @@ function ChatPageInner() {
         return { role: msg.role, content: msg.content };
       });
 
+      // Add placeholder assistant message for streaming
+      const placeholderIdx = allMessages.length;
+      setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
+
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: apiMessages }),
+        body: JSON.stringify({ messages: apiMessages, stream: true }),
       });
 
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
-      setMessages(prev => [...prev, { role: 'assistant', content: data.response }]);
+      if (!res.ok) throw new Error(`API error: ${res.status}`);
+
+      const reader = res.body!.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let fullText = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const jsonStr = line.slice(6).trim();
+          if (jsonStr === '[DONE]') continue;
+          try {
+            const { text: chunk } = JSON.parse(jsonStr);
+            if (chunk) {
+              fullText += chunk;
+              setMessages(prev => {
+                const updated = [...prev];
+                updated[placeholderIdx] = { role: 'assistant', content: fullText };
+                return updated;
+              });
+            }
+          } catch { /* skip */ }
+        }
+      }
+
+      if (!fullText) throw new Error('Empty response');
+      // Final update to ensure complete text
+      setMessages(prev => {
+        const updated = [...prev];
+        updated[placeholderIdx] = { role: 'assistant', content: fullText };
+        return updated;
+      });
     } catch (err) {
       console.error(err);
-      setMessages(prev => [
-        ...prev,
-        { role: 'assistant', content: "I'm having trouble connecting right now. Please check your API key and try again." },
-      ]);
+      setMessages(prev => {
+        // Replace last message if it's an empty placeholder, otherwise append
+        const last = prev[prev.length - 1];
+        if (last?.role === 'assistant' && !last.content) {
+          const updated = [...prev];
+          updated[updated.length - 1] = { role: 'assistant', content: "I'm having trouble connecting right now. Please check your API key and try again." };
+          return updated;
+        }
+        return [...prev, { role: 'assistant', content: "I'm having trouble connecting right now. Please check your API key and try again." }];
+      });
     } finally {
       setLoading(false);
     }

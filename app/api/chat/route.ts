@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { messages } = (await req.json()) as { messages: ApiMessage[] };
+    const { messages, stream } = (await req.json()) as { messages: ApiMessage[]; stream?: boolean };
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -26,6 +26,7 @@ export async function POST(req: NextRequest) {
         max_tokens: 4096,
         system: SYSTEM_PROMPT,
         messages,
+        stream: !!stream,
       }),
     });
 
@@ -38,13 +39,64 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const data = await response.json();
-    const text = data.content
-      ?.filter((block: { type: string }) => block.type === 'text')
-      .map((block: { text: string }) => block.text)
-      .join('');
+    // Non-streaming: return full response
+    if (!stream) {
+      const data = await response.json();
+      const text = data.content
+        ?.filter((block: { type: string }) => block.type === 'text')
+        .map((block: { text: string }) => block.text)
+        .join('');
+      return NextResponse.json({ response: text });
+    }
 
-    return NextResponse.json({ response: text });
+    // Streaming: pipe SSE events to client
+    const encoder = new TextEncoder();
+    const readable = new ReadableStream({
+      async start(controller) {
+        const reader = response.body!.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop() || '';
+
+            for (const line of lines) {
+              if (!line.startsWith('data: ')) continue;
+              const jsonStr = line.slice(6).trim();
+              if (jsonStr === '[DONE]') continue;
+
+              try {
+                const event = JSON.parse(jsonStr);
+                if (event.type === 'content_block_delta' && event.delta?.text) {
+                  controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text: event.delta.text })}\n\n`));
+                }
+              } catch {
+                // skip malformed JSON
+              }
+            }
+          }
+        } catch (err) {
+          console.error('Stream read error:', err);
+        } finally {
+          controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+          controller.close();
+        }
+      },
+    });
+
+    return new Response(readable, {
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        Connection: 'keep-alive',
+      },
+    });
   } catch (error) {
     console.error('Chat API error:', error);
     return NextResponse.json(

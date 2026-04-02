@@ -165,14 +165,48 @@ IMPORTANT: Include dedicated RECOVERY DAY(s) on the off-days in the weekly sched
 Build a full weekly program. For each day, include: warm-up, main lifts (sets x reps, RPE, rest), accessories, conditioning if requested, and cool-down. Use tables for the exercises. Include progression rules and deload guidance.`;
 
     try {
-      const res = await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] }) });
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
-      setProgram(data.response);
+      // Switch to result view immediately to show streaming content
+      setProgram('');
       setView('result');
+
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: [{ role: 'user', content: prompt }], stream: true }),
+      });
+
+      if (!res.ok) throw new Error(`API error: ${res.status}`);
+
+      const reader = res.body!.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let fullText = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const jsonStr = line.slice(6).trim();
+          if (jsonStr === '[DONE]') continue;
+          try {
+            const { text } = JSON.parse(jsonStr);
+            if (text) {
+              fullText += text;
+              setProgram(fullText);
+            }
+          } catch { /* skip */ }
+        }
+      }
+
+      if (!fullText) throw new Error('Empty response');
     } catch {
       setProgram('Unable to generate program. Please check your API key and try again.');
-      setView('result');
     } finally { setLoading(false); }
   };
 
