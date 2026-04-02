@@ -236,6 +236,7 @@ Build a full weekly program. For each day, include: warm-up, main lifts (sets x 
   const handleSetActive = async (p: SavedProgram) => {
     if (!user) return;
     await dbSetActiveProgram(user.id, p.id);
+    await refreshPrograms();
   };
 
   const handleSavePastedWorkout = async () => {
@@ -338,14 +339,17 @@ Build a full weekly program. For each day, include: warm-up, main lifts (sets x 
               <p className="text-xs text-[#9ca3af] mt-1">Generate a program and save it to see it here.</p>
             </div>
           ) : savedPrograms.map((p) => (
-            <div key={p.id} className="flex items-center gap-3 rounded-xl border border-[#e5e7eb] bg-white p-4 hover:border-blue-300 transition-colors shadow-sm">
+            <div key={p.id} className={`flex items-center gap-3 rounded-xl border ${p.isActive ? 'border-blue-400 bg-blue-50/50' : 'border-[#e5e7eb] bg-white'} p-4 hover:border-blue-300 transition-colors shadow-sm`}>
               <button onClick={() => setViewingProgram(p)} className="flex-1 text-left min-w-0">
-                <p className="font-semibold text-sm truncate text-[#111827]">{p.title}</p>
+                <div className="flex items-center gap-2">
+                  <p className="font-semibold text-sm truncate text-[#111827]">{p.title}</p>
+                  {p.isActive && <span className="shrink-0 text-[10px] font-bold uppercase text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full">Active</span>}
+                </div>
                 <div className="flex items-center gap-2 mt-1 text-xs text-[#6b7280]">
                   <Clock size={10} /><span>{formatDate(p.createdAt)}</span>
                 </div>
               </button>
-              <button onClick={() => handleSetActive(p)} className="p-2 rounded-lg text-blue-600 hover:bg-blue-50 transition-colors" title="Set as active workout"><Star size={16} /></button>
+              {!p.isActive && <button onClick={() => handleSetActive(p)} className="p-2 rounded-lg text-blue-600 hover:bg-blue-50 transition-colors" title="Set as active workout"><Star size={16} /></button>}
               <button onClick={() => handleDeleteProgram(p.id)} className="p-2 rounded-lg text-[#9ca3af] hover:text-red-500 hover:bg-red-50 transition-colors"><Trash2 size={16} /></button>
             </div>
           ))}
@@ -465,32 +469,52 @@ Build a full weekly program. For each day, include: warm-up, main lifts (sets x 
 
   // Menu (default view)
   return (
-    <div className="min-h-screen bg-[#f8f9fa]">
+    <div className="min-h-screen pb-24 bg-[#f8f9fa]">
       <div className="flex items-center gap-3 border-b border-[#e5e7eb] bg-white px-4 py-3">
         <Link href="/" className="text-[#6b7280] hover:text-[#111827]"><ArrowLeft size={20} /></Link>
         <h1 className="font-bold text-sm text-[#111827]">Programs</h1>
       </div>
-      <div className="px-4 py-8 space-y-4">
-        <button onClick={() => { setView('intake'); setStep(0); setAnswers({}); setMultiSelections([]); }} className="w-full rounded-2xl bg-blue-600 p-6 text-left text-white hover:bg-blue-700 transition-colors shadow-sm">
-          <Dumbbell size={32} className="mb-3" />
-          <h2 className="text-lg font-bold">Generate New Program</h2>
-          <p className="text-sm text-blue-100/70 mt-1">Answer a few questions and get a fully customized training plan from your AI coach.</p>
-        </button>
-        <button onClick={() => setView('paste')} className="w-full rounded-2xl border-2 border-dashed border-[#d1d5db] bg-white p-6 text-left hover:border-blue-300 transition-colors">
-          <ClipboardPaste size={28} className="mb-3 text-[#6b7280]" />
-          <h2 className="text-lg font-bold text-[#111827]">I Already Have a Workout</h2>
-          <p className="text-sm text-[#6b7280] mt-1">Paste or type your existing routine and use it as your active program.</p>
-        </button>
-        <button onClick={() => setView('saved')} className="w-full rounded-2xl border border-[#e5e7eb] bg-white p-6 text-left hover:border-blue-300 transition-colors shadow-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <BookOpen size={28} className="mb-3 text-blue-600" />
-              <h2 className="text-lg font-bold text-[#111827]">Saved Programs</h2>
-              <p className="text-sm text-[#6b7280] mt-1">{savedPrograms.length > 0 ? `${savedPrograms.length} program${savedPrograms.length !== 1 ? 's' : ''} saved` : 'No programs saved yet'}</p>
+      <div className="px-4 py-6 space-y-4">
+        <div className="flex gap-3">
+          <button onClick={() => { setView('intake'); setStep(0); setAnswers({}); setMultiSelections([]); }} className="flex-1 rounded-xl bg-blue-600 p-4 text-left text-white hover:bg-blue-700 transition-colors shadow-sm">
+            <Dumbbell size={24} className="mb-2" />
+            <h2 className="text-sm font-bold">Generate New</h2>
+          </button>
+          <button onClick={() => setView('paste')} className="flex-1 rounded-xl border border-[#e5e7eb] bg-white p-4 text-left hover:border-blue-300 transition-colors shadow-sm">
+            <ClipboardPaste size={24} className="mb-2 text-[#6b7280]" />
+            <h2 className="text-sm font-bold text-[#111827]">Paste Workout</h2>
+          </button>
+        </div>
+
+        {/* Saved Programs */}
+        <div>
+          <h2 className="text-xs font-medium uppercase tracking-wider text-[#6b7280] mb-3">Saved Programs</h2>
+          {savedPrograms.length === 0 ? (
+            <div className="text-center py-8 rounded-xl border border-dashed border-[#d1d5db] bg-white">
+              <BookOpen size={32} className="mx-auto text-gray-300 mb-2" />
+              <p className="text-sm text-[#6b7280]">No saved programs yet</p>
+              <p className="text-xs text-[#9ca3af] mt-1">Generate or paste a program to get started</p>
             </div>
-            <ArrowRight size={20} className="text-[#9ca3af]" />
-          </div>
-        </button>
+          ) : (
+            <div className="space-y-3">
+              {savedPrograms.map((p) => (
+                <div key={p.id} className={`flex items-center gap-3 rounded-xl border ${p.isActive ? 'border-blue-400 bg-blue-50/50' : 'border-[#e5e7eb] bg-white'} p-4 hover:border-blue-300 transition-colors shadow-sm`}>
+                  <button onClick={() => setViewingProgram(p)} className="flex-1 text-left min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="font-semibold text-sm truncate text-[#111827]">{p.title}</p>
+                      {p.isActive && <span className="shrink-0 text-[10px] font-bold uppercase text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full">Active</span>}
+                    </div>
+                    <div className="flex items-center gap-2 mt-1 text-xs text-[#6b7280]">
+                      <Clock size={10} /><span>{formatDate(p.createdAt)}</span>
+                    </div>
+                  </button>
+                  {!p.isActive && <button onClick={() => handleSetActive(p)} className="p-2 rounded-lg text-blue-600 hover:bg-blue-50 transition-colors" title="Set as active"><Star size={16} /></button>}
+                  <button onClick={() => handleDeleteProgram(p.id)} className="p-2 rounded-lg text-[#9ca3af] hover:text-red-500 hover:bg-red-50 transition-colors"><Trash2 size={16} /></button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
       <Navigation />
     </div>

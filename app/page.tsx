@@ -2,17 +2,68 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { MessageSquare, Zap, Flame, Trophy, Calendar, Play, Pause, RotateCcw, Timer, Dumbbell, Heart } from 'lucide-react';
+import { MessageSquare, Zap, Flame, Trophy, Calendar, Play, Pause, RotateCcw, Timer, Dumbbell, Heart, SkipForward, ChevronDown, ChevronUp } from 'lucide-react';
 import Navigation from '@/components/Navigation';
+import ProgramMarkdown from '@/components/ProgramMarkdown';
 import { useAuth } from '@/components/AuthProvider';
 import { dbGetWorkoutStats, dbGetWeeklyStats, dbGetActiveProgram, DbWorkoutStats } from '@/lib/db';
 import { SavedProgram } from '@/lib/program-history';
+
+interface ProgramDay {
+  header: string;
+  content: string;
+  isRecovery: boolean;
+}
+
+function parseProgramDays(content: string): ProgramDay[] {
+  const lines = content.split('\n');
+  const days: ProgramDay[] = [];
+  let currentHeader = '';
+  let currentLines: string[] = [];
+
+  const dayPattern = /^\*\*.*(?:day\s*\d|monday|tuesday|wednesday|thursday|friday|saturday|sunday)/i;
+
+  for (const line of lines) {
+    if (dayPattern.test(line.trim())) {
+      if (currentHeader) {
+        const text = currentLines.join('\n').trim();
+        const headerLower = currentHeader.toLowerCase();
+        days.push({
+          header: currentHeader.replace(/\*\*/g, '').trim(),
+          content: `${currentHeader}\n${text}`,
+          isRecovery: headerLower.includes('recovery') || headerLower.includes('rest day') || headerLower.includes('active rest'),
+        });
+      }
+      currentHeader = line.trim();
+      currentLines = [];
+    } else {
+      currentLines.push(line);
+    }
+  }
+  // Last day
+  if (currentHeader) {
+    const text = currentLines.join('\n').trim();
+    const headerLower = currentHeader.toLowerCase();
+    days.push({
+      header: currentHeader.replace(/\*\*/g, '').trim(),
+      content: `${currentHeader}\n${text}`,
+      isRecovery: headerLower.includes('recovery') || headerLower.includes('rest day') || headerLower.includes('active rest'),
+    });
+  }
+  return days;
+}
 
 export default function HomePage() {
   const { user } = useAuth();
   const [stats, setStats] = useState<DbWorkoutStats | null>(null);
   const [weekly, setWeekly] = useState({ workoutsThisWeek: 0, daysActive: 0 });
   const [activeProgram, setActiveProgram] = useState<SavedProgram | null>(null);
+
+  // Day selection
+  const [selectedDayIdx, setSelectedDayIdx] = useState(0);
+  const [dayPickerOpen, setDayPickerOpen] = useState(false);
+  const [skippedDays, setSkippedDays] = useState<{ day: string; date: string }[]>([]);
+  const [showDayContent, setShowDayContent] = useState(false);
 
   // Timer state
   const [timerSeconds, setTimerSeconds] = useState(0);
@@ -29,6 +80,14 @@ export default function HomePage() {
       setActiveProgram(await dbGetActiveProgram(user.id));
     })();
   }, [user]);
+
+  // Load skipped days from localStorage
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('elite-coach-skipped-days');
+      if (saved) setSkippedDays(JSON.parse(saved));
+    } catch { /* ignore */ }
+  }, []);
 
   // Timer tick
   useEffect(() => {
@@ -66,37 +125,30 @@ export default function HomePage() {
 
   const isTimerFinished = timerMode === 'rest' && timerSeconds === 0 && !timerRunning;
 
-  // Extract today's workout section from active program
-  const getTodaySection = (content: string): { text: string; isRecovery: boolean } | null => {
-    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    const today = days[new Date().getDay()];
-    // Match patterns like "**Monday — Push Day**" or "**Day 1 — Monday**" or "Monday — Recovery Day"
-    const lines = content.split('\n');
-    let startIdx = -1;
-    let isRecovery = false;
-    for (let i = 0; i < lines.length; i++) {
-      if (lines[i].toLowerCase().includes(today.toLowerCase())) {
-        startIdx = i;
-        const line = lines[i].toLowerCase();
-        isRecovery = line.includes('recovery') || line.includes('rest') || line.includes('mobility');
-        break;
-      }
+  // Parse program days
+  const programDays = activeProgram ? parseProgramDays(activeProgram.content) : [];
+  const selectedDay = programDays[selectedDayIdx] || null;
+
+  // Default to first non-recovery day
+  useEffect(() => {
+    if (programDays.length > 0 && selectedDayIdx === 0) {
+      const firstTraining = programDays.findIndex(d => !d.isRecovery);
+      if (firstTraining > 0) setSelectedDayIdx(firstTraining);
     }
-    if (startIdx === -1) return null;
-    // Find the end — next day header or end of content
-    let endIdx = lines.length;
-    const dayPattern = /\*\*.*(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday|day\s+\d)/i;
-    for (let i = startIdx + 1; i < lines.length; i++) {
-      if (dayPattern.test(lines[i])) { endIdx = i; break; }
-    }
-    const text = lines.slice(startIdx, endIdx).join('\n').trim();
-    return text ? { text, isRecovery } : null;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeProgram]);
+
+  const handleSkipDay = () => {
+    if (!selectedDay) return;
+    const today = new Date().toISOString().slice(0, 10);
+    const newSkipped = [...skippedDays, { day: selectedDay.header, date: today }].slice(-20);
+    setSkippedDays(newSkipped);
+    localStorage.setItem('elite-coach-skipped-days', JSON.stringify(newSkipped));
+    // Don't advance — keep showing the same day so they do it next time
   };
 
-  const todaySection = activeProgram ? getTodaySection(activeProgram.content) : null;
-
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen pb-24">
       <div className="px-4 pt-12 pb-6">
         <h1 className="text-3xl font-extrabold tracking-tight text-[#111827]">
           ELITE <span className="text-blue-600">COACH</span>
@@ -175,38 +227,92 @@ export default function HomePage() {
         </Link>
       </div>
 
-      {/* Active Program or Create Prompt */}
+      {/* Active Program with Day Selection */}
       <div className="px-4 mb-6">
-        {activeProgram ? (
-          <div className="rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-sm">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-xs font-medium uppercase tracking-wider text-blue-600">
-                {todaySection?.isRecovery ? "Today's Recovery" : "Today's Workout"}
-              </h2>
-              <Link href="/progress" className="text-xs text-blue-600 font-medium">Track Progress &rarr;</Link>
-            </div>
-            {todaySection ? (
-              <>
-                {todaySection.isRecovery && (
-                  <div className="flex items-center gap-2 mb-2">
+        {activeProgram && programDays.length > 0 ? (
+          <div className="rounded-2xl border border-[#e5e7eb] bg-white shadow-sm overflow-hidden">
+            {/* Day selector */}
+            <div className="p-4 border-b border-[#e5e7eb]">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-xs font-medium uppercase tracking-wider text-blue-600">
+                  {selectedDay?.isRecovery ? "Today's Recovery" : "Today's Workout"}
+                </h2>
+                <Link href="/progress" className="text-xs text-blue-600 font-medium">Track Progress &rarr;</Link>
+              </div>
+
+              {/* Selected day display */}
+              <button
+                onClick={() => setDayPickerOpen(!dayPickerOpen)}
+                className="w-full flex items-center justify-between rounded-xl bg-[#f8f9fa] border border-[#e5e7eb] px-4 py-3"
+              >
+                <div className="flex items-center gap-2">
+                  {selectedDay?.isRecovery ? (
                     <Heart size={16} className="text-green-600" />
-                    <span className="text-xs font-semibold text-green-600 uppercase">Recovery Day</span>
-                  </div>
-                )}
-                <p className="font-bold text-sm text-[#111827] mb-1">{activeProgram.title}</p>
-                <p className="text-xs text-[#6b7280] line-clamp-4 leading-relaxed whitespace-pre-line">
-                  {todaySection.text.replace(/\*\*/g, '').slice(0, 250)}{todaySection.text.length > 250 ? '...' : ''}
-                </p>
-              </>
-            ) : (
-              <>
-                <p className="font-bold text-sm text-[#111827] mb-1">{activeProgram.title}</p>
-                <p className="text-xs text-[#6b7280] line-clamp-3 leading-relaxed">{activeProgram.content.slice(0, 200)}...</p>
-              </>
-            )}
-            <Link href="/progress" className={`inline-block mt-3 rounded-xl px-5 py-2.5 text-sm font-semibold text-white transition-colors ${todaySection?.isRecovery ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'}`}>
-              {todaySection?.isRecovery ? 'Start Recovery' : 'Start Workout'}
-            </Link>
+                  ) : (
+                    <Dumbbell size={16} className="text-blue-600" />
+                  )}
+                  <span className="font-semibold text-sm text-[#111827]">{selectedDay?.header}</span>
+                </div>
+                {dayPickerOpen ? <ChevronUp size={16} className="text-[#6b7280]" /> : <ChevronDown size={16} className="text-[#6b7280]" />}
+              </button>
+
+              {/* Day picker dropdown */}
+              {dayPickerOpen && (
+                <div className="mt-2 space-y-1">
+                  {programDays.map((day, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => { setSelectedDayIdx(idx); setDayPickerOpen(false); setShowDayContent(false); }}
+                      className={`w-full text-left rounded-lg px-4 py-2.5 text-sm transition-colors flex items-center gap-2 ${
+                        idx === selectedDayIdx
+                          ? 'bg-blue-600 text-white'
+                          : day.isRecovery
+                          ? 'bg-green-50 text-[#111827] hover:bg-green-100'
+                          : 'bg-white text-[#111827] hover:bg-gray-50'
+                      }`}
+                    >
+                      {day.isRecovery ? <Heart size={14} /> : <Dumbbell size={14} />}
+                      <span className="font-medium">{day.header}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Actions */}
+            <div className="p-4">
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowDayContent(!showDayContent)}
+                  className={`flex-1 rounded-xl px-5 py-2.5 text-sm font-semibold text-white transition-colors ${
+                    selectedDay?.isRecovery ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'
+                  }`}
+                >
+                  {showDayContent ? 'Hide Details' : selectedDay?.isRecovery ? 'View Recovery' : 'View Workout'}
+                </button>
+                <button
+                  onClick={handleSkipDay}
+                  className="rounded-xl border border-[#e5e7eb] px-4 py-2.5 text-sm font-medium text-[#6b7280] hover:bg-gray-50 transition-colors flex items-center gap-1.5"
+                  title="Skip this day"
+                >
+                  <SkipForward size={16} /> Skip
+                </button>
+              </div>
+
+              {/* Full day content */}
+              {showDayContent && selectedDay && (
+                <div className="mt-4 pt-4 border-t border-[#e5e7eb]">
+                  <ProgramMarkdown content={selectedDay.content} />
+                </div>
+              )}
+            </div>
+          </div>
+        ) : activeProgram ? (
+          <div className="rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-sm">
+            <h2 className="text-xs font-medium uppercase tracking-wider text-blue-600 mb-3">Active Program</h2>
+            <p className="font-bold text-sm text-[#111827] mb-1">{activeProgram.title}</p>
+            <p className="text-xs text-[#6b7280] line-clamp-3 leading-relaxed">{activeProgram.content.slice(0, 200)}...</p>
+            <Link href="/progress" className="inline-block mt-3 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 transition-colors">Start Workout</Link>
           </div>
         ) : (
           <Link href="/program">
@@ -218,6 +324,23 @@ export default function HomePage() {
           </Link>
         )}
       </div>
+
+      {/* Skipped Days Log */}
+      {skippedDays.length > 0 && (
+        <div className="px-4 mb-6">
+          <div className="rounded-xl border border-[#e5e7eb] bg-white p-4 shadow-sm">
+            <h3 className="text-xs font-medium uppercase tracking-wider text-[#6b7280] mb-2">Skipped Workouts</h3>
+            <div className="space-y-1">
+              {skippedDays.slice(-5).reverse().map((s, i) => (
+                <div key={i} className="flex items-center justify-between text-xs">
+                  <span className="text-[#6b7280]">{s.day}</span>
+                  <span className="text-[#9ca3af]">{new Date(s.date).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       <Navigation />
     </div>

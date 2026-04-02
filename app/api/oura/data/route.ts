@@ -9,17 +9,10 @@ import {
   refreshOuraToken,
   OURA_CONFIG,
 } from '@/lib/oura-api';
-import { OURA_SANDBOX_DATA } from '@/lib/oura-sandbox-data';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
 export async function GET(req: NextRequest) {
-  // Sandbox mode
-  const useSandbox = process.env.OURA_SANDBOX === 'true' && !OURA_CONFIG.clientId;
-  if (useSandbox) {
-    return NextResponse.json({ data: OURA_SANDBOX_DATA, source: 'sandbox' });
-  }
-
   // Get user from Supabase
   const cookieStore = cookies();
   const supabase = createServerClient(

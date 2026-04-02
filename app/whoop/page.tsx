@@ -72,13 +72,13 @@ function WhoopPageInner() {
         return;
       }
 
-      // Try Oura (live or sandbox)
+      // Try Oura (live only — no sandbox/mock data)
       const ouraRes = await fetch('/api/oura/data');
       const ouraJson = await ouraRes.json();
-      if ((ouraJson.source === 'live' || ouraJson.source === 'sandbox') && ouraJson.data) {
+      if (ouraJson.source === 'live' && ouraJson.data) {
         setWhoopData(ouraJson.data);
-        setDataSource(ouraJson.source === 'sandbox' ? 'Oura (Sandbox)' : 'Oura Ring');
-        setSources(prev => prev.map(s => s.id === 'oura' ? { ...s, connected: ouraJson.source === 'live' } : s));
+        setDataSource('Oura Ring');
+        setSources(prev => prev.map(s => s.id === 'oura' ? { ...s, connected: true } : s));
         setLoading(false);
         return;
       }
@@ -178,15 +178,14 @@ function WhoopPageInner() {
           <Loader2 size={32} className="animate-spin text-blue-600" />
         </div>
       ) : !hasData ? (
-        /* Empty state — no data connected */
-        <div className="px-4 py-16 text-center">
-          <Activity size={56} className="mx-auto text-gray-300 mb-4" />
-          <h2 className="text-lg font-bold text-[#111827] mb-2">No recovery data yet</h2>
-          <p className="text-sm text-[#6b7280] max-w-xs mx-auto mb-6">
-            Connect your WHOOP or Oura Ring above to see your recovery scores, sleep data, and strain metrics.
-          </p>
-          <p className="text-xs text-[#9ca3af]">
-            Your coach will use this data to personalize your training recommendations.
+        /* Empty state — no device connected */
+        <div className="px-4 py-12 text-center">
+          <div className="w-16 h-16 rounded-full bg-[#f3f4f6] flex items-center justify-center mx-auto mb-4">
+            <Activity size={32} className="text-[#9ca3af]" />
+          </div>
+          <h2 className="text-lg font-bold text-[#111827] mb-2">Connect a device to see your recovery data</h2>
+          <p className="text-sm text-[#6b7280] max-w-xs mx-auto">
+            Link your WHOOP or Oura Ring above. Your coach will use recovery data to personalize your training.
           </p>
         </div>
       ) : (

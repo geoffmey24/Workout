@@ -21,6 +21,7 @@ export async function dbGetSavedPrograms(userId: string): Promise<SavedProgram[]
     answers: row.answers || {},
     content: row.content,
     createdAt: new Date(row.created_at).getTime(),
+    isActive: row.is_active || false,
   }));
 }
 

@@ -1,11 +1,13 @@
 'use client';
 
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 export default function ProgramMarkdown({ content }: { content: string }) {
   return (
     <div className="program-content text-sm">
       <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
         components={{
           p: ({ children }) => <p className="mb-3 last:mb-0 leading-relaxed text-[#374151]">{children}</p>,
           ol: ({ children }) => <ol className="mb-3 pl-5 list-decimal space-y-1">{children}</ol>,
@@ -17,32 +19,31 @@ export default function ProgramMarkdown({ content }: { content: string }) {
           strong: ({ children }) => <strong className="font-bold text-[#111827]">{children}</strong>,
           em: ({ children }) => <em className="text-[#6b7280]">{children}</em>,
           hr: () => <hr className="my-4 border-[#e5e7eb]" />,
-          // Styled exercise tables
           table: ({ children }) => (
-            <div className="mb-4 overflow-x-auto -mx-1">
-              <table className="w-full text-sm border-collapse rounded-lg overflow-hidden shadow-sm">
+            <div className="mb-4 overflow-x-auto -mx-1 rounded-lg border border-[#e5e7eb] shadow-sm">
+              <table className="w-full text-sm border-collapse min-w-[400px]">
                 {children}
               </table>
             </div>
           ),
           thead: ({ children }) => (
-            <thead className="bg-[#1e3a5f] text-white text-xs uppercase tracking-wider">
+            <thead className="bg-[#1e3a5f] text-white">
               {children}
             </thead>
           ),
-          tbody: ({ children }) => <tbody className="divide-y divide-[#e5e7eb]">{children}</tbody>,
+          tbody: ({ children }) => <tbody>{children}</tbody>,
           tr: ({ children }) => (
-            <tr className="even:bg-[#f8fafc] odd:bg-white hover:bg-blue-50/50 transition-colors">
+            <tr className="even:bg-[#f8f9fa] odd:bg-white border-b border-[#e5e7eb] last:border-b-0">
               {children}
             </tr>
           ),
           th: ({ children }) => (
-            <th className="px-3 py-2.5 text-left font-semibold whitespace-nowrap">
+            <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider whitespace-nowrap">
               {children}
             </th>
           ),
           td: ({ children }) => (
-            <td className="px-3 py-2.5 text-[#374151] whitespace-nowrap">
+            <td className="px-4 py-2.5 text-[#374151] whitespace-nowrap">
               {children}
             </td>
           ),

@@ -7,6 +7,7 @@ export interface SavedProgram {
   answers: Record<string, string>;
   content: string;
   createdAt: number;
+  isActive?: boolean;
 }
 
 export function getSavedPrograms(): SavedProgram[] {
