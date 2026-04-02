@@ -10,39 +10,59 @@ import {
   OURA_CONFIG,
 } from '@/lib/oura-api';
 import { OURA_SANDBOX_DATA } from '@/lib/oura-sandbox-data';
+import { createServerClient } from '@supabase/ssr';
+import { cookies } from 'next/headers';
 
 export async function GET(req: NextRequest) {
-  // Sandbox mode: return realistic sample data when no credentials configured
+  // Sandbox mode
   const useSandbox = process.env.OURA_SANDBOX === 'true' && !OURA_CONFIG.clientId;
   if (useSandbox) {
     return NextResponse.json({ data: OURA_SANDBOX_DATA, source: 'sandbox' });
   }
 
-  let accessToken = req.cookies.get('oura_access_token')?.value;
-  const refreshToken = req.cookies.get('oura_refresh_token')?.value;
+  // Get user from Supabase
+  const cookieStore = cookies();
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) { return cookieStore.get(name)?.value; },
+        set(name: string, value: string, options: any) { try { cookieStore.set({ name, value, ...options }); } catch {} },
+        remove(name: string, options: any) { try { cookieStore.set({ name, value: '', ...options }); } catch {} },
+      },
+    }
+  );
 
-  if (!accessToken && !refreshToken) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
     return NextResponse.json({ data: null, source: 'none' });
   }
 
-  if (!accessToken && refreshToken) {
-    try {
-      const tokens = await refreshOuraToken(refreshToken);
-      accessToken = tokens.access_token;
+  const { data: conn } = await supabase
+    .from('health_connections')
+    .select('*')
+    .eq('user_id', user.id)
+    .eq('provider', 'oura')
+    .single();
 
-      const response = NextResponse.json({ data: null, source: 'refreshing' });
-      response.cookies.set('oura_access_token', tokens.access_token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: tokens.expires_in,
-      });
-      response.cookies.set('oura_refresh_token', tokens.refresh_token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 30 * 24 * 3600,
-      });
+  if (!conn) {
+    return NextResponse.json({ data: null, source: 'none' });
+  }
+
+  let accessToken = conn.access_token;
+
+  // Refresh if expired
+  if (conn.expires_at && new Date(conn.expires_at) < new Date() && conn.refresh_token) {
+    try {
+      const tokens = await refreshOuraToken(conn.refresh_token);
+      accessToken = tokens.access_token;
+      const expiresAt = new Date(Date.now() + tokens.expires_in * 1000).toISOString();
+      await supabase.from('health_connections').update({
+        access_token: tokens.access_token,
+        refresh_token: tokens.refresh_token,
+        expires_at: expiresAt,
+      }).eq('user_id', user.id).eq('provider', 'oura');
     } catch {
       return NextResponse.json({ data: null, source: 'none', error: 'refresh_failed' });
     }
@@ -50,11 +70,11 @@ export async function GET(req: NextRequest) {
 
   try {
     const [readiness, sleepSessions, activity, heartRate, spo2] = await Promise.all([
-      fetchOuraReadiness(accessToken!),
-      fetchOuraSleepSessions(accessToken!),
-      fetchOuraActivity(accessToken!),
-      fetchOuraHeartRate(accessToken!).catch(() => ({ data: [] })),
-      fetchOuraSpO2(accessToken!).catch(() => ({ data: [] })),
+      fetchOuraReadiness(accessToken),
+      fetchOuraSleepSessions(accessToken),
+      fetchOuraActivity(accessToken),
+      fetchOuraHeartRate(accessToken).catch(() => ({ data: [] })),
+      fetchOuraSpO2(accessToken).catch(() => ({ data: [] })),
     ]);
 
     const data = transformOuraData(

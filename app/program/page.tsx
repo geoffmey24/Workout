@@ -5,8 +5,9 @@ import { ArrowLeft, ArrowRight, Loader2, Dumbbell, Save, Trash2, Clock, BookOpen
 import Link from 'next/link';
 import ReactMarkdown from 'react-markdown';
 import Navigation from '@/components/Navigation';
-import { SavedProgram, getSavedPrograms, saveProgram, deleteProgram } from '@/lib/program-history';
-import { setActiveProgram } from '@/lib/active-program';
+import { SavedProgram } from '@/lib/program-history';
+import { useAuth } from '@/components/AuthProvider';
+import { dbGetSavedPrograms, dbSaveProgram, dbDeleteProgram, dbSetActiveProgram } from '@/lib/db';
 
 interface Question {
   id: string;
@@ -42,6 +43,7 @@ const QUESTIONS: Question[] = [
 ];
 
 export default function ProgramPage() {
+  const { user } = useAuth();
   const [view, setView] = useState<'menu' | 'intake' | 'result' | 'saved' | 'paste'>('menu');
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -53,7 +55,11 @@ export default function ProgramPage() {
   const [savedPrograms, setSavedPrograms] = useState<SavedProgram[]>([]);
   const [viewingProgram, setViewingProgram] = useState<SavedProgram | null>(null);
 
-  useEffect(() => { setSavedPrograms(getSavedPrograms()); }, []);
+  const refreshPrograms = async () => {
+    if (user) setSavedPrograms(await dbGetSavedPrograms(user.id));
+  };
+  useEffect(() => { refreshPrograms(); // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   // Get applicable questions (skip conditional ones that don't apply)
   const applicableQuestions = QUESTIONS.filter(q => !q.conditional || q.conditional(answers));
@@ -141,8 +147,8 @@ Build a full weekly program. For each day, include: warm-up, main lifts (sets x 
     } finally { setLoading(false); }
   };
 
-  const handleSaveProgram = () => {
-    if (!program) return;
+  const handleSaveProgram = async () => {
+    if (!program || !user) return;
     const saved: SavedProgram = {
       id: crypto.randomUUID(),
       title: `${answers.goal || 'Custom'} - ${answers.days || '?'} days/wk`,
@@ -150,16 +156,17 @@ Build a full weekly program. For each day, include: warm-up, main lifts (sets x 
       content: program,
       createdAt: Date.now(),
     };
-    saveProgram(saved);
-    setSavedPrograms(getSavedPrograms());
+    await dbSaveProgram(user.id, saved);
+    await refreshPrograms();
   };
 
-  const handleSetActive = (p: SavedProgram) => {
-    setActiveProgram(p);
+  const handleSetActive = async (p: SavedProgram) => {
+    if (!user) return;
+    await dbSetActiveProgram(user.id, p.id);
   };
 
-  const handleSavePastedWorkout = () => {
-    if (!pasteInput.trim()) return;
+  const handleSavePastedWorkout = async () => {
+    if (!pasteInput.trim() || !user) return;
     const saved: SavedProgram = {
       id: crypto.randomUUID(),
       title: 'My Custom Workout',
@@ -167,16 +174,16 @@ Build a full weekly program. For each day, include: warm-up, main lifts (sets x 
       content: pasteInput.trim(),
       createdAt: Date.now(),
     };
-    saveProgram(saved);
-    setActiveProgram(saved);
-    setSavedPrograms(getSavedPrograms());
+    await dbSaveProgram(user.id, saved);
+    await dbSetActiveProgram(user.id, saved.id);
+    await refreshPrograms();
     setPasteInput('');
     setView('saved');
   };
 
-  const handleDeleteProgram = (id: string) => {
-    deleteProgram(id);
-    setSavedPrograms(getSavedPrograms());
+  const handleDeleteProgram = async (id: string) => {
+    await dbDeleteProgram(id);
+    await refreshPrograms();
     if (viewingProgram?.id === id) { setViewingProgram(null); setView('menu'); }
   };
 

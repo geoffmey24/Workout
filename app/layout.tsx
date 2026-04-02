@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
+import AuthProvider from '@/components/AuthProvider';
 
 export const metadata: Metadata = {
   title: 'ELITE COACH',
@@ -40,7 +41,9 @@ export default function RootLayout({
         <meta name="mobile-web-app-capable" content="yes" />
       </head>
       <body className="min-h-screen bg-[#f8f9fa] text-[#111827] antialiased">
-        <main className="pb-20">{children}</main>
+        <AuthProvider>
+          <main className="pb-20">{children}</main>
+        </AuthProvider>
         <script
           dangerouslySetInnerHTML={{
             __html: `

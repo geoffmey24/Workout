@@ -2,14 +2,14 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, MessageSquare, Dumbbell, Activity, TrendingUp } from 'lucide-react';
+import { Home, MessageSquare, Dumbbell, Activity, User } from 'lucide-react';
 
 const NAV_ITEMS = [
   { href: '/', label: 'Home', icon: Home },
   { href: '/chat', label: 'Coach', icon: MessageSquare },
   { href: '/program', label: 'Program', icon: Dumbbell },
   { href: '/whoop', label: 'Recovery', icon: Activity },
-  { href: '/progress', label: 'Progress', icon: TrendingUp },
+  { href: '/settings', label: 'Profile', icon: User },
 ];
 
 export default function Navigation() {

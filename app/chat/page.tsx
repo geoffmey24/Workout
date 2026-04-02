@@ -6,15 +6,10 @@ import { ArrowLeft, Plus } from 'lucide-react';
 import Link from 'next/link';
 import ChatMessage from '@/components/ChatMessage';
 import ChatInput from '@/components/ChatInput';
-import ChatHistory from '@/components/ChatHistory';
 import LoadingDots from '@/components/LoadingDots';
 import { Message, ContentBlock, ApiMessage } from '@/types';
-import {
-  Conversation,
-  saveConversation,
-  generateTitle,
-  createConversation,
-} from '@/lib/chat-history';
+import { useAuth } from '@/components/AuthProvider';
+import { dbGetConversations, dbSaveConversation, dbDeleteConversation, DbConversation } from '@/lib/db';
 
 const SUGGESTIONS = [
   'How should I bench press?',
@@ -28,27 +23,40 @@ const SUGGESTIONS = [
 function ChatPageInner() {
   const searchParams = useSearchParams();
   const topic = searchParams.get('topic');
+  const { user } = useAuth();
 
-  const [convo, setConvo] = useState<Conversation>(createConversation);
+  const [convoId, setConvoId] = useState(() => crypto.randomUUID());
+  const [convoTitle, setConvoTitle] = useState('New Chat');
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
+  const [conversations, setConversations] = useState<DbConversation[]>([]);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
 
+  // Load conversations list
   useEffect(() => {
-    if (messages.length > 0) {
-      const updated = {
-        ...convo,
-        messages,
-        title: generateTitle(messages),
-        updatedAt: Date.now(),
-      };
-      setConvo(updated);
-      saveConversation(updated);
-    }
+    if (!user) return;
+    dbGetConversations(user.id).then(setConversations);
+  }, [user]);
+
+  // Auto-save conversation to Supabase
+  useEffect(() => {
+    if (!user || messages.length === 0) return;
+    const title = messages.find(m => m.role === 'user')?.content.slice(0, 50) || 'New Chat';
+    setConvoTitle(title);
+    dbSaveConversation(user.id, {
+      id: convoId,
+      title,
+      messages,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    }).then(() => {
+      dbGetConversations(user.id).then(setConversations);
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages]);
 
@@ -61,12 +69,12 @@ function ChatPageInner() {
 
   const handleSend = useCallback(async (text: string, image?: string, imageType?: string) => {
     const userMessage: Message = { role: 'user', content: text, image, imageType };
-    setMessages((prev) => [...prev, userMessage]);
+    setMessages(prev => [...prev, userMessage]);
     setLoading(true);
 
     try {
       const allMessages = [...messages, userMessage];
-      const apiMessages: ApiMessage[] = allMessages.map((msg) => {
+      const apiMessages: ApiMessage[] = allMessages.map(msg => {
         if (msg.role === 'user' && msg.image) {
           const blocks: ContentBlock[] = [
             { type: 'image', source: { type: 'base64', media_type: msg.imageType || 'image/jpeg', data: msg.image } },
@@ -85,13 +93,12 @@ function ChatPageInner() {
 
       const data = await res.json();
       if (data.error) throw new Error(data.error);
-
-      setMessages((prev) => [...prev, { role: 'assistant', content: data.response }]);
+      setMessages(prev => [...prev, { role: 'assistant', content: data.response }]);
     } catch (err) {
       console.error(err);
-      setMessages((prev) => [
+      setMessages(prev => [
         ...prev,
-        { role: 'assistant', content: "I'm having trouble connecting right now. Please check your API key in `.env.local` and try again." },
+        { role: 'assistant', content: "I'm having trouble connecting right now. Please check your API key and try again." },
       ]);
     } finally {
       setLoading(false);
@@ -99,77 +106,69 @@ function ChatPageInner() {
   }, [messages]);
 
   const startNewChat = () => {
-    setConvo(createConversation());
+    setConvoId(crypto.randomUUID());
+    setConvoTitle('New Chat');
     setMessages([]);
+    setHistoryOpen(false);
   };
 
-  const loadConversation = (c: Conversation) => {
-    setConvo(c);
-    setMessages(c.messages);
+  const loadConversation = (c: DbConversation) => {
+    setConvoId(c.id);
+    setConvoTitle(c.title);
+    setMessages(c.messages as Message[]);
+    setHistoryOpen(false);
+  };
+
+  const handleDeleteConvo = async (id: string) => {
+    await dbDeleteConversation(id);
+    if (user) setConversations(await dbGetConversations(user.id));
+    if (id === convoId) startNewChat();
   };
 
   return (
     <div className="flex flex-col h-screen bg-[#f8f9fa]">
       {/* Header */}
       <div className="flex items-center gap-3 border-b border-[#e5e7eb] bg-white px-4 py-3">
-        <Link href="/" className="text-[#6b7280] hover:text-[#111827]">
-          <ArrowLeft size={20} />
-        </Link>
+        <Link href="/" className="text-[#6b7280] hover:text-[#111827]"><ArrowLeft size={20} /></Link>
         <div>
-          <h1 className="font-bold text-sm text-[#111827]">
-            ELITE <span className="text-blue-600">COACH</span>
-          </h1>
+          <h1 className="font-bold text-sm text-[#111827]">ELITE <span className="text-blue-600">COACH</span></h1>
           <p className="text-xs text-[#6b7280]">AI Performance Coach</p>
         </div>
         <div className="ml-auto flex items-center gap-3">
-          <button
-            onClick={startNewChat}
-            className="p-1.5 rounded-lg bg-gray-100 text-[#6b7280] hover:text-[#111827] hover:bg-gray-200 transition-colors"
-            title="New Chat"
-          >
-            <Plus size={16} />
-          </button>
-          <div className="flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-            <span className="text-xs text-green-600">Online</span>
-          </div>
+          <button onClick={startNewChat} className="p-1.5 rounded-lg bg-gray-100 text-[#6b7280] hover:text-[#111827] hover:bg-gray-200 transition-colors" title="New Chat"><Plus size={16} /></button>
+          <button onClick={() => setHistoryOpen(!historyOpen)} className="text-xs text-blue-600 font-medium">{historyOpen ? 'Close' : 'History'}</button>
         </div>
       </div>
 
-      <ChatHistory
-        activeId={convo.id}
-        onSelect={loadConversation}
-        onNew={startNewChat}
-      />
+      {/* History Panel */}
+      {historyOpen && (
+        <div className="border-b border-[#e5e7eb] bg-white px-4 py-3 max-h-48 overflow-y-auto">
+          {conversations.length === 0 ? (
+            <p className="text-xs text-[#9ca3af] text-center py-2">No past conversations</p>
+          ) : conversations.map(c => (
+            <div key={c.id} className={`flex items-center gap-2 py-1.5 ${c.id === convoId ? 'text-blue-600' : 'text-[#6b7280]'}`}>
+              <button onClick={() => loadConversation(c)} className="flex-1 text-left text-xs truncate hover:text-[#111827]">{c.title}</button>
+              <button onClick={() => handleDeleteConvo(c.id)} className="text-[10px] text-[#9ca3af] hover:text-red-500">delete</button>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-4">
         {messages.length === 0 && !loading && (
           <div className="flex flex-col items-center justify-center h-full text-center">
             <div className="text-4xl mb-4">🏋️</div>
-            <h2 className="text-lg font-bold mb-2 text-[#111827]">
-              ELITE <span className="text-blue-600">COACH</span>
-            </h2>
-            <p className="text-sm text-[#6b7280] mb-6 max-w-xs">
-              Your AI performance coach. Ask about training, nutrition, recovery, form — or upload a photo for analysis.
-            </p>
+            <h2 className="text-lg font-bold mb-2 text-[#111827]">ELITE <span className="text-blue-600">COACH</span></h2>
+            <p className="text-sm text-[#6b7280] mb-6 max-w-xs">Your AI performance coach. Ask about training, nutrition, recovery, form — or upload a photo for analysis.</p>
             <div className="flex flex-wrap gap-2 justify-center max-w-sm">
-              {SUGGESTIONS.map((s) => (
-                <button
-                  key={s}
-                  onClick={() => handleSend(s)}
-                  className="rounded-full border border-[#e5e7eb] bg-white px-3 py-1.5 text-xs text-[#6b7280] hover:border-blue-300 hover:text-blue-600 transition-colors shadow-sm"
-                >
-                  {s}
-                </button>
+              {SUGGESTIONS.map(s => (
+                <button key={s} onClick={() => handleSend(s)} className="rounded-full border border-[#e5e7eb] bg-white px-3 py-1.5 text-xs text-[#6b7280] hover:border-blue-300 hover:text-blue-600 transition-colors shadow-sm">{s}</button>
               ))}
             </div>
           </div>
         )}
-
-        {messages.map((msg, i) => (
-          <ChatMessage key={i} message={msg} />
-        ))}
+        {messages.map((msg, i) => <ChatMessage key={i} message={msg} />)}
         {loading && <LoadingDots />}
         <div ref={messagesEndRef} />
       </div>

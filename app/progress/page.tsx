@@ -5,8 +5,8 @@ import { ArrowLeft, Check, RotateCcw, Flame, Trophy, Calendar, Dumbbell } from '
 import Link from 'next/link';
 import ReactMarkdown from 'react-markdown';
 import Navigation from '@/components/Navigation';
-import { getWorkoutStats, getWeeklyStats, recordWorkoutCompletion, WorkoutStats } from '@/lib/workout-stats';
-import { getActiveProgram } from '@/lib/active-program';
+import { useAuth } from '@/components/AuthProvider';
+import { dbGetWorkoutStats, dbGetWeeklyStats, dbRecordWorkout, dbGetActiveProgram, DbWorkoutStats } from '@/lib/db';
 import { SavedProgram } from '@/lib/program-history';
 
 // Parse a program's text content into checkable exercise lines
@@ -31,18 +31,25 @@ function parseExercises(content: string): string[] {
 }
 
 export default function ProgressPage() {
+  const { user } = useAuth();
   const [activeProgram, setActiveProgram] = useState<SavedProgram | null>(null);
   const [completed, setCompleted] = useState<Record<string, boolean>>({});
-  const [stats, setStats] = useState<WorkoutStats | null>(null);
+  const [stats, setStats] = useState<DbWorkoutStats | null>(null);
   const [weeklyStats, setWeeklyStats] = useState({ workoutsThisWeek: 0, daysActive: 0 });
   const [workoutDone, setWorkoutDone] = useState(false);
   const [viewMode, setViewMode] = useState<'checklist' | 'full'>('checklist');
+  const [dataLoaded, setDataLoaded] = useState(false);
 
   useEffect(() => {
-    setStats(getWorkoutStats());
-    setWeeklyStats(getWeeklyStats());
-    setActiveProgram(getActiveProgram());
-  }, []);
+    if (!user) return;
+    (async () => {
+      const s = await dbGetWorkoutStats(user.id);
+      setStats(s);
+      setWeeklyStats(dbGetWeeklyStats(s));
+      setActiveProgram(await dbGetActiveProgram(user.id));
+      setDataLoaded(true);
+    })();
+  }, [user]);
 
   const exercises = activeProgram ? parseExercises(activeProgram.content) : [];
   const totalExercises = exercises.length;
@@ -54,13 +61,30 @@ export default function ProgressPage() {
   };
 
   useEffect(() => {
-    if (completedCount === totalExercises && totalExercises > 0 && !workoutDone) {
+    if (completedCount === totalExercises && totalExercises > 0 && !workoutDone && user) {
       setWorkoutDone(true);
-      const updated = recordWorkoutCompletion(1);
-      setStats(updated);
-      setWeeklyStats(getWeeklyStats());
+      dbRecordWorkout(user.id, 1).then(updated => {
+        setStats(updated);
+        setWeeklyStats(dbGetWeeklyStats(updated));
+      });
     }
-  }, [completedCount, totalExercises, workoutDone]);
+  }, [completedCount, totalExercises, workoutDone, user]);
+
+  // Still loading data
+  if (!dataLoaded) {
+    return (
+      <div className="min-h-screen pb-24">
+        <div className="flex items-center gap-3 border-b border-[#e5e7eb] bg-white px-4 py-3">
+          <Link href="/" className="text-[#6b7280] hover:text-[#111827]"><ArrowLeft size={20} /></Link>
+          <h1 className="font-bold text-sm text-[#111827]">Workout Tracker</h1>
+        </div>
+        <div className="flex items-center justify-center py-20">
+          <div className="flex gap-1.5"><span className="typing-dot h-2 w-2 rounded-full bg-blue-500" /><span className="typing-dot h-2 w-2 rounded-full bg-blue-500" /><span className="typing-dot h-2 w-2 rounded-full bg-blue-500" /></div>
+        </div>
+        <Navigation />
+      </div>
+    );
+  }
 
   // No active program
   if (!activeProgram) {
