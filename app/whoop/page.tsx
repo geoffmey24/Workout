@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { ArrowLeft, Loader2, Link2, Link2Off, Wifi, WifiOff, Smartphone } from 'lucide-react';
+import { ArrowLeft, Loader2, Link2, Link2Off, Wifi, WifiOff } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
@@ -46,11 +46,12 @@ function WhoopPageInner() {
   const [whoopData, setWhoopData] = useState<WhoopData>(MOCK_WHOOP_DATA);
   const [dataSource, setDataSource] = useState<string>('mock');
   const [loading, setLoading] = useState(true);
+  // HIDDEN: Requires native app — re-enable when building React Native version
+  // { id: 'apple', name: 'Apple Health', icon: 'A', description: 'Steps, heart rate, workouts, sleep', authUrl: '', dataUrl: '', disconnectUrl: '', color: '#ef4444', connected: false },
+  // { id: 'google', name: 'Google Health Connect', icon: 'G', description: 'Activity, nutrition, vitals', authUrl: '', dataUrl: '', disconnectUrl: '', color: '#3b82f6', connected: false },
   const [sources, setSources] = useState<HealthSource[]>([
     { id: 'whoop', name: 'WHOOP', icon: 'W', description: 'Recovery, strain, sleep tracking', authUrl: '/api/whoop/auth', dataUrl: '/api/whoop/data', disconnectUrl: '/api/whoop/disconnect', color: '#16a34a', connected: false },
     { id: 'oura', name: 'Oura Ring', icon: 'O', description: 'Readiness, sleep stages, HRV', authUrl: '/api/oura/auth', dataUrl: '/api/oura/data', disconnectUrl: '/api/oura/disconnect', color: '#a855f7', connected: false },
-    { id: 'apple', name: 'Apple Health', icon: 'A', description: 'Steps, heart rate, workouts, sleep', authUrl: '', dataUrl: '', disconnectUrl: '', color: '#ef4444', connected: false },
-    { id: 'google', name: 'Google Health Connect', icon: 'G', description: 'Activity, nutrition, vitals', authUrl: '', dataUrl: '', disconnectUrl: '', color: '#3b82f6', connected: false },
   ]);
 
   useEffect(() => {
@@ -72,13 +73,13 @@ function WhoopPageInner() {
         return;
       }
 
-      // Try Oura
+      // Try Oura (live or sandbox)
       const ouraRes = await fetch('/api/oura/data');
       const ouraJson = await ouraRes.json();
-      if (ouraJson.source === 'live' && ouraJson.data) {
+      if ((ouraJson.source === 'live' || ouraJson.source === 'sandbox') && ouraJson.data) {
         setWhoopData(ouraJson.data);
-        setDataSource('Oura Ring');
-        setSources(prev => prev.map(s => s.id === 'oura' ? { ...s, connected: true } : s));
+        setDataSource(ouraJson.source === 'sandbox' ? 'Oura (Sandbox)' : 'Oura Ring');
+        setSources(prev => prev.map(s => s.id === 'oura' ? { ...s, connected: ouraJson.source === 'live' } : s));
         setLoading(false);
         return;
       }
@@ -165,17 +166,13 @@ function WhoopPageInner() {
                 >
                   <Link2Off size={10} /> Disconnect
                 </button>
-              ) : source.authUrl ? (
+              ) : (
                 <a
                   href={source.authUrl}
                   className="flex items-center justify-center gap-1 w-full rounded-lg border border-[#e5e7eb] bg-gray-50 py-1.5 text-[10px] font-medium text-[#111827] hover:bg-gray-100 transition-colors"
                 >
                   <Link2 size={10} /> Connect
                 </a>
-              ) : (
-                <div className="flex items-center justify-center gap-1 w-full rounded-lg border border-[#e5e7eb] bg-gray-50 py-1.5 text-[10px] font-medium text-[#9ca3af]">
-                  <Smartphone size={10} /> Mobile Only
-                </div>
               )}
             </div>
           ))}

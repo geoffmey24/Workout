@@ -1,13 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
   fetchOuraReadiness,
-  fetchOuraSleep,
+  fetchOuraSleepSessions,
   fetchOuraActivity,
+  fetchOuraHeartRate,
+  fetchOuraSpO2,
   transformOuraData,
   refreshOuraToken,
+  OURA_CONFIG,
 } from '@/lib/oura-api';
+import { OURA_SANDBOX_DATA } from '@/lib/oura-sandbox-data';
 
 export async function GET(req: NextRequest) {
+  // Sandbox mode: return realistic sample data when no credentials configured
+  const useSandbox = process.env.OURA_SANDBOX === 'true' && !OURA_CONFIG.clientId;
+  if (useSandbox) {
+    return NextResponse.json({ data: OURA_SANDBOX_DATA, source: 'sandbox' });
+  }
+
   let accessToken = req.cookies.get('oura_access_token')?.value;
   const refreshToken = req.cookies.get('oura_refresh_token')?.value;
 
@@ -39,16 +49,20 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const [readiness, sleep, activity] = await Promise.all([
+    const [readiness, sleepSessions, activity, heartRate, spo2] = await Promise.all([
       fetchOuraReadiness(accessToken!),
-      fetchOuraSleep(accessToken!),
+      fetchOuraSleepSessions(accessToken!),
       fetchOuraActivity(accessToken!),
+      fetchOuraHeartRate(accessToken!).catch(() => ({ data: [] })),
+      fetchOuraSpO2(accessToken!).catch(() => ({ data: [] })),
     ]);
 
     const data = transformOuraData(
       readiness.data || [],
-      sleep.data || [],
-      activity.data || []
+      sleepSessions.data || [],
+      activity.data || [],
+      spo2.data || [],
+      heartRate.data || []
     );
     return NextResponse.json({ data, source: 'live' });
   } catch (error) {
