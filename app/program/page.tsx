@@ -25,13 +25,18 @@ const QUESTIONS: Question[] = [
   { id: 'split', question: 'Preferred training split?', type: 'select', options: ['Full Body', 'Upper/Lower', 'Push/Pull/Legs', 'Bro Split (one muscle/day)', 'No preference — you decide'] },
   { id: 'priority', question: 'Any muscle groups or movements to prioritize?', type: 'text' },
   { id: 'injuries', question: 'Any injuries or limitations?', type: 'text' },
-  { id: 'sport', question: 'Sport or activity focus (optional)?', type: 'text' },
+  {
+    id: 'sport',
+    question: 'What sport or activity are you training for?',
+    type: 'text',
+    conditional: (answers) => answers.goal === 'Sport-Specific' || answers.goal === 'Athletic Performance',
+  },
   {
     id: 'sport_focus',
     question: 'What aspects do you want to focus on for your sport?',
     type: 'multi-select',
     options: ['Endurance', 'Power', 'Speed', 'Agility', 'Strength', 'Flexibility', 'Explosiveness', 'Conditioning', 'Skill Work', 'Injury Prevention'],
-    conditional: (answers) => !!answers.sport && answers.sport.toLowerCase() !== 'none',
+    conditional: (answers) => (answers.goal === 'Sport-Specific' || answers.goal === 'Athletic Performance') && !!answers.sport && answers.sport.toLowerCase() !== 'none',
   },
   { id: 'cardio', question: 'Include conditioning/cardio work?', type: 'select', options: ['Yes — high intensity (HIIT, sprints)', 'Yes — steady state (running, cycling)', 'Yes — both', 'Minimal / warm-up only', 'No cardio'] },
 ];
