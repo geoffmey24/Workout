@@ -1,8 +1,45 @@
 'use client';
 
 import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
 import { Message } from '@/types';
+import { ExerciseTable, parseExerciseTables } from './ExerciseTable';
+
+function MarkdownContent({ text }: { text: string }) {
+  return (
+    <ReactMarkdown
+      components={{
+        p: ({ children }) => <p className="mb-2 last:mb-0 leading-relaxed">{children}</p>,
+        ol: ({ children }) => <ol className="mb-2 pl-5 list-decimal space-y-1">{children}</ol>,
+        ul: ({ children }) => <ul className="mb-2 pl-5 list-disc space-y-1">{children}</ul>,
+        li: ({ children }) => <li className="leading-relaxed">{children}</li>,
+        h1: ({ children }) => <h2 className="font-bold text-base mt-3 mb-1">{children}</h2>,
+        h2: ({ children }) => <h3 className="font-bold text-sm mt-3 mb-1">{children}</h3>,
+        h3: ({ children }) => <h4 className="font-semibold text-sm mt-2 mb-1">{children}</h4>,
+        strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+        em: ({ children }) => <em>{children}</em>,
+        // Fallback for any stray markdown tables
+        table: ({ children }) => (
+          <div className="mb-3 overflow-x-auto rounded-lg border border-[#e5e7eb] shadow-sm">
+            <table className="w-full text-sm border-collapse min-w-[350px]">{children}</table>
+          </div>
+        ),
+        thead: ({ children }) => <thead className="bg-[#1e3a5f] text-white">{children}</thead>,
+        tbody: ({ children }) => <tbody>{children}</tbody>,
+        tr: ({ children }) => <tr className="even:bg-[#f8f9fa] odd:bg-white border-b border-[#e5e7eb] last:border-b-0">{children}</tr>,
+        th: ({ children }) => <th className="px-3 py-2.5 text-left text-xs font-bold uppercase tracking-wider whitespace-nowrap">{children}</th>,
+        td: ({ children }) => <td className="px-3 py-2 text-[#374151] whitespace-nowrap">{children}</td>,
+        code: ({ children, className }) => {
+          const isBlock = className?.includes('language-');
+          if (isBlock) return <code className="block bg-gray-50 rounded-lg p-3 text-xs font-mono overflow-x-auto my-2">{children}</code>;
+          return <code className="bg-gray-100 px-1 py-0.5 rounded text-xs font-mono">{children}</code>;
+        },
+        pre: ({ children }) => <>{children}</>,
+      }}
+    >
+      {text}
+    </ReactMarkdown>
+  );
+}
 
 export default function ChatMessage({ message }: { message: Message }) {
   const isUser = message.role === 'user';
@@ -27,54 +64,13 @@ export default function ChatMessage({ message }: { message: Message }) {
           <p className="text-sm whitespace-pre-wrap">{message.content}</p>
         ) : (
           <div className="chat-message text-sm">
-            <ReactMarkdown
-              remarkPlugins={[remarkGfm]}
-              components={{
-                p: ({ children }) => <p className="mb-2 last:mb-0 leading-relaxed">{children}</p>,
-                ol: ({ children }) => <ol className="mb-2 pl-5 list-decimal space-y-1">{children}</ol>,
-                ul: ({ children }) => <ul className="mb-2 pl-5 list-disc space-y-1">{children}</ul>,
-                li: ({ children }) => <li className="leading-relaxed">{children}</li>,
-                h1: ({ children }) => <h2 className="font-bold text-base mt-3 mb-1">{children}</h2>,
-                h2: ({ children }) => <h3 className="font-bold text-sm mt-3 mb-1">{children}</h3>,
-                h3: ({ children }) => <h4 className="font-semibold text-sm mt-2 mb-1">{children}</h4>,
-                strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
-                em: ({ children }) => <em>{children}</em>,
-                table: ({ children }) => (
-                  <div className="mb-3 overflow-x-auto -mx-1 rounded-lg border border-[#e5e7eb] shadow-sm">
-                    <table className="w-full text-sm border-collapse min-w-[350px]">
-                      {children}
-                    </table>
-                  </div>
-                ),
-                thead: ({ children }) => (
-                  <thead className="bg-[#1e3a5f] text-white">
-                    {children}
-                  </thead>
-                ),
-                tbody: ({ children }) => <tbody>{children}</tbody>,
-                tr: ({ children }) => (
-                  <tr className="even:bg-[#f8f9fa] odd:bg-white border-b border-[#e5e7eb] last:border-b-0">
-                    {children}
-                  </tr>
-                ),
-                th: ({ children }) => (
-                  <th className="px-3 py-2.5 text-left text-xs font-bold uppercase tracking-wider whitespace-nowrap">{children}</th>
-                ),
-                td: ({ children }) => (
-                  <td className="px-3 py-2 text-[#374151] whitespace-nowrap">{children}</td>
-                ),
-                code: ({ children, className }) => {
-                  const isBlock = className?.includes('language-');
-                  if (isBlock) {
-                    return <code className="block bg-gray-50 rounded-lg p-3 text-xs font-mono overflow-x-auto my-2">{children}</code>;
-                  }
-                  return <code className="bg-gray-100 px-1 py-0.5 rounded text-xs font-mono">{children}</code>;
-                },
-                pre: ({ children }) => <>{children}</>,
-              }}
-            >
-              {message.content}
-            </ReactMarkdown>
+            {parseExerciseTables(message.content).map((part, i) =>
+              part.type === 'table' ? (
+                <ExerciseTable key={i} header={part.header} rows={part.rows} />
+              ) : (
+                <MarkdownContent key={i} text={part.content} />
+              )
+            )}
           </div>
         )}
       </div>
