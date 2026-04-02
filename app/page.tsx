@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { MessageSquare, Zap, Flame, Trophy, Calendar, Play, Pause, RotateCcw, Timer, Dumbbell } from 'lucide-react';
+import { MessageSquare, Zap, Flame, Trophy, Calendar, Play, Pause, RotateCcw, Timer, Dumbbell, Heart } from 'lucide-react';
 import Navigation from '@/components/Navigation';
 import { useAuth } from '@/components/AuthProvider';
 import { dbGetWorkoutStats, dbGetWeeklyStats, dbGetActiveProgram, DbWorkoutStats } from '@/lib/db';
@@ -65,6 +65,35 @@ export default function HomePage() {
   };
 
   const isTimerFinished = timerMode === 'rest' && timerSeconds === 0 && !timerRunning;
+
+  // Extract today's workout section from active program
+  const getTodaySection = (content: string): { text: string; isRecovery: boolean } | null => {
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const today = days[new Date().getDay()];
+    // Match patterns like "**Monday — Push Day**" or "**Day 1 — Monday**" or "Monday — Recovery Day"
+    const lines = content.split('\n');
+    let startIdx = -1;
+    let isRecovery = false;
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i].toLowerCase().includes(today.toLowerCase())) {
+        startIdx = i;
+        const line = lines[i].toLowerCase();
+        isRecovery = line.includes('recovery') || line.includes('rest') || line.includes('mobility');
+        break;
+      }
+    }
+    if (startIdx === -1) return null;
+    // Find the end — next day header or end of content
+    let endIdx = lines.length;
+    const dayPattern = /\*\*.*(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday|day\s+\d)/i;
+    for (let i = startIdx + 1; i < lines.length; i++) {
+      if (dayPattern.test(lines[i])) { endIdx = i; break; }
+    }
+    const text = lines.slice(startIdx, endIdx).join('\n').trim();
+    return text ? { text, isRecovery } : null;
+  };
+
+  const todaySection = activeProgram ? getTodaySection(activeProgram.content) : null;
 
   return (
     <div className="min-h-screen">
@@ -151,12 +180,33 @@ export default function HomePage() {
         {activeProgram ? (
           <div className="rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-sm">
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-xs font-medium uppercase tracking-wider text-blue-600">Active Program</h2>
+              <h2 className="text-xs font-medium uppercase tracking-wider text-blue-600">
+                {todaySection?.isRecovery ? "Today's Recovery" : "Today's Workout"}
+              </h2>
               <Link href="/progress" className="text-xs text-blue-600 font-medium">Track Progress &rarr;</Link>
             </div>
-            <p className="font-bold text-sm text-[#111827] mb-1">{activeProgram.title}</p>
-            <p className="text-xs text-[#6b7280] line-clamp-3 leading-relaxed">{activeProgram.content.slice(0, 200)}...</p>
-            <Link href="/progress" className="inline-block mt-3 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 transition-colors">Start Workout</Link>
+            {todaySection ? (
+              <>
+                {todaySection.isRecovery && (
+                  <div className="flex items-center gap-2 mb-2">
+                    <Heart size={16} className="text-green-600" />
+                    <span className="text-xs font-semibold text-green-600 uppercase">Recovery Day</span>
+                  </div>
+                )}
+                <p className="font-bold text-sm text-[#111827] mb-1">{activeProgram.title}</p>
+                <p className="text-xs text-[#6b7280] line-clamp-4 leading-relaxed whitespace-pre-line">
+                  {todaySection.text.replace(/\*\*/g, '').slice(0, 250)}{todaySection.text.length > 250 ? '...' : ''}
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="font-bold text-sm text-[#111827] mb-1">{activeProgram.title}</p>
+                <p className="text-xs text-[#6b7280] line-clamp-3 leading-relaxed">{activeProgram.content.slice(0, 200)}...</p>
+              </>
+            )}
+            <Link href="/progress" className={`inline-block mt-3 rounded-xl px-5 py-2.5 text-sm font-semibold text-white transition-colors ${todaySection?.isRecovery ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'}`}>
+              {todaySection?.isRecovery ? 'Start Recovery' : 'Start Workout'}
+            </Link>
           </div>
         ) : (
           <Link href="/program">

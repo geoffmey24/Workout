@@ -40,6 +40,21 @@ const QUESTIONS: Question[] = [
     conditional: (answers) => (answers.goal === 'Sport-Specific' || answers.goal === 'Athletic Performance') && !!answers.sport && answers.sport.toLowerCase() !== 'none',
   },
   { id: 'cardio', question: 'Include conditioning/cardio work?', type: 'select', options: ['Yes — high intensity (HIIT, sprints)', 'Yes — steady state (running, cycling)', 'Yes — both', 'Minimal / warm-up only', 'No cardio'] },
+  { id: 'recovery', question: 'Would you like to include a recovery day routine?', type: 'select', options: ['Yes', 'No'] },
+  {
+    id: 'recovery_equipment',
+    question: 'What recovery equipment do you have access to?',
+    type: 'multi-select',
+    options: ['Foam roller', 'Massage gun', 'Lacrosse/tennis ball', 'Resistance bands', 'Yoga mat', 'Ice bath / cold plunge', 'Epsom salt bath', 'Sauna', 'Red light therapy', 'Compression boots (Normatec etc.)', 'Stretching strap', 'None — just bodyweight'],
+    conditional: (answers) => answers.recovery === 'Yes',
+  },
+  {
+    id: 'recovery_goal',
+    question: "What's your main recovery goal?",
+    type: 'select',
+    options: ['Reduce muscle soreness', 'Improve flexibility/mobility', 'Injury prevention', 'Mental recovery / stress relief', 'General wellness', 'All of the above'],
+    conditional: (answers) => answers.recovery === 'Yes',
+  },
 ];
 
 export default function ProgramPage() {
@@ -121,6 +136,19 @@ export default function ProgramPage() {
 
   const generateProgram = async () => {
     setLoading(true);
+    const recoverySection = answers.recovery === 'Yes'
+      ? `\n- Include recovery days: Yes
+- Recovery equipment available: ${answers.recovery_equipment || 'Bodyweight only'}
+- Recovery goal: ${answers.recovery_goal || 'General wellness'}
+
+IMPORTANT: Include dedicated RECOVERY DAY(s) on the off-days in the weekly schedule. For each recovery day, create a structured routine that:
+1. ONLY uses the recovery equipment listed above (do not suggest equipment the user doesn't have)
+2. Includes specific timing for each activity (e.g., "Foam roll quads — 2 min each side")
+3. Is formatted the same way as workout days — with a bold day header and bullet point exercises
+4. Targets the user's recovery goal: ${answers.recovery_goal || 'General wellness'}
+5. Lasts 20-40 minutes total`
+      : '';
+
     const prompt = `Generate a complete, detailed training program based on these parameters:
 - Goal: ${answers.goal}
 - Training days/week: ${answers.days}
@@ -131,7 +159,7 @@ export default function ProgramPage() {
 - Priority areas: ${answers.priority || 'None'}
 - Injuries/limitations: ${answers.injuries || 'None'}
 - Sport focus: ${answers.sport || 'General'}${answers.sport_focus ? `\n- Sport aspects to focus on: ${answers.sport_focus}` : ''}
-- Cardio preference: ${answers.cardio || 'No preference'}
+- Cardio preference: ${answers.cardio || 'No preference'}${recoverySection}
 
 Build a full weekly program. For each day, include: warm-up, main lifts (sets x reps, RPE, rest), accessories, conditioning if requested, and cool-down. Use tables for the exercises. Include progression rules and deload guidance.`;
 
