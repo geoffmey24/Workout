@@ -2,7 +2,7 @@
 
 import ReactMarkdown from 'react-markdown';
 import { Message } from '@/types';
-import { ExerciseCard, parseExerciseCards, cleanExerciseTableTags } from './ExerciseTable';
+import { PipeTable, ExerciseCard, parseExerciseContent } from './ExerciseTable';
 
 function MarkdownContent({ text }: { text: string }) {
   return (
@@ -62,14 +62,12 @@ export default function ChatMessage({ message }: { message: Message }) {
         {isUser ? (
           <p className="text-sm whitespace-pre-wrap">{message.content}</p>
         ) : (
-          <div className="chat-message text-sm space-y-1.5">
-            {parseExerciseCards(cleanExerciseTableTags(message.content)).map((part, i) =>
-              part.type === 'exercise' ? (
-                <ExerciseCard key={i} name={part.name} details={part.details} />
-              ) : (
-                <MarkdownContent key={i} text={part.content} />
-              )
-            )}
+          <div className="chat-message text-sm">
+            {parseExerciseContent(message.content).map((part, i) => {
+              if (part.type === 'table') return <PipeTable key={i} header={part.header} rows={part.rows} />;
+              if (part.type === 'card') return <ExerciseCard key={i} name={part.name} details={part.details} />;
+              return <MarkdownContent key={i} text={part.content} />;
+            })}
           </div>
         )}
       </div>

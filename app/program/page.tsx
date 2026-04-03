@@ -5,9 +5,52 @@ import { ArrowLeft, ArrowRight, Loader2, Dumbbell, Save, Trash2, Clock, BookOpen
 import Link from 'next/link';
 import Navigation from '@/components/Navigation';
 import ProgramMarkdown from '@/components/ProgramMarkdown';
-import { SavedProgram } from '@/lib/program-history';
 import { useAuth } from '@/components/AuthProvider';
-import { dbGetSavedPrograms, dbSaveProgram, dbDeleteProgram, dbSetActiveProgram } from '@/lib/db';
+
+// Direct localStorage helpers — no db.ts wrapper
+const EC_PROGRAMS_KEY = 'ec_saved_programs';
+const EC_ACTIVE_KEY = 'ec_active_program_id';
+
+interface SavedProgram {
+  id: string;
+  title: string;
+  answers: Record<string, string>;
+  content: string;
+  createdAt: number;
+  isActive?: boolean;
+}
+
+function lsReadPrograms(): SavedProgram[] {
+  try {
+    const raw = localStorage.getItem(EC_PROGRAMS_KEY);
+    if (!raw) return [];
+    return JSON.parse(raw) as SavedProgram[];
+  } catch (e) {
+    console.error('[lsReadPrograms] parse error, clearing:', e);
+    localStorage.removeItem(EC_PROGRAMS_KEY);
+    return [];
+  }
+}
+
+function lsWritePrograms(programs: SavedProgram[]): void {
+  try {
+    localStorage.setItem(EC_PROGRAMS_KEY, JSON.stringify(programs));
+    console.log('[lsWritePrograms] saved', programs.length, 'programs');
+  } catch (e) {
+    console.error('[lsWritePrograms] FAILED:', e);
+  }
+}
+
+function lsGetActiveId(): string | null {
+  try { return localStorage.getItem(EC_ACTIVE_KEY); } catch { return null; }
+}
+
+function lsSetActiveId(id: string | null): void {
+  try {
+    if (id) localStorage.setItem(EC_ACTIVE_KEY, id);
+    else localStorage.removeItem(EC_ACTIVE_KEY);
+  } catch { /* ignore */ }
+}
 
 interface Question {
   id: string;
@@ -119,12 +162,12 @@ export default function ProgramPage() {
     });
   }, []);
 
-  const refreshPrograms = async () => {
-    if (!user) return;
-    console.log('[ProgramPage] refreshPrograms called for user:', user.id);
-    const programs = await dbGetSavedPrograms(user.id);
-    console.log('[ProgramPage] got', programs.length, 'saved programs:', programs.map(p => ({ id: p.id, title: p.title, isActive: p.isActive })));
-    setSavedPrograms(programs);
+  const refreshPrograms = () => {
+    const programs = lsReadPrograms();
+    const activeId = lsGetActiveId();
+    const withActive = programs.map(p => ({ ...p, isActive: p.id === activeId }));
+    console.log('[ProgramPage] refreshPrograms:', withActive.length, 'programs, activeId:', activeId);
+    setSavedPrograms(withActive);
   };
   useEffect(() => { refreshPrograms(); // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
@@ -204,7 +247,7 @@ Include dedicated RECOVERY DAY(s) on the off-days in the weekly schedule. For ea
    - Example: "Compression boots — 20 min on legs" or "Ice bath — 3-5 min cold immersion"
 2. Include specific timing for each activity (e.g., "Foam roll quads — 2 min each side")
 3. Format with a bold day header like **Day X — Recovery Day**
-4. Format as numbered lists like: 1. Foam Rolling — Full body — 10 min
+4. Format as pipe-separated lines: Activity | Duration | Notes
 5. Target these recovery goals: ${recoveryGoals}
 6. Total routine should be 20-40 minutes
 7. Do NOT suggest equipment the user does not have`
@@ -222,7 +265,10 @@ Include dedicated RECOVERY DAY(s) on the off-days in the weekly schedule. For ea
 - Sport focus: ${answers.sport || 'General'}${answers.sport_focus ? `\n- Sport aspects to focus on: ${answers.sport_focus}` : ''}${answers.sport_movement ? `\n- Specific movements/skills to improve: ${answers.sport_movement}` : ''}
 - Cardio preference: ${answers.cardio || 'No preference'}${recoverySection}
 
-Build a full weekly program. For each day, include: warm-up, main lifts (sets x reps, RPE, rest), accessories, conditioning if requested, and cool-down. Format ALL exercises as numbered lists like: 1. Exercise Name — Sets x Reps — RPE X — Rest Y. Do NOT use tables or pipe characters. Include progression rules and deload guidance.`;
+Build a full weekly program. For each day, include: warm-up, main lifts, accessories, conditioning if requested, and cool-down. Format ALL exercises using pipe-separated lines with a header row like:
+Exercise | Sets | Reps | RPE | Rest
+Bench Press | 4 | 8 | 7-8 | 3 min
+Do NOT use markdown table separators (|---|---|). Include progression rules and deload guidance.`;
 
     try {
       // Switch to result view immediately to show streaming content
@@ -270,69 +316,63 @@ Build a full weekly program. For each day, include: warm-up, main lifts (sets x 
     } finally { setLoading(false); }
   };
 
-  const handleSaveProgram = async () => {
-    console.log('[handleSaveProgram] called, program length:', program?.length, 'user:', user?.id, 'status:', saveStatus);
-    if (!program || !user || saveStatus === 'saving') {
-      console.log('[handleSaveProgram] early return — missing program/user or already saving');
-      return;
-    }
+  const handleSaveProgram = () => {
+    console.log('[handleSaveProgram] called, program length:', program?.length);
+    if (!program || saveStatus === 'saving') return;
     setSaveStatus('saving');
     try {
-      // Check localStorage capacity first
-      const contentSize = new Blob([program]).size;
-      console.log('[handleSaveProgram] program content size:', (contentSize / 1024).toFixed(1), 'KB');
-      if (contentSize > 4 * 1024 * 1024) {
-        throw new Error('Program too large for storage');
-      }
+      // 1. Test localStorage works at all
+      const testKey = 'ec_test_save';
+      localStorage.setItem(testKey, 'hello');
+      const readBack = localStorage.getItem(testKey);
+      console.log('[handleSaveProgram] localStorage test:', readBack);
+      localStorage.removeItem(testKey);
 
+      // 2. Save program directly
       const programId = crypto.randomUUID();
       const title = `${answers.goal || 'Custom'} - ${answers.days || '?'} days/wk`;
-      const saved: SavedProgram = {
+      const newProgram: SavedProgram = {
         id: programId,
         title,
         answers,
         content: program,
         createdAt: Date.now(),
       };
-      console.log('[handleSaveProgram] saving program:', saved.id, saved.title);
-      await dbSaveProgram(user.id, saved);
-      console.log('[handleSaveProgram] dbSaveProgram completed');
-      await dbSetActiveProgram(user.id, saved.id);
-      console.log('[handleSaveProgram] dbSetActiveProgram completed');
 
-      // Force re-read from storage to confirm save worked
-      const freshPrograms = await dbGetSavedPrograms(user.id);
-      setSavedPrograms(freshPrograms);
-      const found = freshPrograms.find(p => p.id === programId);
-      console.log('[handleSaveProgram] verified save:', found ? 'FOUND in list' : 'NOT found in list', 'total programs:', freshPrograms.length);
+      const existing = lsReadPrograms();
+      existing.unshift(newProgram);
+      lsWritePrograms(existing.slice(0, 20));
 
+      // 3. Set as active
+      lsSetActiveId(programId);
+
+      // 4. Verify
+      const verify = lsReadPrograms();
+      const found = verify.find(p => p.id === programId);
+      console.log('[handleSaveProgram] verified:', found ? 'FOUND' : 'NOT FOUND', 'total:', verify.length);
+
+      if (!found) {
+        alert('Save verification failed! Programs: ' + verify.length);
+        throw new Error('Verification failed');
+      }
+
+      refreshPrograms();
       setSaveStatus('saved');
       setTimeout(() => setSaveStatus('idle'), 3000);
     } catch (err) {
       console.error('[handleSaveProgram] FAILED:', err);
-      // Try to recover corrupted localStorage
-      try {
-        const raw = localStorage.getItem('elite-coach-saved-programs');
-        if (raw) {
-          JSON.parse(raw); // test if valid JSON
-        }
-      } catch {
-        console.warn('[handleSaveProgram] localStorage corrupted, clearing');
-        localStorage.removeItem('elite-coach-saved-programs');
-      }
       setSaveStatus('error');
       setTimeout(() => setSaveStatus('idle'), 3000);
     }
   };
 
-  const handleSetActive = async (p: SavedProgram) => {
-    if (!user) return;
-    await dbSetActiveProgram(user.id, p.id);
-    await refreshPrograms();
+  const handleSetActive = (p: SavedProgram) => {
+    lsSetActiveId(p.id);
+    refreshPrograms();
   };
 
-  const handleSavePastedWorkout = async () => {
-    if (!pasteInput.trim() || !user) return;
+  const handleSavePastedWorkout = () => {
+    if (!pasteInput.trim()) return;
     const saved: SavedProgram = {
       id: crypto.randomUUID(),
       title: 'My Custom Workout',
@@ -340,19 +380,22 @@ Build a full weekly program. For each day, include: warm-up, main lifts (sets x 
       content: pasteInput.trim(),
       createdAt: Date.now(),
     };
-    await dbSaveProgram(user.id, saved);
-    await dbSetActiveProgram(user.id, saved.id);
-    await refreshPrograms();
+    const existing = lsReadPrograms();
+    existing.unshift(saved);
+    lsWritePrograms(existing.slice(0, 20));
+    lsSetActiveId(saved.id);
+    refreshPrograms();
     setPasteInput('');
     setView('saved');
   };
 
-  const handleDeleteProgram = async (id: string) => {
+  const handleDeleteProgram = (id: string) => {
     console.log('[ProgramPage] deleting program:', id);
-    await dbDeleteProgram(id);
-    console.log('[ProgramPage] delete complete, refreshing list');
+    const programs = lsReadPrograms();
+    lsWritePrograms(programs.filter(p => p.id !== id));
+    if (lsGetActiveId() === id) lsSetActiveId(null);
     setConfirmDelete(null);
-    await refreshPrograms();
+    refreshPrograms();
     if (viewingProgram?.id === id) { setViewingProgram(null); setView('menu'); }
   };
 

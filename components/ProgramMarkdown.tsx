@@ -1,18 +1,17 @@
 'use client';
 
 import ReactMarkdown from 'react-markdown';
-import { ExerciseCard, parseExerciseCards, cleanExerciseTableTags } from './ExerciseTable';
+import { PipeTable, ExerciseCard, parseExerciseContent } from './ExerciseTable';
 
 export default function ProgramMarkdown({ content }: { content: string }) {
-  const cleaned = cleanExerciseTableTags(content);
-  const parts = parseExerciseCards(cleaned);
+  const parts = parseExerciseContent(content);
 
   return (
-    <div className="program-content text-sm space-y-1.5">
-      {parts.map((part, i) =>
-        part.type === 'exercise' ? (
-          <ExerciseCard key={i} name={part.name} details={part.details} />
-        ) : (
+    <div className="program-content text-sm">
+      {parts.map((part, i) => {
+        if (part.type === 'table') return <PipeTable key={i} header={part.header} rows={part.rows} />;
+        if (part.type === 'card') return <ExerciseCard key={i} name={part.name} details={part.details} />;
+        return (
           <div key={i}>
             <ReactMarkdown
               components={{
@@ -26,6 +25,7 @@ export default function ProgramMarkdown({ content }: { content: string }) {
                 strong: ({ children }) => <strong className="font-bold text-[#111827]">{children}</strong>,
                 em: ({ children }) => <em className="text-[#6b7280]">{children}</em>,
                 hr: () => <hr className="my-4 border-[#e5e7eb]" />,
+                // Fallback for any markdown tables that slip through
                 table: ({ children }) => (
                   <div className="mb-4 overflow-x-auto rounded-lg border border-[#e5e7eb] shadow-sm">
                     <table className="w-full text-sm border-collapse min-w-[360px]">{children}</table>
@@ -47,8 +47,8 @@ export default function ProgramMarkdown({ content }: { content: string }) {
               {part.content}
             </ReactMarkdown>
           </div>
-        )
-      )}
+        );
+      })}
     </div>
   );
 }

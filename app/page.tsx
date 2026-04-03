@@ -2,12 +2,164 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { MessageSquare, Zap, Flame, Trophy, Calendar, Play, Pause, RotateCcw, Timer, Dumbbell, Heart, SkipForward, Trash2, TrendingUp, Scale, Plus } from 'lucide-react';
+import { MessageSquare, Zap, Flame, Trophy, Calendar, Play, Pause, RotateCcw, Timer, Dumbbell, Heart, SkipForward, Trash2, TrendingUp, Scale, Plus, Check } from 'lucide-react';
 import Navigation from '@/components/Navigation';
 import ProgramMarkdown from '@/components/ProgramMarkdown';
 import { useAuth } from '@/components/AuthProvider';
-import { dbGetWorkoutStats, dbGetWeeklyStats, dbGetActiveProgram, dbDeleteProgram, DbWorkoutStats, dbGetUserProfile, dbSaveUserProfile, UserProfile, dbGetDarkMode, dbGetBodyStats, dbSaveBodyStat, BodyStatEntry } from '@/lib/db';
-import { SavedProgram } from '@/lib/program-history';
+import { dbGetUserProfile, dbSaveUserProfile, UserProfile, dbGetDarkMode, dbGetBodyStats, dbSaveBodyStat, BodyStatEntry } from '@/lib/db';
+
+// Direct localStorage keys — same as program page
+const EC_PROGRAMS_KEY = 'ec_saved_programs';
+const EC_ACTIVE_KEY = 'ec_active_program_id';
+const EC_WORKOUT_LOGS_KEY = 'ec_workout_logs';
+const EC_COMPLETIONS_KEY = 'ec_workout_completions';
+
+interface SavedProgram {
+  id: string;
+  title: string;
+  answers: Record<string, string>;
+  content: string;
+  createdAt: number;
+}
+
+interface WorkoutLogEntry {
+  exerciseName: string;
+  weight: number;
+  reps: number;
+  sets: number;
+  date: string;
+  estimated1RM: number;
+}
+
+interface WorkoutCompletion {
+  date: string;
+  dayName: string;
+  timestamp: number;
+}
+
+function calculate1RM(weight: number, reps: number): number {
+  if (reps <= 0 || weight <= 0) return 0;
+  if (reps === 1) return weight;
+  return Math.round(weight * (1 + reps / 30));
+}
+
+function lsGetActiveProgram(): SavedProgram | null {
+  try {
+    const activeId = localStorage.getItem(EC_ACTIVE_KEY);
+    if (!activeId) return null;
+    const raw = localStorage.getItem(EC_PROGRAMS_KEY);
+    if (!raw) return null;
+    const programs = JSON.parse(raw) as SavedProgram[];
+    return programs.find(p => p.id === activeId) || null;
+  } catch { return null; }
+}
+
+function lsGetWorkoutLogs(): WorkoutLogEntry[] {
+  try {
+    const raw = localStorage.getItem(EC_WORKOUT_LOGS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch { return []; }
+}
+
+function lsSaveWorkoutLog(entry: WorkoutLogEntry): void {
+  try {
+    const logs = lsGetWorkoutLogs();
+    logs.push(entry);
+    localStorage.setItem(EC_WORKOUT_LOGS_KEY, JSON.stringify(logs.slice(-500)));
+  } catch { /* ignore */ }
+}
+
+function lsGetLastLog(exerciseName: string): WorkoutLogEntry | null {
+  const logs = lsGetWorkoutLogs();
+  for (let i = logs.length - 1; i >= 0; i--) {
+    if (logs[i].exerciseName.toLowerCase() === exerciseName.toLowerCase()) return logs[i];
+  }
+  return null;
+}
+
+function lsGetCompletions(): WorkoutCompletion[] {
+  try {
+    const raw = localStorage.getItem(EC_COMPLETIONS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch { return []; }
+}
+
+function lsSaveCompletion(c: WorkoutCompletion): void {
+  try {
+    const completions = lsGetCompletions();
+    completions.push(c);
+    localStorage.setItem(EC_COMPLETIONS_KEY, JSON.stringify(completions.slice(-200)));
+  } catch { /* ignore */ }
+}
+
+function getWeekCompletions(): WorkoutCompletion[] {
+  const now = new Date();
+  const dayOfWeek = now.getDay();
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - ((dayOfWeek + 6) % 7));
+  const mondayStr = monday.toISOString().slice(0, 10);
+  return lsGetCompletions().filter(c => c.date >= mondayStr);
+}
+
+function getStreak(): number {
+  const completions = lsGetCompletions();
+  if (completions.length === 0) return 0;
+  const dates = Array.from(new Set(completions.map(c => c.date))).sort().reverse();
+  let streak = 0;
+  const d = new Date();
+  for (let i = 0; i < 365; i++) {
+    const key = d.toISOString().slice(0, 10);
+    if (dates.includes(key)) {
+      streak++;
+    } else if (i > 0) {
+      break;
+    }
+    d.setDate(d.getDate() - 1);
+  }
+  return streak;
+}
+
+function getWeekVolume(): number {
+  const now = new Date();
+  const dayOfWeek = now.getDay();
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - ((dayOfWeek + 6) % 7));
+  const mondayStr = monday.toISOString().slice(0, 10);
+  const logs = lsGetWorkoutLogs().filter(l => l.date >= mondayStr);
+  return logs.reduce((sum, l) => sum + (l.weight * l.reps * l.sets), 0);
+}
+
+function parseExercisesFromContent(content: string): { name: string; line: string }[] {
+  const lines = content.split('\n');
+  const exercises: { name: string; line: string }[] = [];
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+    // Pipe-separated: "Bench Press | 4 | 8 | 7-8 | 3 min"
+    if (trimmed.includes('|') && !trimmed.startsWith('#')) {
+      const parts = trimmed.split('|').map(p => p.trim());
+      const name = parts[0].replace(/\*\*/g, '').trim();
+      // Skip header rows
+      if (['exercise', 'activity', 'movement', 'sets'].includes(name.toLowerCase())) continue;
+      if (name.length > 2) exercises.push({ name, line: trimmed });
+      continue;
+    }
+    // Numbered list: "1. Bench Press — 4 x 8 — RPE 7"
+    const numberedMatch = trimmed.match(/^\d+\.\s+(.+?)\s*[\u2014\u2013\-]\s+(.+)$/);
+    if (numberedMatch) {
+      const name = numberedMatch[1].replace(/\*\*/g, '').trim();
+      if (name.length > 2) exercises.push({ name, line: trimmed });
+      continue;
+    }
+    // Fallback: has sets notation
+    if (/\d+\s*[xX\u00d7]\s*\d+/.test(trimmed) || /\d+\s*sets?/i.test(trimmed)) {
+      const cleaned = trimmed.replace(/^[-*|]\s*/, '').replace(/^\d+\.\s*/, '').replace(/\*\*/g, '').trim();
+      const name = cleaned.split(/[|]|[\d]+\s*[xX\u00d7]/)[0].trim();
+      if (name.length > 2) exercises.push({ name, line: cleaned });
+    }
+  }
+  return exercises;
+}
 
 interface ProgramDay {
   header: string;
@@ -81,9 +233,11 @@ function parseProgramDays(content: string): ProgramDay[] {
 
 export default function HomePage() {
   const { user } = useAuth();
-  const [stats, setStats] = useState<DbWorkoutStats | null>(null);
-  const [weekly, setWeekly] = useState({ workoutsThisWeek: 0, daysActive: 0 });
   const [activeProgram, setActiveProgram] = useState<SavedProgram | null>(null);
+  const [streak, setStreak] = useState(0);
+  const [weekCompletions, setWeekCompletions] = useState<WorkoutCompletion[]>([]);
+  const [weekVolume, setWeekVolume] = useState(0);
+  const [totalWorkouts, setTotalWorkouts] = useState(0);
 
   // Onboarding
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -95,6 +249,13 @@ export default function HomePage() {
   const [skippedDays, setSkippedDays] = useState<{ day: string; date: string }[]>([]);
   const [showDayContent, setShowDayContent] = useState(false);
   const [confirmDeleteProgram, setConfirmDeleteProgram] = useState(false);
+
+  // Weight logging for today's exercises
+  const [exerciseInputs, setExerciseInputs] = useState<Record<string, { weight: string; reps: string; sets: string }>>({});
+  const [loggedExercises, setLoggedExercises] = useState<Set<string>>(new Set());
+
+  // Workout completion
+  const [workoutDone, setWorkoutDone] = useState(false);
 
   // Body stats quick input
   const [bodyStatsEntries, setBodyStatsEntries] = useState<BodyStatEntry[]>([]);
@@ -108,22 +269,29 @@ export default function HomePage() {
   const [timerMode, setTimerMode] = useState<'stopwatch' | 'rest'>('stopwatch');
   const [restPreset, setRestPreset] = useState(90);
 
+  const refreshStats = () => {
+    setStreak(getStreak());
+    setWeekCompletions(getWeekCompletions());
+    setWeekVolume(getWeekVolume());
+    setTotalWorkouts(lsGetCompletions().length);
+  };
+
   useEffect(() => {
     if (!user) return;
-    (async () => {
-      const s = await dbGetWorkoutStats(user.id);
-      setStats(s);
-      setWeekly(dbGetWeeklyStats(s));
-      setActiveProgram(await dbGetActiveProgram(user.id));
-      // Check onboarding
-      const p = dbGetUserProfile();
-      setProfile(p);
-      if (!p || !p.onboardingComplete) setShowOnboarding(true);
-      setBodyStatsEntries(dbGetBodyStats());
-      // Apply dark mode
-      const dark = dbGetDarkMode();
-      document.documentElement.classList.toggle('dark', dark);
-    })();
+    setActiveProgram(lsGetActiveProgram());
+    refreshStats();
+    // Check onboarding
+    const p = dbGetUserProfile();
+    setProfile(p);
+    if (!p || !p.onboardingComplete) setShowOnboarding(true);
+    setBodyStatsEntries(dbGetBodyStats());
+    // Apply dark mode
+    const dark = dbGetDarkMode();
+    document.documentElement.classList.toggle('dark', dark);
+    // Check if today's workout is done
+    const today = new Date().toISOString().slice(0, 10);
+    const todayDone = lsGetCompletions().some(c => c.date === today);
+    if (todayDone) setWorkoutDone(true);
   }, [user]);
 
   const handleOnboardingComplete = () => {
@@ -212,16 +380,48 @@ export default function HomePage() {
     // Don't advance — keep showing the same day so they do it next time
   };
 
-  const handleDeleteActiveProgram = async () => {
+  const handleDeleteActiveProgram = () => {
     if (!activeProgram) return;
-    console.log('[HomePage] deleting active program:', activeProgram.id, activeProgram.title);
-    await dbDeleteProgram(activeProgram.id);
-    console.log('[HomePage] delete complete, clearing UI');
+    try {
+      const raw = localStorage.getItem(EC_PROGRAMS_KEY);
+      if (raw) {
+        const programs = JSON.parse(raw) as SavedProgram[];
+        localStorage.setItem(EC_PROGRAMS_KEY, JSON.stringify(programs.filter(p => p.id !== activeProgram.id)));
+      }
+      localStorage.removeItem(EC_ACTIVE_KEY);
+      localStorage.removeItem('elite-coach-selected-day-idx');
+    } catch { /* ignore */ }
     setActiveProgram(null);
     setShowDayContent(false);
     setSelectedDayIdx(0);
     setConfirmDeleteProgram(false);
-    try { localStorage.removeItem('elite-coach-selected-day-idx'); } catch {}
+  };
+
+  const handleLogSet = (exerciseName: string) => {
+    const key = exerciseName.toLowerCase();
+    const input = exerciseInputs[key];
+    if (!input?.weight || !input?.reps) return;
+    const weight = parseFloat(input.weight);
+    const reps = parseInt(input.reps);
+    const sets = parseInt(input.sets) || 1;
+    const est1RM = calculate1RM(weight, reps);
+    lsSaveWorkoutLog({
+      exerciseName,
+      weight,
+      reps,
+      sets,
+      date: new Date().toISOString().slice(0, 10),
+      estimated1RM: est1RM,
+    });
+    setLoggedExercises(prev => { const s = new Set(Array.from(prev)); s.add(key); return s; });
+    setExerciseInputs(prev => ({ ...prev, [key]: { weight: '', reps: '', sets: '' } }));
+  };
+
+  const handleCompleteWorkout = () => {
+    const today = new Date().toISOString().slice(0, 10);
+    lsSaveCompletion({ date: today, dayName: selectedDay?.header || 'Workout', timestamp: Date.now() });
+    setWorkoutDone(true);
+    refreshStats();
   };
 
   return (
@@ -276,43 +476,55 @@ export default function HomePage() {
         )}
       </div>
 
-      {stats && stats.totalWorkouts > 0 && (
+      {totalWorkouts > 0 && (
         <div className="px-4 mb-6 flex gap-3">
           <div className="flex-1 rounded-xl bg-white border border-[#e5e7eb] p-3 text-center shadow-sm">
             <Flame size={16} className="mx-auto text-orange-500 mb-1" />
-            <p className="text-lg font-bold text-[#111827]">{stats.streak}</p>
+            <p className="text-lg font-bold text-[#111827]">{streak}</p>
             <p className="text-[10px] text-[#6b7280] uppercase">Day Streak</p>
           </div>
           <div className="flex-1 rounded-xl bg-white border border-[#e5e7eb] p-3 text-center shadow-sm">
             <Calendar size={16} className="mx-auto text-blue-500 mb-1" />
-            <p className="text-lg font-bold text-[#111827]">{weekly.daysActive}</p>
+            <p className="text-lg font-bold text-[#111827]">{weekCompletions.length}</p>
             <p className="text-[10px] text-[#6b7280] uppercase">This Week</p>
           </div>
           <div className="flex-1 rounded-xl bg-white border border-[#e5e7eb] p-3 text-center shadow-sm">
             <Trophy size={16} className="mx-auto text-yellow-500 mb-1" />
-            <p className="text-lg font-bold text-[#111827]">{stats.totalWorkouts}</p>
+            <p className="text-lg font-bold text-[#111827]">{totalWorkouts}</p>
             <p className="text-[10px] text-[#6b7280] uppercase">Total</p>
           </div>
         </div>
       )}
 
-      {/* Weekly Summary */}
-      {stats && stats.totalWorkouts > 0 && activeProgram && (
+      {/* Weekly Check-In Summary */}
+      {activeProgram && (
         <div className="px-4 mb-4">
           <div className="rounded-xl bg-blue-50 border border-blue-200 p-4">
             <div className="flex items-center gap-2 mb-2">
               <TrendingUp size={14} className="text-blue-600" />
-              <span className="text-xs font-medium text-blue-800 uppercase tracking-wider">This Week</span>
+              <span className="text-xs font-medium text-blue-800 uppercase tracking-wider">Weekly Check-In</span>
             </div>
             <p className="text-sm text-blue-900">
-              <strong>{weekly.daysActive}</strong> workout{weekly.daysActive !== 1 ? 's' : ''} completed
+              <strong>{weekCompletions.length}</strong> workout{weekCompletions.length !== 1 ? 's' : ''} completed
               {parseInt(activeProgram.answers?.days || '0') > 0 && (
                 <span> of <strong>{activeProgram.answers.days}</strong> planned</span>
               )}
-              {stats.streak > 1 && (
-                <span className="block mt-1 text-xs text-blue-700">{stats.streak}-day streak going strong!</span>
-              )}
             </p>
+            {weekVolume > 0 && (
+              <p className="text-xs text-blue-700 mt-1">Total volume: {weekVolume.toLocaleString()} lbs this week</p>
+            )}
+            {bodyStatsEntries.length > 1 && (() => {
+              const latest = bodyStatsEntries[bodyStatsEntries.length - 1];
+              const prev = bodyStatsEntries[bodyStatsEntries.length - 2];
+              if (latest.weight && prev.weight) {
+                const change = latest.weight - prev.weight;
+                return <p className="text-xs text-blue-700 mt-0.5">Body weight: {change > 0 ? '+' : ''}{change.toFixed(1)} lbs</p>;
+              }
+              return null;
+            })()}
+            {streak > 1 && (
+              <p className="text-xs text-blue-700 mt-0.5">{streak}-day streak going strong!</p>
+            )}
           </div>
         </div>
       )}
@@ -433,6 +645,81 @@ export default function HomePage() {
               {showDayContent && selectedDay && (
                 <div className="pt-2 border-t border-[#e5e7eb]">
                   <ProgramMarkdown content={selectedDay.content} />
+
+                  {/* Weight Logging for Exercises */}
+                  {!selectedDay.isRecovery && (() => {
+                    const exercises = parseExercisesFromContent(selectedDay.content);
+                    if (exercises.length === 0) return null;
+                    return (
+                      <div className="mt-4 border-t border-[#e5e7eb] pt-3">
+                        <h3 className="text-xs font-medium uppercase tracking-wider text-[#6b7280] mb-3">Log Your Sets</h3>
+                        <div className="space-y-2">
+                          {exercises.map((ex, idx) => {
+                            const key = ex.name.toLowerCase();
+                            const input = exerciseInputs[key] || { weight: '', reps: '', sets: '' };
+                            const lastLog = lsGetLastLog(ex.name);
+                            const isLogged = loggedExercises.has(key);
+                            const currentWeight = parseFloat(input.weight);
+                            const currentReps = parseInt(input.reps);
+                            const current1RM = currentWeight > 0 && currentReps > 0 ? calculate1RM(currentWeight, currentReps) : 0;
+                            const last1RM = lastLog ? calculate1RM(lastLog.weight, lastLog.reps) : 0;
+                            const isNewPR = current1RM > 0 && current1RM > last1RM && last1RM > 0;
+
+                            return (
+                              <div key={idx} className={`rounded-lg border p-3 ${isLogged ? 'border-green-200 bg-green-50' : 'border-[#e5e7eb] bg-white'}`}>
+                                <p className="font-medium text-sm text-[#111827] mb-1">{ex.name}</p>
+                                {lastLog && (
+                                  <p className="text-[10px] text-blue-600 mb-1">Last: {lastLog.weight}lbs x {lastLog.reps}r | Est. 1RM: {last1RM}lbs</p>
+                                )}
+                                {isLogged ? (
+                                  <p className="text-xs text-green-600 font-medium flex items-center gap-1"><Check size={12} /> Logged!</p>
+                                ) : (
+                                  <>
+                                    <div className="flex gap-1.5 mb-1">
+                                      <input type="number" inputMode="decimal" placeholder="lbs" value={input.weight}
+                                        onChange={e => setExerciseInputs(prev => ({ ...prev, [key]: { ...input, weight: e.target.value } }))}
+                                        className="flex-1 rounded-lg border border-[#e5e7eb] px-2 py-2 text-sm text-center" />
+                                      <input type="number" inputMode="numeric" placeholder="reps" value={input.reps}
+                                        onChange={e => setExerciseInputs(prev => ({ ...prev, [key]: { ...input, reps: e.target.value } }))}
+                                        className="w-16 rounded-lg border border-[#e5e7eb] px-2 py-2 text-sm text-center" />
+                                      <input type="number" inputMode="numeric" placeholder="sets" value={input.sets}
+                                        onChange={e => setExerciseInputs(prev => ({ ...prev, [key]: { ...input, sets: e.target.value } }))}
+                                        className="w-16 rounded-lg border border-[#e5e7eb] px-2 py-2 text-sm text-center" />
+                                      <button onClick={() => handleLogSet(ex.name)}
+                                        disabled={!input.weight || !input.reps}
+                                        className="rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-40">
+                                        Log
+                                      </button>
+                                    </div>
+                                    {current1RM > 0 && (
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-[10px] text-purple-600 font-medium">Est. 1RM: {current1RM} lbs</span>
+                                        {isNewPR && <span className="text-[10px] bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded-full font-bold animate-pulse">NEW PR!</span>}
+                                      </div>
+                                    )}
+                                  </>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+
+                        {/* Complete Workout Button */}
+                        {!workoutDone ? (
+                          <button onClick={handleCompleteWorkout}
+                            className="w-full mt-3 rounded-xl bg-green-600 py-3 text-sm font-bold text-white hover:bg-green-700 transition-colors flex items-center justify-center gap-2">
+                            <Check size={18} /> Complete Workout
+                          </button>
+                        ) : (
+                          <div className="mt-3 rounded-xl bg-green-50 border border-green-200 p-3 text-center">
+                            <Trophy size={24} className="mx-auto text-yellow-500 mb-1" />
+                            <p className="font-bold text-sm text-[#111827]">Workout Complete!</p>
+                            <p className="text-xs text-[#6b7280]">Streak: {streak} day{streak !== 1 ? 's' : ''}</p>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
               )}
 

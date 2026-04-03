@@ -2,14 +2,43 @@
 
 import { useState, useRef, useEffect, Suspense, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { ArrowLeft, Plus } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import ChatMessage from '@/components/ChatMessage';
 import ChatInput from '@/components/ChatInput';
 import LoadingDots from '@/components/LoadingDots';
 import { Message, ContentBlock, ApiMessage } from '@/types';
-import { useAuth } from '@/components/AuthProvider';
-import { dbGetConversations, dbSaveConversation, dbDeleteConversation, DbConversation } from '@/lib/db';
+
+// Direct localStorage — no db.ts wrapper
+const EC_CHAT_KEY = 'ec_chat_history';
+
+interface ChatConversation {
+  id: string;
+  title: string;
+  messages: Message[];
+  createdAt: number;
+  updatedAt: number;
+}
+
+function readConversations(): ChatConversation[] {
+  try {
+    const raw = localStorage.getItem(EC_CHAT_KEY);
+    if (!raw) return [];
+    return JSON.parse(raw) as ChatConversation[];
+  } catch (e) {
+    console.error('[readConversations] parse error:', e);
+    return [];
+  }
+}
+
+function writeConversations(convos: ChatConversation[]): void {
+  try {
+    localStorage.setItem(EC_CHAT_KEY, JSON.stringify(convos.slice(0, 20)));
+    console.log('[writeConversations] saved', convos.length, 'conversations');
+  } catch (e) {
+    console.error('[writeConversations] FAILED:', e);
+  }
+}
 
 const SUGGESTIONS = [
   'How should I bench press?',
@@ -23,13 +52,11 @@ const SUGGESTIONS = [
 function ChatPageInner() {
   const searchParams = useSearchParams();
   const topic = searchParams.get('topic');
-  const { user } = useAuth();
 
   const [convoId, setConvoId] = useState(() => crypto.randomUUID());
-  const [convoTitle, setConvoTitle] = useState('New Chat');
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
-  const [conversations, setConversations] = useState<DbConversation[]>([]);
+  const [conversations, setConversations] = useState<ChatConversation[]>([]);
   const [historyOpen, setHistoryOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -37,26 +64,31 @@ function ChatPageInner() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
 
-  // Load conversations list
+  // Load conversations list on mount
   useEffect(() => {
-    if (!user) return;
-    dbGetConversations(user.id).then(setConversations);
-  }, [user]);
+    const loaded = readConversations();
+    console.log('[ChatPage] loaded', loaded.length, 'conversations from localStorage');
+    setConversations(loaded);
+  }, []);
 
-  // Auto-save conversation to Supabase
+  // Save conversation after every message change
   useEffect(() => {
-    if (!user || messages.length === 0) return;
+    if (messages.length === 0) return;
     const title = messages.find(m => m.role === 'user')?.content.slice(0, 50) || 'New Chat';
-    setConvoTitle(title);
-    dbSaveConversation(user.id, {
+
+    const convos = readConversations();
+    const idx = convos.findIndex(c => c.id === convoId);
+    const updated: ChatConversation = {
       id: convoId,
       title,
       messages,
-      createdAt: Date.now(),
+      createdAt: idx >= 0 ? convos[idx].createdAt : Date.now(),
       updatedAt: Date.now(),
-    }).then(() => {
-      dbGetConversations(user.id).then(setConversations);
-    });
+    };
+    if (idx >= 0) convos[idx] = updated;
+    else convos.unshift(updated);
+    writeConversations(convos);
+    setConversations([...convos]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages]);
 
@@ -85,7 +117,6 @@ function ChatPageInner() {
         return { role: msg.role, content: msg.content };
       });
 
-      // Add placeholder assistant message for streaming
       const placeholderIdx = allMessages.length;
       setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
 
@@ -129,7 +160,6 @@ function ChatPageInner() {
       }
 
       if (!fullText) throw new Error('Empty response');
-      // Final update to ensure complete text
       setMessages(prev => {
         const updated = [...prev];
         updated[placeholderIdx] = { role: 'assistant', content: fullText };
@@ -138,7 +168,6 @@ function ChatPageInner() {
     } catch (err) {
       console.error(err);
       setMessages(prev => {
-        // Replace last message if it's an empty placeholder, otherwise append
         const last = prev[prev.length - 1];
         if (last?.role === 'assistant' && !last.content) {
           const updated = [...prev];
@@ -154,21 +183,20 @@ function ChatPageInner() {
 
   const startNewChat = () => {
     setConvoId(crypto.randomUUID());
-    setConvoTitle('New Chat');
     setMessages([]);
     setHistoryOpen(false);
   };
 
-  const loadConversation = (c: DbConversation) => {
+  const loadConversation = (c: ChatConversation) => {
     setConvoId(c.id);
-    setConvoTitle(c.title);
-    setMessages(c.messages as Message[]);
+    setMessages(c.messages);
     setHistoryOpen(false);
   };
 
-  const handleDeleteConvo = async (id: string) => {
-    await dbDeleteConversation(id);
-    if (user) setConversations(await dbGetConversations(user.id));
+  const handleDeleteConvo = (id: string) => {
+    const convos = readConversations().filter(c => c.id !== id);
+    writeConversations(convos);
+    setConversations(convos);
     if (id === convoId) startNewChat();
   };
 
@@ -182,7 +210,7 @@ function ChatPageInner() {
         </div>
         <div className="ml-auto flex items-center gap-3">
           <button onClick={startNewChat} className="p-1.5 rounded-lg bg-gray-100 text-[#6b7280] hover:text-[#111827] hover:bg-gray-200 transition-colors" title="New Chat"><Plus size={16} /></button>
-          <button onClick={() => setHistoryOpen(!historyOpen)} className="text-xs text-blue-600 font-medium">{historyOpen ? 'Close' : 'History'}</button>
+          <button onClick={() => setHistoryOpen(!historyOpen)} className="text-xs text-blue-600 font-medium">{historyOpen ? 'Close' : `History (${conversations.length})`}</button>
         </div>
       </div>
 
@@ -194,7 +222,7 @@ function ChatPageInner() {
           ) : conversations.map(c => (
             <div key={c.id} className={`flex items-center gap-2 py-1.5 ${c.id === convoId ? 'text-blue-600' : 'text-[#6b7280]'}`}>
               <button onClick={() => loadConversation(c)} className="flex-1 text-left text-xs truncate hover:text-[#111827]">{c.title}</button>
-              <button onClick={() => handleDeleteConvo(c.id)} className="text-[10px] text-[#9ca3af] hover:text-red-500">delete</button>
+              <button onClick={() => handleDeleteConvo(c.id)} className="text-[#9ca3af] hover:text-red-500 p-0.5"><Trash2 size={12} /></button>
             </div>
           ))}
         </div>

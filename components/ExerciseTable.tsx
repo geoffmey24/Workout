@@ -2,20 +2,83 @@
 
 import { ExternalLink } from 'lucide-react';
 
+// ── Styled HTML Table (primary renderer for pipe-separated data) ──
+
+interface PipeTableProps {
+  header: string[];
+  rows: string[][];
+}
+
+function PipeTable({ header, rows }: PipeTableProps) {
+  return (
+    <div className="mb-4 overflow-x-auto rounded-lg border border-[#e5e7eb] shadow-sm">
+      <table className="w-full text-sm border-collapse min-w-[360px]">
+        <thead>
+          <tr className="bg-[#1e3a5f]">
+            {header.map((h, i) => (
+              <th
+                key={i}
+                className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-white whitespace-nowrap"
+              >
+                {h}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, ri) => (
+            <tr
+              key={ri}
+              className={`${ri % 2 === 0 ? 'bg-white' : 'bg-[#f8f9fa]'} border-b border-[#e5e7eb] last:border-b-0`}
+            >
+              {row.map((cell, ci) => (
+                <td
+                  key={ci}
+                  className={`px-4 py-3 whitespace-nowrap ${ci === 0 ? 'font-medium text-[#111827]' : 'text-[#374151]'}`}
+                >
+                  {ci === 0 ? (
+                    <span className="inline-flex items-center gap-1.5">
+                      {cell}
+                      <a
+                        href={`https://www.youtube.com/results?search_query=${encodeURIComponent(cell + ' exercise form')}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-red-500 hover:text-red-600"
+                        title="Watch on YouTube"
+                      >
+                        <ExternalLink size={11} />
+                      </a>
+                    </span>
+                  ) : cell}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// ── Exercise Card (fallback for non-pipe formats) ──
+
 interface ExerciseCardProps {
   name: string;
   details: string[];
 }
 
 function ExerciseCard({ name, details }: ExerciseCardProps) {
-  const youtubeUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(name + ' exercise form')}`;
-  const exrxUrl = `https://exrx.net/Lists/ExList/${encodeURIComponent(name.replace(/\s+/g, ''))}`;
-
   return (
     <div className="flex items-center justify-between gap-2 rounded-lg border border-[#e5e7eb] bg-white px-3 py-2.5 shadow-sm">
       <div className="flex items-center gap-2 min-w-0">
         <span className="font-semibold text-sm text-[#111827] truncate">{name}</span>
-        <a href={youtubeUrl} target="_blank" rel="noopener noreferrer" className="shrink-0 text-red-500 hover:text-red-600" title="Watch on YouTube">
+        <a
+          href={`https://www.youtube.com/results?search_query=${encodeURIComponent(name + ' exercise form')}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="shrink-0 text-red-500 hover:text-red-600"
+          title="Watch on YouTube"
+        >
           <ExternalLink size={12} />
         </a>
       </div>
@@ -39,73 +102,97 @@ function ExerciseCard({ name, details }: ExerciseCardProps) {
   );
 }
 
-/** Parse numbered exercise lines like "1. Bench Press — 4 x 8 — RPE 7-8 — Rest 3 min" */
-export function parseExerciseCards(text: string): Array<{ type: 'text'; content: string } | { type: 'exercise'; name: string; details: string[] }> {
-  const lines = text.split('\n');
-  const parts: Array<{ type: 'text'; content: string } | { type: 'exercise'; name: string; details: string[] }> = [];
-  let textBuffer: string[] = [];
+// ── Parser: detect pipe-tables, numbered exercise lists, or plain text ──
 
-  // Pattern: numbered list with em-dash or regular dash separated details
-  // Matches: "1. Exercise Name — details — details" or "1. Exercise Name - details - details"
-  // Also catches lines with pipe characters as fallback
-  const exercisePattern = /^\d+\.\s+(.+?)(?:\s*[\u2014\u2013\-]\s+|\s*\|\s*)(.+)$/;
-  // Fallback: lines with pipe characters (from old format)
-  const pipePattern = /^(.+?)\s*\|\s*(.+)$/;
-  // Simple numbered exercise with sets notation: "1. Exercise Name 4x8" or "1. Exercise Name — 4 x 8"
-  const simplePattern = /^\d+\.\s+(.+?)[\s\u2014\u2013\-]+(\d+\s*[xX\u00d7]\s*\d+.*)$/;
+type ParsedPart =
+  | { type: 'text'; content: string }
+  | { type: 'table'; header: string[]; rows: string[][] }
+  | { type: 'card'; name: string; details: string[] };
+
+export function parseExerciseContent(text: string): ParsedPart[] {
+  // Clean old tags
+  const cleaned = text.replace(/\[\/?\s*EXERCISE_TABLE\s*\]/g, '');
+  const lines = cleaned.split('\n');
+  const parts: ParsedPart[] = [];
+  let textBuffer: string[] = [];
+  let pipeBuffer: string[] = [];
+
+  function flushText() {
+    if (textBuffer.length > 0) {
+      const t = textBuffer.join('\n').trim();
+      if (t) parts.push({ type: 'text', content: t });
+      textBuffer = [];
+    }
+  }
+
+  function flushPipeTable() {
+    if (pipeBuffer.length < 2) {
+      // Not enough for header+row, push as text
+      if (pipeBuffer.length > 0) textBuffer.push(...pipeBuffer);
+      pipeBuffer = [];
+      return;
+    }
+    flushText();
+
+    // Filter out markdown separator lines like |---|---|
+    const dataLines = pipeBuffer.filter(l => !/^\s*\|?\s*[-:]+(\s*\|\s*[-:]+)+\s*\|?\s*$/.test(l));
+    if (dataLines.length < 2) {
+      textBuffer.push(...pipeBuffer);
+      pipeBuffer = [];
+      return;
+    }
+
+    const parseLine = (line: string) =>
+      line.replace(/^\|/, '').replace(/\|$/, '').split('|').map(c => c.trim());
+
+    const header = parseLine(dataLines[0]);
+    const rows = dataLines.slice(1).map(parseLine);
+    parts.push({ type: 'table', header, rows });
+    pipeBuffer = [];
+  }
+
+  const hasPipe = (line: string) => {
+    const trimmed = line.trim();
+    // Must have at least one | that isn't just a markdown separator
+    return trimmed.includes('|') && !/^[-:|s]+$/.test(trimmed) && !trimmed.startsWith('#') && !trimmed.startsWith('[');
+  };
+
+  // Numbered exercise pattern: "1. Exercise Name — 4 x 8 — RPE 7 — Rest 3 min"
+  const numberedExercisePattern = /^\d+\.\s+(.+?)\s*[\u2014\u2013\-]\s+(.+)$/;
 
   for (const line of lines) {
     const trimmed = line.trim();
-    if (!trimmed) {
-      textBuffer.push(line);
+
+    // Check for pipe-separated line
+    if (hasPipe(trimmed)) {
+      // If we were accumulating text, keep going
+      pipeBuffer.push(trimmed);
       continue;
     }
 
-    let match = trimmed.match(exercisePattern);
-    if (!match) match = trimmed.match(simplePattern);
-
-    // Fallback: try pipe pattern (catches old [EXERCISE_TABLE] content)
-    if (!match && trimmed.includes('|') && !trimmed.startsWith('#') && !trimmed.startsWith('[')) {
-      const pipeMatch = trimmed.match(pipePattern);
-      if (pipeMatch) {
-        // Skip header-like rows (contain "Exercise", "Sets", "Reps" etc.)
-        const firstPart = pipeMatch[1].trim().toLowerCase();
-        if (['exercise', 'activity', 'movement'].some(h => firstPart === h)) {
-          textBuffer.push(line);
-          continue;
-        }
-        match = pipeMatch;
-      }
+    // If we were in a pipe section and hit a non-pipe line, flush the table
+    if (pipeBuffer.length > 0) {
+      flushPipeTable();
     }
 
-    if (match) {
-      // Flush text buffer
-      if (textBuffer.length > 0) {
-        const text = textBuffer.join('\n').trim();
-        if (text) parts.push({ type: 'text', content: text });
-        textBuffer = [];
-      }
-
-      const name = match[1].trim().replace(/\*\*/g, '').replace(/^\d+\.\s*/, '');
-      const rest = match[2];
-      // Split remaining by em-dash, regular dash (surrounded by spaces), or pipe
-      const details = rest.split(/\s*[\u2014\u2013]\s*|\s*\|\s*/)
-        .map(d => d.trim())
-        .filter(d => d.length > 0);
-
-      parts.push({ type: 'exercise', name, details });
-    } else {
-      textBuffer.push(line);
+    // Check for numbered exercise line (fallback card format)
+    const numberedMatch = trimmed.match(numberedExercisePattern);
+    if (numberedMatch) {
+      flushText();
+      const name = numberedMatch[1].replace(/\*\*/g, '').trim();
+      const rest = numberedMatch[2];
+      const details = rest.split(/\s*[\u2014\u2013]\s*/).map(d => d.trim()).filter(d => d.length > 0);
+      parts.push({ type: 'card', name, details });
+      continue;
     }
+
+    textBuffer.push(line);
   }
 
-  // Flush remaining text
-  if (textBuffer.length > 0) {
-    const text = textBuffer.join('\n').trim();
-    if (text) parts.push({ type: 'text', content: text });
-  }
+  // Flush remaining
+  if (pipeBuffer.length > 0) flushPipeTable();
+  flushText();
 
-  // If nothing was parsed, return entire text
   if (parts.length === 0 && text.trim()) {
     parts.push({ type: 'text', content: text });
   }
@@ -113,10 +200,19 @@ export function parseExerciseCards(text: string): Array<{ type: 'text'; content:
   return parts;
 }
 
-// Also strip any remaining [EXERCISE_TABLE] tags from old content
-export function cleanExerciseTableTags(text: string): string {
-  return text.replace(/\[\/?\s*EXERCISE_TABLE\s*\]/g, '');
+// ── Renderer component ──
+
+export function ExerciseRenderer({ parts }: { parts: ParsedPart[] }) {
+  return (
+    <>
+      {parts.map((part, i) => {
+        if (part.type === 'table') return <PipeTable key={i} header={part.header} rows={part.rows} />;
+        if (part.type === 'card') return <ExerciseCard key={i} name={part.name} details={part.details} />;
+        return null; // text parts handled separately
+      })}
+    </>
+  );
 }
 
-export { ExerciseCard };
-export default ExerciseCard;
+export { PipeTable, ExerciseCard };
+export type { ParsedPart };

@@ -6,8 +6,94 @@ import Link from 'next/link';
 import Navigation from '@/components/Navigation';
 import ProgramMarkdown from '@/components/ProgramMarkdown';
 import { useAuth } from '@/components/AuthProvider';
-import { dbGetWorkoutStats, dbGetWeeklyStats, dbRecordWorkout, dbGetActiveProgram, DbWorkoutStats, dbGetLastEntry, dbSaveExerciseLogEntry, dbGetPersonalRecords, dbSaveWorkoutNote, ExerciseLogEntry } from '@/lib/db';
-import { SavedProgram } from '@/lib/program-history';
+
+// Direct localStorage keys
+const EC_PROGRAMS_KEY = 'ec_saved_programs';
+const EC_ACTIVE_KEY = 'ec_active_program_id';
+const EC_WORKOUT_LOGS_KEY = 'ec_workout_logs';
+const EC_COMPLETIONS_KEY = 'ec_workout_completions';
+
+interface SavedProgram {
+  id: string;
+  title: string;
+  answers: Record<string, string>;
+  content: string;
+  createdAt: number;
+}
+
+interface WorkoutLogEntry {
+  exerciseName: string;
+  weight: number;
+  reps: number;
+  sets: number;
+  date: string;
+  estimated1RM: number;
+}
+
+function lsGetActiveProgram(): SavedProgram | null {
+  try {
+    const activeId = localStorage.getItem(EC_ACTIVE_KEY);
+    if (!activeId) return null;
+    const raw = localStorage.getItem(EC_PROGRAMS_KEY);
+    if (!raw) return null;
+    const programs = JSON.parse(raw) as SavedProgram[];
+    return programs.find(p => p.id === activeId) || null;
+  } catch { return null; }
+}
+
+function lsGetWorkoutLogs(): WorkoutLogEntry[] {
+  try { return JSON.parse(localStorage.getItem(EC_WORKOUT_LOGS_KEY) || '[]'); } catch { return []; }
+}
+
+function lsSaveWorkoutLog(entry: WorkoutLogEntry): void {
+  try {
+    const logs = lsGetWorkoutLogs();
+    logs.push(entry);
+    localStorage.setItem(EC_WORKOUT_LOGS_KEY, JSON.stringify(logs.slice(-500)));
+  } catch { /* ignore */ }
+}
+
+function lsGetLastLog(exerciseName: string): WorkoutLogEntry | null {
+  const logs = lsGetWorkoutLogs();
+  for (let i = logs.length - 1; i >= 0; i--) {
+    if (logs[i].exerciseName.toLowerCase() === exerciseName.toLowerCase()) return logs[i];
+  }
+  return null;
+}
+
+function lsGetPersonalRecords(): Record<string, WorkoutLogEntry> {
+  const logs = lsGetWorkoutLogs();
+  const prs: Record<string, WorkoutLogEntry> = {};
+  for (const entry of logs) {
+    const key = entry.exerciseName.toLowerCase();
+    if (!prs[key] || entry.weight > prs[key].weight) prs[key] = entry;
+  }
+  return prs;
+}
+
+function lsSaveCompletion(dayName: string): void {
+  try {
+    const completions = JSON.parse(localStorage.getItem(EC_COMPLETIONS_KEY) || '[]');
+    completions.push({ date: new Date().toISOString().slice(0, 10), dayName, timestamp: Date.now() });
+    localStorage.setItem(EC_COMPLETIONS_KEY, JSON.stringify(completions.slice(-200)));
+  } catch { /* ignore */ }
+}
+
+function lsGetStreak(): number {
+  try {
+    const completions = JSON.parse(localStorage.getItem(EC_COMPLETIONS_KEY) || '[]') as { date: string }[];
+    if (completions.length === 0) return 0;
+    const dates = Array.from(new Set(completions.map(c => c.date))).sort().reverse();
+    let streak = 0;
+    const d = new Date();
+    for (let i = 0; i < 365; i++) {
+      if (dates.includes(d.toISOString().slice(0, 10))) streak++;
+      else if (i > 0) break;
+      d.setDate(d.getDate() - 1);
+    }
+    return streak;
+  } catch { return 0; }
+}
 
 function parseExercises(content: string): string[] {
   const lines = content.split('\n');
@@ -15,7 +101,17 @@ function parseExercises(content: string): string[] {
   for (const line of lines) {
     const trimmed = line.trim();
     if (!trimmed) continue;
-    // Match numbered list format: "1. Exercise Name — details"
+    // Pipe-separated: "Bench Press | 4 | 8 | 7-8 | 3 min"
+    if (trimmed.includes('|') && !trimmed.startsWith('#')) {
+      const parts = trimmed.split('|').map(p => p.trim());
+      const name = parts[0].replace(/\*\*/g, '').trim();
+      if (['exercise', 'activity', 'movement', 'sets'].includes(name.toLowerCase())) continue;
+      if (name.length > 2) {
+        exercises.push(parts.join(' | '));
+        continue;
+      }
+    }
+    // Numbered list: "1. Exercise Name — details"
     const numberedMatch = trimmed.match(/^\d+\.\s+(.+?)(?:\s*[\u2014\u2013\-]\s+|\s*\|\s*)(.+)$/);
     if (numberedMatch) {
       const name = numberedMatch[1].replace(/\*\*/g, '').trim();
@@ -52,26 +148,26 @@ export default function ProgressPage() {
   const { user } = useAuth();
   const [activeProgram, setActiveProgram] = useState<SavedProgram | null>(null);
   const [completed, setCompleted] = useState<Record<string, boolean>>({});
-  const [stats, setStats] = useState<DbWorkoutStats | null>(null);
-  const [weeklyStats, setWeeklyStats] = useState({ workoutsThisWeek: 0, daysActive: 0 });
+  const [streak, setStreak] = useState(0);
+  const [totalWorkouts, setTotalWorkouts] = useState(0);
   const [workoutDone, setWorkoutDone] = useState(false);
   const [viewMode, setViewMode] = useState<'checklist' | 'full' | 'prs'>('checklist');
   const [dataLoaded, setDataLoaded] = useState(false);
   const [exerciseWeights, setExerciseWeights] = useState<Record<string, { weight: string; reps: string; sets: string }>>({});
   const [workoutNote, setWorkoutNote] = useState('');
   const [noteSaved, setNoteSaved] = useState(false);
-  const [personalRecords, setPersonalRecords] = useState<Record<string, ExerciseLogEntry>>({});
+  const [personalRecords, setPersonalRecords] = useState<Record<string, WorkoutLogEntry>>({});
 
   useEffect(() => {
     if (!user) return;
-    (async () => {
-      const s = await dbGetWorkoutStats(user.id);
-      setStats(s);
-      setWeeklyStats(dbGetWeeklyStats(s));
-      setActiveProgram(await dbGetActiveProgram(user.id));
-      setPersonalRecords(dbGetPersonalRecords());
-      setDataLoaded(true);
-    })();
+    setActiveProgram(lsGetActiveProgram());
+    setPersonalRecords(lsGetPersonalRecords());
+    setStreak(lsGetStreak());
+    try {
+      const comps = JSON.parse(localStorage.getItem(EC_COMPLETIONS_KEY) || '[]');
+      setTotalWorkouts(comps.length);
+    } catch { /* ignore */ }
+    setDataLoaded(true);
   }, [user]);
 
   const exercises = activeProgram ? parseExercises(activeProgram.content) : [];
@@ -83,48 +179,41 @@ export default function ProgressPage() {
     const newCompleted = { ...completed, [key]: !completed[key] };
     setCompleted(newCompleted);
 
-    // If completing, save the weight log
     if (!completed[key]) {
       const exerciseName = extractExerciseName(exercises[idx]);
       const input = exerciseWeights[key];
       if (input?.weight) {
-        dbSaveExerciseLogEntry({
-          exercise: exerciseName,
+        const weight = parseFloat(input.weight);
+        const reps = parseInt(input.reps) || 0;
+        const sets = parseInt(input.sets) || 0;
+        lsSaveWorkoutLog({
+          exerciseName,
+          weight,
+          reps,
+          sets,
           date: new Date().toISOString().slice(0, 10),
-          weight: parseFloat(input.weight),
-          reps: parseInt(input.reps) || 0,
-          sets: parseInt(input.sets) || 0,
+          estimated1RM: calculate1RM(weight, reps),
         });
-        setPersonalRecords(dbGetPersonalRecords());
+        setPersonalRecords(lsGetPersonalRecords());
       }
     }
   };
 
   const handleCompleteWorkout = () => {
-    if (!user) return;
     setWorkoutDone(true);
-    dbRecordWorkout(user.id, 1).then(updated => {
-      setStats(updated);
-      setWeeklyStats(dbGetWeeklyStats(updated));
-    });
-    // Save note if any
+    lsSaveCompletion(activeProgram?.title || 'Workout');
+    setStreak(lsGetStreak());
+    try {
+      const comps = JSON.parse(localStorage.getItem(EC_COMPLETIONS_KEY) || '[]');
+      setTotalWorkouts(comps.length);
+    } catch { /* ignore */ }
     if (workoutNote.trim()) {
-      dbSaveWorkoutNote({
-        date: new Date().toISOString().slice(0, 10),
-        dayName: activeProgram?.title || 'Workout',
-        note: workoutNote.trim(),
-      });
       setNoteSaved(true);
     }
   };
 
   const handleSaveNote = () => {
     if (!workoutNote.trim()) return;
-    dbSaveWorkoutNote({
-      date: new Date().toISOString().slice(0, 10),
-      dayName: activeProgram?.title || 'Workout',
-      note: workoutNote.trim(),
-    });
     setNoteSaved(true);
     setTimeout(() => setNoteSaved(false), 2000);
   };
@@ -177,19 +266,15 @@ export default function ProgressPage() {
       </div>
 
       {/* Stats Bar */}
-      {stats && stats.totalWorkouts > 0 && (
+      {totalWorkouts > 0 && (
         <div className="px-4 py-3 flex gap-3">
           <div className="flex-1 rounded-xl bg-white border border-[#e5e7eb] p-3 text-center shadow-sm">
             <Flame size={14} className="mx-auto text-orange-500 mb-1" />
-            <p className="text-lg font-bold text-[#111827]">{stats.streak}<span className="text-xs text-[#6b7280] ml-0.5">d</span></p>
-          </div>
-          <div className="flex-1 rounded-xl bg-white border border-[#e5e7eb] p-3 text-center shadow-sm">
-            <Calendar size={14} className="mx-auto text-blue-500 mb-1" />
-            <p className="text-lg font-bold text-[#111827]">{weeklyStats.daysActive}</p>
+            <p className="text-lg font-bold text-[#111827]">{streak}<span className="text-xs text-[#6b7280] ml-0.5">d</span></p>
           </div>
           <div className="flex-1 rounded-xl bg-white border border-[#e5e7eb] p-3 text-center shadow-sm">
             <Trophy size={14} className="mx-auto text-yellow-500 mb-1" />
-            <p className="text-lg font-bold text-[#111827]">{stats.totalWorkouts}</p>
+            <p className="text-lg font-bold text-[#111827]">{totalWorkouts}</p>
           </div>
         </div>
       )}
@@ -220,7 +305,7 @@ export default function ProgressPage() {
             const key = `ex-${i}`;
             const done = completed[key] || false;
             const exerciseName = extractExerciseName(ex);
-            const lastEntry = dbGetLastEntry(exerciseName);
+            const lastEntry = lsGetLastLog(exerciseName);
             const input = exerciseWeights[key] || { weight: '', reps: '', sets: '' };
 
             return (
@@ -300,7 +385,7 @@ export default function ProgressPage() {
             <div className="mt-4 rounded-xl bg-green-50 border border-green-200 p-4 text-center">
               <Trophy size={32} className="mx-auto text-yellow-500 mb-2" />
               <h3 className="font-bold text-[#111827] mb-1">Workout Complete!</h3>
-              <p className="text-sm text-[#6b7280]">Great work! Your streak is now {stats?.streak || 1} day{(stats?.streak || 1) > 1 ? 's' : ''}.</p>
+              <p className="text-sm text-[#6b7280]">Great work! Your streak is now {streak} day{streak !== 1 ? 's' : ''}.</p>
             </div>
           )}
         </div>
