@@ -100,7 +100,11 @@ export default function ProgramPage() {
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   const refreshPrograms = async () => {
-    if (user) setSavedPrograms(await dbGetSavedPrograms(user.id));
+    if (!user) return;
+    console.log('[ProgramPage] refreshPrograms called for user:', user.id);
+    const programs = await dbGetSavedPrograms(user.id);
+    console.log('[ProgramPage] got', programs.length, 'saved programs:', programs.map(p => ({ id: p.id, title: p.title, isActive: p.isActive })));
+    setSavedPrograms(programs);
   };
   useEffect(() => { refreshPrograms(); // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);

@@ -2,17 +2,29 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { MessageSquare, Zap, Flame, Trophy, Calendar, Play, Pause, RotateCcw, Timer, Dumbbell, Heart, SkipForward, Trash2, TrendingUp } from 'lucide-react';
+import { MessageSquare, Zap, Flame, Trophy, Calendar, Play, Pause, RotateCcw, Timer, Dumbbell, Heart, SkipForward, Trash2, TrendingUp, Scale, Plus } from 'lucide-react';
 import Navigation from '@/components/Navigation';
 import ProgramMarkdown from '@/components/ProgramMarkdown';
 import { useAuth } from '@/components/AuthProvider';
-import { dbGetWorkoutStats, dbGetWeeklyStats, dbGetActiveProgram, dbDeleteProgram, DbWorkoutStats, dbGetUserProfile, dbSaveUserProfile, UserProfile, dbGetDarkMode } from '@/lib/db';
+import { dbGetWorkoutStats, dbGetWeeklyStats, dbGetActiveProgram, dbDeleteProgram, DbWorkoutStats, dbGetUserProfile, dbSaveUserProfile, UserProfile, dbGetDarkMode, dbGetBodyStats, dbSaveBodyStat, BodyStatEntry } from '@/lib/db';
 import { SavedProgram } from '@/lib/program-history';
 
 interface ProgramDay {
   header: string;
   content: string;
   isRecovery: boolean;
+}
+
+function cleanDayLabel(raw: string): string {
+  // Remove markdown: **, ##, etc.
+  let label = raw.replace(/\*\*/g, '').replace(/^#{1,3}\s*/, '').trim();
+  // Remove "Day X —" or "Day X:" prefix to get the training label
+  const dayMatch = label.match(/^(?:day\s*\d+\s*[:\u2014\u2013\-]\s*)(.*)/i);
+  if (dayMatch && dayMatch[1]) return dayMatch[1].trim();
+  // Remove weekday prefix: "Monday — Upper Body" -> "Upper Body"
+  const weekdayMatch = label.match(/^(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday)\s*[:\u2014\u2013\-]\s*(.*)/i);
+  if (weekdayMatch && weekdayMatch[1]) return weekdayMatch[1].trim();
+  return label;
 }
 
 function parseProgramDays(content: string): ProgramDay[] {
@@ -22,19 +34,26 @@ function parseProgramDays(content: string): ProgramDay[] {
   let currentLines: string[] = [];
 
   const dayPattern = /^(?:\*\*|#{1,3}\s+\*{0,2}).*(?:day\s*\d|day\s+\w|monday|tuesday|wednesday|thursday|friday|saturday|sunday|week\s*\d|recovery|rest\s+day|active\s+rest)/i;
+  // Skip metadata lines like "Schedule: 4 training days..."
+  const metadataPattern = /^(?:\*\*|#{1,3}\s+\*{0,2})?\s*(?:schedule|overview|notes|progression|deload|weekly|program\s+summary)/i;
 
   for (const line of lines) {
-    if (dayPattern.test(line.trim())) {
+    const trimmed = line.trim();
+    // Skip metadata headers
+    if (metadataPattern.test(trimmed)) continue;
+    if (dayPattern.test(trimmed)) {
       if (currentHeader) {
         const text = currentLines.join('\n').trim();
         const headerLower = currentHeader.toLowerCase();
+        const label = cleanDayLabel(currentHeader);
+        const isRecovery = headerLower.includes('recovery') || headerLower.includes('rest day') || headerLower.includes('active rest');
         days.push({
-          header: currentHeader.replace(/\*\*/g, '').trim(),
+          header: label,
           content: `${currentHeader}\n${text}`,
-          isRecovery: headerLower.includes('recovery') || headerLower.includes('rest day') || headerLower.includes('active rest'),
+          isRecovery,
         });
       }
-      currentHeader = line.trim();
+      currentHeader = trimmed;
       currentLines = [];
     } else {
       currentLines.push(line);
@@ -44,13 +63,20 @@ function parseProgramDays(content: string): ProgramDay[] {
   if (currentHeader) {
     const text = currentLines.join('\n').trim();
     const headerLower = currentHeader.toLowerCase();
+    const label = cleanDayLabel(currentHeader);
+    const isRecovery = headerLower.includes('recovery') || headerLower.includes('rest day') || headerLower.includes('active rest');
     days.push({
-      header: currentHeader.replace(/\*\*/g, '').trim(),
+      header: label,
       content: `${currentHeader}\n${text}`,
-      isRecovery: headerLower.includes('recovery') || headerLower.includes('rest day') || headerLower.includes('active rest'),
+      isRecovery,
     });
   }
-  return days;
+
+  // Number the days: "Day 1: Upper Body", "Day 2: Lower Body"
+  return days.map((day, idx) => ({
+    ...day,
+    header: `Day ${idx + 1}: ${day.header}`,
+  }));
 }
 
 export default function HomePage() {
@@ -70,6 +96,12 @@ export default function HomePage() {
   const [showDayContent, setShowDayContent] = useState(false);
   const [confirmDeleteProgram, setConfirmDeleteProgram] = useState(false);
 
+  // Body stats quick input
+  const [bodyStatsEntries, setBodyStatsEntries] = useState<BodyStatEntry[]>([]);
+  const [showWeightInput, setShowWeightInput] = useState(false);
+  const [quickWeight, setQuickWeight] = useState('');
+  const [quickBf, setQuickBf] = useState('');
+
   // Timer state
   const [timerSeconds, setTimerSeconds] = useState(0);
   const [timerRunning, setTimerRunning] = useState(false);
@@ -87,6 +119,7 @@ export default function HomePage() {
       const p = dbGetUserProfile();
       setProfile(p);
       if (!p || !p.onboardingComplete) setShowOnboarding(true);
+      setBodyStatsEntries(dbGetBodyStats());
       // Apply dark mode
       const dark = dbGetDarkMode();
       document.documentElement.classList.toggle('dark', dark);
@@ -428,6 +461,86 @@ export default function HomePage() {
             </div>
           </Link>
         )}
+      </div>
+
+      {/* Body Stats Quick Section */}
+      <div className="px-4 mb-6">
+        <div className="rounded-2xl border border-[#e5e7eb] bg-white p-4 shadow-sm">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Scale size={16} className="text-blue-600" />
+              <h2 className="text-xs font-medium uppercase tracking-wider text-[#6b7280]">Body Stats</h2>
+            </div>
+            <div className="flex items-center gap-2">
+              <button onClick={() => setShowWeightInput(!showWeightInput)} className="p-1 rounded-lg bg-blue-600 text-white hover:bg-blue-700">
+                <Plus size={14} />
+              </button>
+              <Link href="/body-stats" className="text-xs text-blue-600 font-medium">View All</Link>
+            </div>
+          </div>
+
+          {/* Quick weight input */}
+          {showWeightInput && (
+            <div className="mb-3 flex gap-2">
+              <input type="number" step="0.1" value={quickWeight} onChange={e => setQuickWeight(e.target.value)} placeholder="Weight (lbs)" className="flex-1 rounded-lg border border-[#e5e7eb] px-3 py-2 text-sm" />
+              <input type="number" step="0.1" value={quickBf} onChange={e => setQuickBf(e.target.value)} placeholder="BF %" className="w-20 rounded-lg border border-[#e5e7eb] px-3 py-2 text-sm" />
+              <button
+                onClick={() => {
+                  if (!quickWeight && !quickBf) return;
+                  dbSaveBodyStat({
+                    date: new Date().toISOString().slice(0, 10),
+                    weight: quickWeight ? parseFloat(quickWeight) : undefined,
+                    bodyFat: quickBf ? parseFloat(quickBf) : undefined,
+                  });
+                  setBodyStatsEntries(dbGetBodyStats());
+                  setQuickWeight(''); setQuickBf(''); setShowWeightInput(false);
+                }}
+                className="rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-700"
+              >
+                Save
+              </button>
+            </div>
+          )}
+
+          {/* Latest stats display */}
+          {bodyStatsEntries.length > 0 ? (
+            <div className="flex gap-4 text-sm">
+              {(() => {
+                const latest = bodyStatsEntries[bodyStatsEntries.length - 1];
+                const prev = bodyStatsEntries.length > 1 ? bodyStatsEntries[bodyStatsEntries.length - 2] : null;
+                const weightChange = latest.weight && prev?.weight ? latest.weight - prev.weight : null;
+                return (
+                  <>
+                    {latest.weight && (
+                      <div>
+                        <span className="text-[#6b7280] text-xs">Weight</span>
+                        <p className="font-bold text-[#111827]">
+                          {latest.weight} lbs
+                          {weightChange !== null && (
+                            <span className={`ml-1 text-xs font-medium ${weightChange > 0 ? 'text-orange-600' : weightChange < 0 ? 'text-green-600' : 'text-[#6b7280]'}`}>
+                              {weightChange > 0 ? '+' : ''}{weightChange.toFixed(1)}
+                            </span>
+                          )}
+                        </p>
+                      </div>
+                    )}
+                    {latest.bodyFat && (
+                      <div>
+                        <span className="text-[#6b7280] text-xs">Body Fat</span>
+                        <p className="font-bold text-[#111827]">{latest.bodyFat}%</p>
+                      </div>
+                    )}
+                    <div className="ml-auto text-right">
+                      <span className="text-[#9ca3af] text-[10px]">{new Date(latest.date).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+          ) : (
+            <p className="text-xs text-[#9ca3af]">Tap + to log your weight and body fat</p>
+          )}
+        </div>
       </div>
 
       {/* Skipped Days Log */}

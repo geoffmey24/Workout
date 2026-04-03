@@ -16,12 +16,23 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
   const [speechSupported, setSpeechSupported] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const recognitionRef = useRef<any>(null);
+  const wantListeningRef = useRef(false);
+  const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    setSpeechSupported(
+    const supported =
       typeof window !== 'undefined' &&
-      !!((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition)
-    );
+      !!((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition);
+    setSpeechSupported(supported);
+  }, []);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      wantListeningRef.current = false;
+      recognitionRef.current?.stop();
+      if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+    };
   }, []);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -52,26 +63,40 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
     }
   };
 
-  const toggleVoice = () => {
-    if (isListening) {
-      recognitionRef.current?.stop();
-      setIsListening(false);
+  const stopListening = () => {
+    wantListeningRef.current = false;
+    recognitionRef.current?.stop();
+    setIsListening(false);
+    if (silenceTimerRef.current) {
+      clearTimeout(silenceTimerRef.current);
+      silenceTimerRef.current = null;
+    }
+  };
+
+  const startListening = () => {
+    const SpeechRecognition =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert('Voice input is not supported in this browser. Try Chrome on desktop.');
       return;
     }
 
-    const SpeechRecognition =
-      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) return;
-
     try {
       const recognition = new SpeechRecognition();
-      recognition.continuous = false;
+      recognition.continuous = true;
       recognition.interimResults = true;
       recognition.lang = 'en-US';
 
       let finalTranscript = '';
 
       recognition.onresult = (event: any) => {
+        // Reset silence timer on every result
+        if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+        silenceTimerRef.current = setTimeout(() => {
+          // Auto-stop after 4s of silence
+          stopListening();
+        }, 4000);
+
         let interim = '';
         for (let i = 0; i < event.results.length; i++) {
           if (event.results[i].isFinal) {
@@ -84,25 +109,58 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
       };
 
       recognition.onend = () => {
-        setIsListening(false);
-        // Auto-populate the final transcript
-        if (finalTranscript) {
-          setText(finalTranscript);
+        // If we still want to be listening (user didn't tap stop),
+        // restart recognition (handles browser auto-stop on mobile)
+        if (wantListeningRef.current) {
+          try {
+            recognition.start();
+          } catch {
+            setIsListening(false);
+            wantListeningRef.current = false;
+          }
+        } else {
+          setIsListening(false);
+          if (finalTranscript) {
+            setText(finalTranscript);
+          }
         }
       };
 
       recognition.onerror = (event: any) => {
-        setIsListening(false);
+        console.log('[SpeechRecognition] error:', event.error);
         if (event.error === 'not-allowed') {
           alert('Microphone access denied. Please allow microphone access in your browser settings.');
+          wantListeningRef.current = false;
+          setIsListening(false);
+        } else if (event.error === 'no-speech') {
+          // No speech detected — keep listening if user hasn't stopped
+          // recognition.onend will handle restart
+        } else {
+          wantListeningRef.current = false;
+          setIsListening(false);
         }
       };
 
       recognitionRef.current = recognition;
+      wantListeningRef.current = true;
       recognition.start();
       setIsListening(true);
+
+      // Set initial silence timer
+      silenceTimerRef.current = setTimeout(() => {
+        stopListening();
+      }, 6000);
     } catch {
       setIsListening(false);
+      wantListeningRef.current = false;
+    }
+  };
+
+  const toggleVoice = () => {
+    if (isListening) {
+      stopListening();
+    } else {
+      startListening();
     }
   };
 
@@ -121,6 +179,12 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
           >
             <X size={14} />
           </button>
+        </div>
+      )}
+      {isListening && (
+        <div className="mb-2 flex items-center gap-2 rounded-lg bg-red-50 border border-red-200 px-3 py-2">
+          <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
+          <span className="text-xs font-medium text-red-700">Listening... tap mic to stop</span>
         </div>
       )}
       <div className="flex items-end gap-2">
