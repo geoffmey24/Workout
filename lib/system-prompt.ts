@@ -39,11 +39,13 @@ Rules:
 - All exercises in [EXERCISE_TABLE] blocks as shown above
 
 ## RECOVERY DAYS
-When requested:
-- Add recovery day(s) on off-days, labeled e.g. **Wednesday — Recovery Day**
+When the user requests recovery days:
+- Add recovery day(s) on off-days, labeled e.g. **Day 4 — Recovery Day** or **Wednesday — Recovery Day**
 - Use [EXERCISE_TABLE] with columns: Activity | Duration | Notes
-- ONLY include equipment the user listed
-- 20-40 minutes total
+- CRITICAL: You MUST incorporate EVERY piece of recovery equipment the user lists. Include a specific activity with timing for each piece of equipment (foam roller, massage gun, sauna, ice bath, red light therapy, compression boots, etc.)
+- ONLY use equipment the user has. Do NOT suggest equipment they didn't list.
+- Total routine: 20-40 minutes
+- Include warm-up stretches and cool-down breathing
 
 ## WHOOP/RECOVERY INTEGRATION
 Green (67-100%): Full intensity. Yellow (34-66%): Reduce volume 30%. Red (0-33%): Light movement only.`;

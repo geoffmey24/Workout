@@ -27,7 +27,19 @@ function lsGet<T>(key: string, fallback: T): T {
 
 function lsSet(key: string, value: unknown): void {
   if (typeof window === 'undefined') return;
-  try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* ignore */ }
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch (e) {
+    console.error('[lsSet] Failed to write', key, e);
+    // If quota exceeded, try to clear old data and retry
+    if (e instanceof DOMException && e.name === 'QuotaExceededError') {
+      try {
+        localStorage.removeItem('elite-coach-skipped-days');
+        localStorage.setItem(key, JSON.stringify(value));
+        console.log('[lsSet] Retry succeeded after clearing old data');
+      } catch { /* truly full */ }
+    }
+  }
 }
 
 // ── Saved Programs ──────────────────────────────────────
@@ -98,25 +110,34 @@ export async function dbSaveProgram(userId: string, program: SavedProgram): Prom
 }
 
 export async function dbDeleteProgram(programId: string): Promise<void> {
+  console.log('[dbDeleteProgram] deleting program:', programId);
   if (isSupabaseConfigured()) {
     try {
       const { error } = await getSupabase().from('saved_programs').delete().eq('id', programId);
       if (!error) {
-        // Also clean localStorage if it exists there
+        console.log('[dbDeleteProgram] deleted from Supabase');
         const programs: SavedProgram[] = lsGet(LS_PROGRAMS_KEY, []);
         lsSet(LS_PROGRAMS_KEY, programs.filter(p => p.id !== programId));
         const activeId = lsGet<string | null>(LS_ACTIVE_KEY, null);
         if (activeId === programId) lsSet(LS_ACTIVE_KEY, null);
         return;
       }
-    } catch { /* fall through */ }
+      console.warn('[dbDeleteProgram] Supabase delete error:', error.message);
+    } catch (e) {
+      console.warn('[dbDeleteProgram] Supabase exception:', e);
+    }
   }
 
   // localStorage fallback
   const programs: SavedProgram[] = lsGet(LS_PROGRAMS_KEY, []);
-  lsSet(LS_PROGRAMS_KEY, programs.filter(p => p.id !== programId));
+  const filtered = programs.filter(p => p.id !== programId);
+  console.log('[dbDeleteProgram] localStorage: had', programs.length, 'now', filtered.length);
+  lsSet(LS_PROGRAMS_KEY, filtered);
   const activeId = lsGet<string | null>(LS_ACTIVE_KEY, null);
-  if (activeId === programId) lsSet(LS_ACTIVE_KEY, null);
+  if (activeId === programId) {
+    console.log('[dbDeleteProgram] clearing active program');
+    lsSet(LS_ACTIVE_KEY, null);
+  }
 }
 
 export async function dbGetActiveProgram(userId: string): Promise<SavedProgram | null> {
@@ -215,7 +236,15 @@ export async function dbSaveConversation(userId: string, convo: DbConversation):
         messages: convo.messages,
         updated_at: new Date().toISOString(),
       });
-      if (!error) return;
+      if (!error) {
+        // Also save to localStorage as backup
+        const convos: DbConversation[] = lsGet(LS_CONVOS_KEY, []);
+        const idx = convos.findIndex(c => c.id === convo.id);
+        if (idx >= 0) convos[idx] = convo;
+        else convos.unshift(convo);
+        lsSet(LS_CONVOS_KEY, convos.slice(0, 20));
+        return;
+      }
     } catch { /* fall through */ }
   }
 
@@ -391,4 +420,131 @@ export async function dbSaveHealthConnection(
 export async function dbDeleteHealthConnection(userId: string, provider: string): Promise<void> {
   if (!isSupabaseConfigured()) return;
   await getSupabase().from('health_connections').delete().eq('user_id', userId).eq('provider', provider);
+}
+
+// ── Exercise Weight Tracking ──────────────────────────────
+
+const LS_EXERCISE_LOG_KEY = 'elite-coach-exercise-log';
+
+export interface ExerciseLogEntry {
+  exercise: string;
+  date: string;
+  weight: number;
+  reps: number;
+  sets: number;
+}
+
+export function dbGetExerciseLog(): ExerciseLogEntry[] {
+  return lsGet<ExerciseLogEntry[]>(LS_EXERCISE_LOG_KEY, []);
+}
+
+export function dbSaveExerciseLogEntry(entry: ExerciseLogEntry): void {
+  const log = dbGetExerciseLog();
+  log.push(entry);
+  // Keep last 500 entries
+  lsSet(LS_EXERCISE_LOG_KEY, log.slice(-500));
+}
+
+export function dbGetLastEntry(exercise: string): ExerciseLogEntry | null {
+  const log = dbGetExerciseLog();
+  for (let i = log.length - 1; i >= 0; i--) {
+    if (log[i].exercise.toLowerCase() === exercise.toLowerCase()) return log[i];
+  }
+  return null;
+}
+
+export function dbGetExerciseHistory(exercise: string): ExerciseLogEntry[] {
+  return dbGetExerciseLog().filter(e => e.exercise.toLowerCase() === exercise.toLowerCase());
+}
+
+export function dbGetPersonalRecords(): Record<string, ExerciseLogEntry> {
+  const log = dbGetExerciseLog();
+  const prs: Record<string, ExerciseLogEntry> = {};
+  for (const entry of log) {
+    const key = entry.exercise.toLowerCase();
+    if (!prs[key] || entry.weight > prs[key].weight) {
+      prs[key] = entry;
+    }
+  }
+  return prs;
+}
+
+// ── Body Stats Tracking ──────────────────────────────────
+
+const LS_BODY_STATS_KEY = 'elite-coach-body-stats';
+
+export interface BodyStatEntry {
+  date: string;
+  weight?: number;
+  bodyFat?: number;
+  measurements?: Record<string, number>;
+  notes?: string;
+}
+
+export function dbGetBodyStats(): BodyStatEntry[] {
+  return lsGet<BodyStatEntry[]>(LS_BODY_STATS_KEY, []);
+}
+
+export function dbSaveBodyStat(entry: BodyStatEntry): void {
+  const stats = dbGetBodyStats();
+  // Replace if same date exists
+  const idx = stats.findIndex(s => s.date === entry.date);
+  if (idx >= 0) stats[idx] = entry;
+  else stats.push(entry);
+  stats.sort((a, b) => a.date.localeCompare(b.date));
+  lsSet(LS_BODY_STATS_KEY, stats.slice(-365));
+}
+
+export function dbDeleteBodyStat(date: string): void {
+  const stats = dbGetBodyStats();
+  lsSet(LS_BODY_STATS_KEY, stats.filter(s => s.date !== date));
+}
+
+// ── Workout Notes ──────────────────────────────────────
+
+const LS_WORKOUT_NOTES_KEY = 'elite-coach-workout-notes';
+
+export interface WorkoutNote {
+  date: string;
+  dayName: string;
+  note: string;
+}
+
+export function dbGetWorkoutNotes(): WorkoutNote[] {
+  return lsGet<WorkoutNote[]>(LS_WORKOUT_NOTES_KEY, []);
+}
+
+export function dbSaveWorkoutNote(note: WorkoutNote): void {
+  const notes = dbGetWorkoutNotes();
+  notes.push(note);
+  lsSet(LS_WORKOUT_NOTES_KEY, notes.slice(-100));
+}
+
+// ── User Profile / Onboarding ──────────────────────────
+
+const LS_USER_PROFILE_KEY = 'elite-coach-user-profile';
+
+export interface UserProfile {
+  name: string;
+  onboardingComplete: boolean;
+}
+
+export function dbGetUserProfile(): UserProfile | null {
+  return lsGet<UserProfile | null>(LS_USER_PROFILE_KEY, null);
+}
+
+export function dbSaveUserProfile(profile: UserProfile): void {
+  lsSet(LS_USER_PROFILE_KEY, profile);
+}
+
+// ── Dark Mode ──────────────────────────────────────────
+
+const LS_DARK_MODE_KEY = 'elite-coach-dark-mode';
+
+export function dbGetDarkMode(): boolean {
+  return lsGet<boolean>(LS_DARK_MODE_KEY, false);
+}
+
+export function dbSetDarkMode(dark: boolean): void {
+  lsSet(LS_DARK_MODE_KEY, dark);
 }

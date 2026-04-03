@@ -100,6 +100,17 @@ body {
 .chat-message strong { font-weight: 700; }
 .chat-message em { font-style: italic; }
 
+/* Dark mode */
+.dark body {
+  background-color: #111827;
+  color: #f9fafb;
+}
+.dark .bg-white { background-color: #1f2937; }
+.dark .bg-\[\#f8f9fa\] { background-color: #111827; }
+.dark .text-\[\#111827\] { color: #f9fafb; }
+.dark .text-\[\#6b7280\] { color: #9ca3af; }
+.dark .border-\[\#e5e7eb\] { border-color: #374151; }
+
 /* iMessage-style typing indicator */
 @keyframes typing-bounce {
   0%, 60%, 100% {

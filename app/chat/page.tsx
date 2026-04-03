@@ -179,7 +179,6 @@ function ChatPageInner() {
         <Link href="/" className="text-[#6b7280] hover:text-[#111827]"><ArrowLeft size={20} /></Link>
         <div>
           <h1 className="font-bold text-sm text-[#111827]">ELITE <span className="text-blue-600">COACH</span></h1>
-          <p className="text-xs text-[#6b7280]">AI Performance Coach</p>
         </div>
         <div className="ml-auto flex items-center gap-3">
           <button onClick={startNewChat} className="p-1.5 rounded-lg bg-gray-100 text-[#6b7280] hover:text-[#111827] hover:bg-gray-200 transition-colors" title="New Chat"><Plus size={16} /></button>
@@ -205,9 +204,8 @@ function ChatPageInner() {
       <div className="flex-1 overflow-y-auto px-4 py-4">
         {messages.length === 0 && !loading && (
           <div className="flex flex-col items-center justify-center h-full text-center">
-            <div className="text-4xl mb-4">🏋️</div>
             <h2 className="text-lg font-bold mb-2 text-[#111827]">ELITE <span className="text-blue-600">COACH</span></h2>
-            <p className="text-sm text-[#6b7280] mb-6 max-w-xs">Your AI performance coach. Ask about training, nutrition, recovery, form — or upload a photo for analysis.</p>
+            <p className="text-sm text-[#6b7280] mb-6 max-w-xs">Ask about training, nutrition, recovery, form — or upload a photo for analysis.</p>
             <div className="flex flex-wrap gap-2 justify-center max-w-sm">
               {SUGGESTIONS.map(s => (
                 <button key={s} onClick={() => handleSend(s)} className="rounded-full border border-[#e5e7eb] bg-white px-3 py-1.5 text-xs text-[#6b7280] hover:border-blue-300 hover:text-blue-600 transition-colors shadow-sm">{s}</button>

@@ -39,6 +39,13 @@ const QUESTIONS: Question[] = [
     options: ['Endurance', 'Power', 'Speed', 'Agility', 'Strength', 'Flexibility', 'Explosiveness', 'Conditioning', 'Skill Work', 'Injury Prevention'],
     conditional: (answers) => (answers.goal === 'Sport-Specific' || answers.goal === 'Athletic Performance') && !!answers.sport && answers.sport.toLowerCase() !== 'none',
   },
+  {
+    id: 'sport_movement',
+    question: 'What specific movements or skills do you want to improve?',
+    type: 'multi-select',
+    options: [], // dynamically populated based on sport
+    conditional: (answers) => (answers.goal === 'Sport-Specific' || answers.goal === 'Athletic Performance') && !!answers.sport && answers.sport.toLowerCase() !== 'none',
+  },
   { id: 'cardio', question: 'Include conditioning/cardio work?', type: 'select', options: ['Yes — high intensity (HIIT, sprints)', 'Yes — steady state (running, cycling)', 'Yes — both', 'Minimal / warm-up only', 'No cardio'] },
   { id: 'recovery', question: 'Would you like to include a recovery day routine?', type: 'select', options: ['Yes', 'No'] },
   {
@@ -50,12 +57,32 @@ const QUESTIONS: Question[] = [
   },
   {
     id: 'recovery_goal',
-    question: "What's your main recovery goal?",
-    type: 'select',
-    options: ['Reduce muscle soreness', 'Improve flexibility/mobility', 'Injury prevention', 'Mental recovery / stress relief', 'General wellness', 'All of the above'],
+    question: 'What are your recovery goals?',
+    type: 'multi-select',
+    options: ['Reduce muscle soreness', 'Improve flexibility/mobility', 'Injury prevention', 'Mental recovery / stress relief', 'General wellness'],
     conditional: (answers) => answers.recovery === 'Yes',
   },
 ];
+
+function getSportMovementOptions(sport: string): string[] {
+  const s = sport.toLowerCase();
+  if (s.includes('golf')) return ['Swing distance', 'Swing consistency', 'Rotational power', 'Hip mobility', 'Putting stability', 'Core stability', 'Shoulder flexibility'];
+  if (s.includes('tennis')) return ['Serve power', 'Lateral agility', 'Shoulder endurance', 'Wrist stability', 'Court coverage speed', 'Core rotation', 'Injury prevention'];
+  if (s.includes('baseball') || s.includes('softball')) return ['Bat speed', 'Throwing velocity', 'Rotational power', 'Sprint speed', 'Shoulder durability', 'Hip rotation', 'Grip strength'];
+  if (s.includes('basketball')) return ['Vertical jump', 'Lateral quickness', 'Shooting endurance', 'Ankle stability', 'Sprint speed', 'Core strength', 'Upper body power'];
+  if (s.includes('soccer') || s.includes('football') && !s.includes('american')) return ['Sprint speed', 'Kicking power', 'Endurance', 'Agility', 'Heading power', 'Balance', 'Injury prevention'];
+  if (s.includes('american football') || s.includes('football')) return ['Explosive power', 'Sprint speed', 'Tackling strength', 'Agility', 'Vertical jump', 'Core stability', 'Conditioning'];
+  if (s.includes('swim')) return ['Stroke power', 'Shoulder mobility', 'Core rotation', 'Kick strength', 'Endurance', 'Flip turn speed', 'Breathing efficiency'];
+  if (s.includes('run') || s.includes('marathon') || s.includes('track')) return ['Speed', 'Endurance', 'Stride efficiency', 'Hip flexibility', 'Injury prevention', 'Hill power', 'Recovery between runs'];
+  if (s.includes('cycling') || s.includes('bike')) return ['Pedaling power', 'Endurance', 'Hill climbing', 'Core stability', 'Hip flexibility', 'Sprint power', 'Recovery'];
+  if (s.includes('box') || s.includes('mma') || s.includes('martial')) return ['Punching power', 'Footwork speed', 'Cardio endurance', 'Core strength', 'Shoulder endurance', 'Hip mobility', 'Grip strength'];
+  if (s.includes('volleyball')) return ['Vertical jump', 'Shoulder power', 'Lateral quickness', 'Core stability', 'Wrist strength', 'Endurance', 'Ankle stability'];
+  if (s.includes('hockey')) return ['Skating power', 'Shot power', 'Core rotation', 'Agility', 'Endurance', 'Hip mobility', 'Upper body strength'];
+  if (s.includes('climb') || s.includes('boulder')) return ['Grip strength', 'Pull-up power', 'Core tension', 'Finger strength', 'Shoulder stability', 'Flexibility', 'Endurance'];
+  if (s.includes('crossfit')) return ['Olympic lifting', 'Gymnastics skills', 'Endurance', 'Grip strength', 'Mobility', 'Double-unders', 'Muscle-ups'];
+  // Generic fallback
+  return ['Power', 'Speed', 'Endurance', 'Flexibility', 'Injury prevention', 'Agility', 'Core strength'];
+}
 
 export default function ProgramPage() {
   const { user } = useAuth();
@@ -138,17 +165,25 @@ export default function ProgramPage() {
 
   const generateProgram = async () => {
     setLoading(true);
+    const recoveryEquipment = answers.recovery_equipment || 'Bodyweight only';
+    const recoveryGoals = answers.recovery_goal || 'General wellness';
     const recoverySection = answers.recovery === 'Yes'
       ? `\n- Include recovery days: Yes
-- Recovery equipment available: ${answers.recovery_equipment || 'Bodyweight only'}
-- Recovery goal: ${answers.recovery_goal || 'General wellness'}
+- Recovery equipment available: ${recoveryEquipment}
+- Recovery goals: ${recoveryGoals}
 
-IMPORTANT: Include dedicated RECOVERY DAY(s) on the off-days in the weekly schedule. For each recovery day, create a structured routine that:
-1. ONLY uses the recovery equipment listed above (do not suggest equipment the user doesn't have)
-2. Includes specific timing for each activity (e.g., "Foam roll quads — 2 min each side")
-3. Is formatted the same way as workout days — with a bold day header and bullet point exercises
-4. Targets the user's recovery goal: ${answers.recovery_goal || 'General wellness'}
-5. Lasts 20-40 minutes total`
+CRITICAL RECOVERY DAY INSTRUCTIONS:
+Include dedicated RECOVERY DAY(s) on the off-days in the weekly schedule. For each recovery day:
+1. You MUST incorporate EVERY piece of recovery equipment the user listed: ${recoveryEquipment}
+   - For each piece of equipment, include a specific activity with duration and instructions
+   - Example: "Red light therapy — 15 min on sore muscle groups" or "Sauna — 15-20 min at moderate heat"
+   - Example: "Compression boots — 20 min on legs" or "Ice bath — 3-5 min cold immersion"
+2. Include specific timing for each activity (e.g., "Foam roll quads — 2 min each side")
+3. Format with a bold day header like **Day X — Recovery Day**
+4. Use [EXERCISE_TABLE] format with columns: Activity | Duration | Notes
+5. Target these recovery goals: ${recoveryGoals}
+6. Total routine should be 20-40 minutes
+7. Do NOT suggest equipment the user does not have`
       : '';
 
     const prompt = `Generate a complete, detailed training program based on these parameters:
@@ -160,7 +195,7 @@ IMPORTANT: Include dedicated RECOVERY DAY(s) on the off-days in the weekly sched
 - Preferred split: ${answers.split || 'No preference'}
 - Priority areas: ${answers.priority || 'None'}
 - Injuries/limitations: ${answers.injuries || 'None'}
-- Sport focus: ${answers.sport || 'General'}${answers.sport_focus ? `\n- Sport aspects to focus on: ${answers.sport_focus}` : ''}
+- Sport focus: ${answers.sport || 'General'}${answers.sport_focus ? `\n- Sport aspects to focus on: ${answers.sport_focus}` : ''}${answers.sport_movement ? `\n- Specific movements/skills to improve: ${answers.sport_movement}` : ''}
 - Cardio preference: ${answers.cardio || 'No preference'}${recoverySection}
 
 Build a full weekly program. For each day, include: warm-up, main lifts (sets x reps, RPE, rest), accessories, conditioning if requested, and cool-down. Use tables for the exercises. Include progression rules and deload guidance.`;
@@ -219,9 +254,18 @@ Build a full weekly program. For each day, include: warm-up, main lifts (sets x 
     }
     setSaveStatus('saving');
     try {
+      // Check localStorage capacity first
+      const contentSize = new Blob([program]).size;
+      console.log('[handleSaveProgram] program content size:', (contentSize / 1024).toFixed(1), 'KB');
+      if (contentSize > 4 * 1024 * 1024) {
+        throw new Error('Program too large for storage');
+      }
+
+      const programId = crypto.randomUUID();
+      const title = `${answers.goal || 'Custom'} - ${answers.days || '?'} days/wk`;
       const saved: SavedProgram = {
-        id: crypto.randomUUID(),
-        title: `${answers.goal || 'Custom'} - ${answers.days || '?'} days/wk`,
+        id: programId,
+        title,
         answers,
         content: program,
         createdAt: Date.now(),
@@ -231,12 +275,27 @@ Build a full weekly program. For each day, include: warm-up, main lifts (sets x 
       console.log('[handleSaveProgram] dbSaveProgram completed');
       await dbSetActiveProgram(user.id, saved.id);
       console.log('[handleSaveProgram] dbSetActiveProgram completed');
-      await refreshPrograms();
-      console.log('[handleSaveProgram] refreshPrograms completed, savedPrograms count:', savedPrograms.length);
+
+      // Force re-read from storage to confirm save worked
+      const freshPrograms = await dbGetSavedPrograms(user.id);
+      setSavedPrograms(freshPrograms);
+      const found = freshPrograms.find(p => p.id === programId);
+      console.log('[handleSaveProgram] verified save:', found ? 'FOUND in list' : 'NOT found in list', 'total programs:', freshPrograms.length);
+
       setSaveStatus('saved');
       setTimeout(() => setSaveStatus('idle'), 3000);
     } catch (err) {
       console.error('[handleSaveProgram] FAILED:', err);
+      // Try to recover corrupted localStorage
+      try {
+        const raw = localStorage.getItem('elite-coach-saved-programs');
+        if (raw) {
+          JSON.parse(raw); // test if valid JSON
+        }
+      } catch {
+        console.warn('[handleSaveProgram] localStorage corrupted, clearing');
+        localStorage.removeItem('elite-coach-saved-programs');
+      }
       setSaveStatus('error');
       setTimeout(() => setSaveStatus('idle'), 3000);
     }
@@ -265,7 +324,9 @@ Build a full weekly program. For each day, include: warm-up, main lifts (sets x 
   };
 
   const handleDeleteProgram = async (id: string) => {
+    console.log('[ProgramPage] deleting program:', id);
     await dbDeleteProgram(id);
+    console.log('[ProgramPage] delete complete, refreshing list');
     setConfirmDelete(null);
     await refreshPrograms();
     if (viewingProgram?.id === id) { setViewingProgram(null); setView('menu'); }
@@ -457,16 +518,18 @@ Build a full weekly program. For each day, include: warm-up, main lifts (sets x 
           {!showComplete && currentQ ? (
             <div>
               <h2 className="text-xl font-bold mb-6 text-[#111827]">{currentQ.question}</h2>
-              {currentQ.type === 'select' ? (
+              {(() => {
+                const displayOptions = currentQ.id === 'sport_movement' ? getSportMovementOptions(answers.sport || '') : currentQ.options;
+                return currentQ.type === 'select' ? (
                 <div className="space-y-3">
-                  {currentQ.options?.map((opt) => (
+                  {displayOptions?.map((opt) => (
                     <button key={opt} onClick={() => selectAnswer(opt)} className="w-full text-left rounded-xl border border-[#e5e7eb] bg-white p-4 text-sm text-[#111827] hover:border-blue-300 transition-colors shadow-sm">{opt}</button>
                   ))}
                 </div>
               ) : currentQ.type === 'multi-select' ? (
                 <div className="space-y-3">
                   <div className="flex flex-wrap gap-2">
-                    {currentQ.options?.map((opt) => (
+                    {displayOptions?.map((opt) => (
                       <button
                         key={opt}
                         onClick={() => toggleMultiSelect(opt)}
@@ -488,7 +551,8 @@ Build a full weekly program. For each day, include: warm-up, main lifts (sets x 
                   <input value={textInput} onChange={(e) => setTextInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && submitText()} placeholder="Type your answer (or press Enter to skip)" className="w-full rounded-xl border border-[#e5e7eb] bg-white px-4 py-3 text-sm text-[#111827] placeholder-[#9ca3af] focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-sm" />
                   <button onClick={submitText} className="flex items-center gap-2 rounded-xl bg-blue-600 px-6 py-3 text-sm font-semibold text-white hover:bg-blue-700 transition-colors">Next <ArrowRight size={16} /></button>
                 </div>
-              )}
+              );
+              })()}
               {step > 0 && <button onClick={() => setStep(getPrevStep(step))} className="mt-4 text-sm text-[#6b7280] hover:text-[#111827]">&larr; Back</button>}
             </div>
           ) : (
