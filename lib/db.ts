@@ -15,7 +15,7 @@ function isSupabaseConfigured(): boolean {
 const LS_PROGRAMS_KEY = 'elite-coach-saved-programs';
 const LS_ACTIVE_KEY = 'elite-coach-active-program-id';
 const LS_STATS_KEY = 'elite-coach-workout-stats';
-const LS_CONVOS_KEY = 'elite-coach-conversations';
+const LS_CONVOS_KEY = 'elite_coach_chat_history';
 
 function lsGet<T>(key: string, fallback: T): T {
   if (typeof window === 'undefined') return fallback;
@@ -223,10 +223,22 @@ export async function dbGetConversations(userId: string): Promise<DbConversation
     } catch { /* fall through */ }
   }
 
-  return lsGet<DbConversation[]>(LS_CONVOS_KEY, []);
+  // Try new key first, then migrate from old key
+  let convos = lsGet<DbConversation[]>(LS_CONVOS_KEY, []);
+  if (convos.length === 0) {
+    const oldConvos = lsGet<DbConversation[]>('elite-coach-conversations', []);
+    if (oldConvos.length > 0) {
+      console.log('[dbGetConversations] migrating', oldConvos.length, 'conversations from old key');
+      convos = oldConvos;
+      lsSet(LS_CONVOS_KEY, convos);
+    }
+  }
+  console.log('[dbGetConversations] returning', convos.length, 'conversations from localStorage');
+  return convos;
 }
 
 export async function dbSaveConversation(userId: string, convo: DbConversation): Promise<void> {
+  console.log('[dbSaveConversation] saving convo:', convo.id, 'title:', convo.title, 'messages:', convo.messages.length);
   if (isSupabaseConfigured()) {
     try {
       const { error } = await getSupabase().from('chat_conversations').upsert({
@@ -243,17 +255,21 @@ export async function dbSaveConversation(userId: string, convo: DbConversation):
         if (idx >= 0) convos[idx] = convo;
         else convos.unshift(convo);
         lsSet(LS_CONVOS_KEY, convos.slice(0, 20));
+        console.log('[dbSaveConversation] saved to both Supabase and localStorage');
         return;
       }
     } catch { /* fall through */ }
   }
 
-  // localStorage fallback
+  // localStorage fallback — always save
   const convos: DbConversation[] = lsGet(LS_CONVOS_KEY, []);
   const idx = convos.findIndex(c => c.id === convo.id);
   if (idx >= 0) convos[idx] = convo;
   else convos.unshift(convo);
   lsSet(LS_CONVOS_KEY, convos.slice(0, 20));
+  // Verify
+  const verify = lsGet<DbConversation[]>(LS_CONVOS_KEY, []);
+  console.log('[dbSaveConversation] localStorage now has', verify.length, 'conversations');
 }
 
 export async function dbDeleteConversation(convoId: string): Promise<void> {
@@ -264,6 +280,11 @@ export async function dbDeleteConversation(convoId: string): Promise<void> {
   }
   const convos: DbConversation[] = lsGet(LS_CONVOS_KEY, []);
   lsSet(LS_CONVOS_KEY, convos.filter(c => c.id !== convoId));
+  // Also clean old key
+  try {
+    const old: DbConversation[] = lsGet('elite-coach-conversations', []);
+    if (old.length > 0) lsSet('elite-coach-conversations', old.filter(c => c.id !== convoId));
+  } catch { /* ignore */ }
 }
 
 // ── Workout Stats ──────────────────────────────────────

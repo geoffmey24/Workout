@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Check, RotateCcw, Flame, Trophy, Calendar, Dumbbell, MessageSquare, StickyNote, TrendingUp } from 'lucide-react';
+import { ArrowLeft, Check, RotateCcw, Flame, Trophy, Calendar, Dumbbell, MessageSquare, StickyNote, TrendingUp, Zap } from 'lucide-react';
 import Link from 'next/link';
 import Navigation from '@/components/Navigation';
 import ProgramMarkdown from '@/components/ProgramMarkdown';
@@ -15,6 +15,15 @@ function parseExercises(content: string): string[] {
   for (const line of lines) {
     const trimmed = line.trim();
     if (!trimmed) continue;
+    // Match numbered list format: "1. Exercise Name — details"
+    const numberedMatch = trimmed.match(/^\d+\.\s+(.+?)(?:\s*[\u2014\u2013\-]\s+|\s*\|\s*)(.+)$/);
+    if (numberedMatch) {
+      const name = numberedMatch[1].replace(/\*\*/g, '').trim();
+      const rest = numberedMatch[2].trim();
+      if (name.length > 2) exercises.push(`${name} — ${rest}`);
+      continue;
+    }
+    // Fallback: old format with sets/reps notation
     const isExercise =
       /\d+\s*[xX\u00d7]\s*\d+/.test(trimmed) ||
       /\d+\s*sets?/i.test(trimmed) ||
@@ -28,8 +37,15 @@ function parseExercises(content: string): string[] {
 }
 
 function extractExerciseName(exerciseLine: string): string {
-  // Extract just the exercise name from "Bench Press | 4 | 8 | 7-8 | 3 min" or "Bench Press 4x8"
-  return exerciseLine.split(/[|]|[\d]+\s*[xX\u00d7]/)[0].trim().replace(/^\d+\.\s*/, '');
+  // Extract just the exercise name from "Bench Press — 4 x 8 — RPE 7 — Rest 3 min" or "Bench Press | 4 | 8"
+  return exerciseLine.split(/[\u2014\u2013]|[|]|[\d]+\s*[xX\u00d7]/)[0].trim().replace(/^\d+\.\s*/, '');
+}
+
+function calculate1RM(weight: number, reps: number): number {
+  // Epley formula: 1RM = weight × (1 + reps/30)
+  if (reps <= 0 || weight <= 0) return 0;
+  if (reps === 1) return weight;
+  return Math.round(weight * (1 + reps / 30));
 }
 
 export default function ProgressPage() {
@@ -216,13 +232,39 @@ export default function ProgressPage() {
                   <p className={`text-sm flex-1 ${done ? 'line-through text-[#9ca3af]' : 'text-[#111827]'}`}>{ex}</p>
                 </button>
                 {lastEntry && !done && (
-                  <p className="text-[10px] text-blue-600 ml-9 mt-1">Last: {lastEntry.weight}lbs x {lastEntry.reps} reps x {lastEntry.sets} sets ({lastEntry.date})</p>
+                  <div className="ml-9 mt-1 flex items-center gap-2">
+                    <p className="text-[10px] text-blue-600">Last: {lastEntry.weight}lbs x {lastEntry.reps}r x {lastEntry.sets}s ({lastEntry.date})</p>
+                    {lastEntry.weight > 0 && lastEntry.reps > 0 && (
+                      <span className="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded-full font-medium">
+                        Est. 1RM: {calculate1RM(lastEntry.weight, lastEntry.reps)} lbs
+                      </span>
+                    )}
+                  </div>
                 )}
                 {!done && (
-                  <div className="flex gap-2 ml-9 mt-2">
-                    <input type="number" placeholder="Weight" value={input.weight} onChange={e => setExerciseWeights(prev => ({ ...prev, [key]: { ...input, weight: e.target.value } }))} className="w-20 rounded-lg border border-[#e5e7eb] px-2 py-1 text-xs" />
-                    <input type="number" placeholder="Reps" value={input.reps} onChange={e => setExerciseWeights(prev => ({ ...prev, [key]: { ...input, reps: e.target.value } }))} className="w-16 rounded-lg border border-[#e5e7eb] px-2 py-1 text-xs" />
-                    <input type="number" placeholder="Sets" value={input.sets} onChange={e => setExerciseWeights(prev => ({ ...prev, [key]: { ...input, sets: e.target.value } }))} className="w-16 rounded-lg border border-[#e5e7eb] px-2 py-1 text-xs" />
+                  <div className="ml-9 mt-2">
+                    <div className="flex gap-2">
+                      <input type="number" placeholder="Weight" value={input.weight} onChange={e => setExerciseWeights(prev => ({ ...prev, [key]: { ...input, weight: e.target.value } }))} className="w-20 rounded-lg border border-[#e5e7eb] px-2 py-1 text-xs" />
+                      <input type="number" placeholder="Reps" value={input.reps} onChange={e => setExerciseWeights(prev => ({ ...prev, [key]: { ...input, reps: e.target.value } }))} className="w-16 rounded-lg border border-[#e5e7eb] px-2 py-1 text-xs" />
+                      <input type="number" placeholder="Sets" value={input.sets} onChange={e => setExerciseWeights(prev => ({ ...prev, [key]: { ...input, sets: e.target.value } }))} className="w-16 rounded-lg border border-[#e5e7eb] px-2 py-1 text-xs" />
+                    </div>
+                    {input.weight && input.reps && parseFloat(input.weight) > 0 && parseInt(input.reps) > 0 && (
+                      <div className="mt-1 flex items-center gap-1.5">
+                        <Zap size={10} className="text-purple-600" />
+                        <span className="text-[10px] text-purple-600 font-medium">
+                          Est. 1RM: {calculate1RM(parseFloat(input.weight), parseInt(input.reps))} lbs
+                        </span>
+                        {(() => {
+                          const pr = personalRecords[exerciseName.toLowerCase()];
+                          const current1RM = calculate1RM(parseFloat(input.weight), parseInt(input.reps));
+                          const pr1RM = pr ? calculate1RM(pr.weight, pr.reps) : 0;
+                          if (current1RM > pr1RM && pr1RM > 0) {
+                            return <span className="text-[10px] bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded-full font-bold animate-pulse">NEW PR!</span>;
+                          }
+                          return null;
+                        })()}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -273,18 +315,24 @@ export default function ProgressPage() {
               <Trophy size={40} className="mx-auto text-gray-300 mb-3" />
               <p className="text-sm text-[#6b7280]">No PRs yet. Log your weights during workouts!</p>
             </div>
-          ) : prEntries.map(([name, entry]) => (
-            <div key={name} className="rounded-xl bg-white border border-[#e5e7eb] p-3 shadow-sm flex items-center justify-between">
-              <div>
-                <p className="font-semibold text-sm text-[#111827] capitalize">{name}</p>
-                <p className="text-xs text-[#6b7280]">{entry.date}</p>
+          ) : prEntries.map(([name, entry]) => {
+            const est1RM = calculate1RM(entry.weight, entry.reps);
+            return (
+              <div key={name} className="rounded-xl bg-white border border-[#e5e7eb] p-3 shadow-sm flex items-center justify-between">
+                <div>
+                  <p className="font-semibold text-sm text-[#111827] capitalize">{name}</p>
+                  <p className="text-xs text-[#6b7280]">{entry.date}</p>
+                </div>
+                <div className="text-right">
+                  <p className="font-bold text-sm text-[#111827]">{entry.weight} lbs</p>
+                  <p className="text-xs text-[#6b7280]">{entry.reps}r x {entry.sets}s</p>
+                  {est1RM > 0 && (
+                    <p className="text-[10px] text-purple-600 font-medium mt-0.5">Est. 1RM: {est1RM} lbs</p>
+                  )}
+                </div>
               </div>
-              <div className="text-right">
-                <p className="font-bold text-sm text-[#111827]">{entry.weight} lbs</p>
-                <p className="text-xs text-[#6b7280]">{entry.reps}r x {entry.sets}s</p>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       ) : (
         <div className="px-4 chat-message text-sm">

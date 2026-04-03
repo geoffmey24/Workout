@@ -2,7 +2,7 @@
 
 import ReactMarkdown from 'react-markdown';
 import { Message } from '@/types';
-import { ExerciseTable, parseExerciseTables } from './ExerciseTable';
+import { ExerciseCard, parseExerciseCards, cleanExerciseTableTags } from './ExerciseTable';
 
 function MarkdownContent({ text }: { text: string }) {
   return (
@@ -17,7 +17,6 @@ function MarkdownContent({ text }: { text: string }) {
         h3: ({ children }) => <h4 className="font-semibold text-sm mt-2 mb-1">{children}</h4>,
         strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
         em: ({ children }) => <em>{children}</em>,
-        // Fallback for any stray markdown tables
         table: ({ children }) => (
           <div className="mb-3 overflow-x-auto rounded-lg border border-[#e5e7eb] shadow-sm">
             <table className="w-full text-sm border-collapse min-w-[350px]">{children}</table>
@@ -63,10 +62,10 @@ export default function ChatMessage({ message }: { message: Message }) {
         {isUser ? (
           <p className="text-sm whitespace-pre-wrap">{message.content}</p>
         ) : (
-          <div className="chat-message text-sm">
-            {parseExerciseTables(message.content).map((part, i) =>
-              part.type === 'table' ? (
-                <ExerciseTable key={i} header={part.header} rows={part.rows} />
+          <div className="chat-message text-sm space-y-1.5">
+            {parseExerciseCards(cleanExerciseTableTags(message.content)).map((part, i) =>
+              part.type === 'exercise' ? (
+                <ExerciseCard key={i} name={part.name} details={part.details} />
               ) : (
                 <MarkdownContent key={i} text={part.content} />
               )

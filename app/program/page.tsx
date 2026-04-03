@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { ArrowLeft, ArrowRight, Loader2, Dumbbell, Save, Trash2, Clock, BookOpen, ClipboardPaste, Star, Check } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { ArrowLeft, ArrowRight, Loader2, Dumbbell, Save, Trash2, Clock, BookOpen, ClipboardPaste, Star, Check, Camera } from 'lucide-react';
 import Link from 'next/link';
 import Navigation from '@/components/Navigation';
 import ProgramMarkdown from '@/components/ProgramMarkdown';
@@ -98,6 +98,26 @@ export default function ProgramPage() {
   const [viewingProgram, setViewingProgram] = useState<SavedProgram | null>(null);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [scanningGym, setScanningGym] = useState(false);
+  const scanFileRef = useRef<HTMLInputElement>(null);
+
+  // Debug: dump all localStorage keys on mount
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const allKeys = Object.keys(localStorage);
+    console.log('[ProgramPage] All localStorage keys:', allKeys);
+    const programKeys = allKeys.filter(k => k.includes('program') || k.includes('elite'));
+    console.log('[ProgramPage] Relevant keys:', programKeys);
+    programKeys.forEach(k => {
+      try {
+        const val = localStorage.getItem(k);
+        if (val) {
+          const parsed = JSON.parse(val);
+          console.log(`[ProgramPage] ${k}:`, Array.isArray(parsed) ? `Array(${parsed.length})` : typeof parsed, parsed);
+        }
+      } catch { console.log(`[ProgramPage] ${k}: (not JSON)`); }
+    });
+  }, []);
 
   const refreshPrograms = async () => {
     if (!user) return;
@@ -184,7 +204,7 @@ Include dedicated RECOVERY DAY(s) on the off-days in the weekly schedule. For ea
    - Example: "Compression boots — 20 min on legs" or "Ice bath — 3-5 min cold immersion"
 2. Include specific timing for each activity (e.g., "Foam roll quads — 2 min each side")
 3. Format with a bold day header like **Day X — Recovery Day**
-4. Use [EXERCISE_TABLE] format with columns: Activity | Duration | Notes
+4. Format as numbered lists like: 1. Foam Rolling — Full body — 10 min
 5. Target these recovery goals: ${recoveryGoals}
 6. Total routine should be 20-40 minutes
 7. Do NOT suggest equipment the user does not have`
@@ -202,7 +222,7 @@ Include dedicated RECOVERY DAY(s) on the off-days in the weekly schedule. For ea
 - Sport focus: ${answers.sport || 'General'}${answers.sport_focus ? `\n- Sport aspects to focus on: ${answers.sport_focus}` : ''}${answers.sport_movement ? `\n- Specific movements/skills to improve: ${answers.sport_movement}` : ''}
 - Cardio preference: ${answers.cardio || 'No preference'}${recoverySection}
 
-Build a full weekly program. For each day, include: warm-up, main lifts (sets x reps, RPE, rest), accessories, conditioning if requested, and cool-down. Use tables for the exercises. Include progression rules and deload guidance.`;
+Build a full weekly program. For each day, include: warm-up, main lifts (sets x reps, RPE, rest), accessories, conditioning if requested, and cool-down. Format ALL exercises as numbered lists like: 1. Exercise Name — Sets x Reps — RPE X — Rest Y. Do NOT use tables or pipe characters. Include progression rules and deload guidance.`;
 
     try {
       // Switch to result view immediately to show streaming content
@@ -334,6 +354,80 @@ Build a full weekly program. For each day, include: warm-up, main lifts (sets x 
     setConfirmDelete(null);
     await refreshPrograms();
     if (viewingProgram?.id === id) { setViewingProgram(null); setView('menu'); }
+  };
+
+  const handleScanGym = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setScanningGym(true);
+    try {
+      const reader = new FileReader();
+      const base64 = await new Promise<string>((resolve) => {
+        reader.onload = () => resolve((reader.result as string).split(',')[1]);
+        reader.readAsDataURL(file);
+      });
+
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [{
+            role: 'user',
+            content: [
+              { type: 'image', source: { type: 'base64', media_type: file.type, data: base64 } },
+              { type: 'text', text: 'Look at this gym photo. List ONLY the equipment you can see. Return a JSON array of strings, nothing else. Example: ["Barbell", "Squat Rack", "Dumbbells", "Cable Machine", "Bench"]. Just the JSON array, no other text.' }
+            ]
+          }],
+          stream: false,
+        }),
+      });
+
+      if (!res.ok) throw new Error('API error');
+      const data = await res.json();
+      const responseText = data.response || data.content || data.text || '';
+      // Extract JSON array from response
+      const jsonMatch = responseText.match(/\[[\s\S]*?\]/);
+      if (jsonMatch) {
+        const equipment = JSON.parse(jsonMatch[0]) as string[];
+        // Map detected equipment to our options
+        const equipmentMap: Record<string, string> = {
+          'full': 'Full Commercial Gym',
+          'commercial': 'Full Commercial Gym',
+          'barbell': 'Home Gym (barbell + rack + bench)',
+          'squat rack': 'Home Gym (barbell + rack + bench)',
+          'power rack': 'Home Gym (barbell + rack + bench)',
+          'rack': 'Home Gym (barbell + rack + bench)',
+          'bench': 'Home Gym (barbell + rack + bench)',
+          'dumbbell': 'Home Gym (basic — dumbbells, bands)',
+          'band': 'Home Gym (basic — dumbbells, bands)',
+          'resistance band': 'Home Gym (basic — dumbbells, bands)',
+          'kettlebell': 'Kettlebells Only',
+          'cable': 'Full Commercial Gym',
+          'smith machine': 'Full Commercial Gym',
+          'leg press': 'Full Commercial Gym',
+          'treadmill': 'Full Commercial Gym',
+        };
+        let bestMatch = 'Full Commercial Gym';
+        const detectedLower = equipment.map(e => e.toLowerCase());
+        if (detectedLower.some(e => e.includes('cable') || e.includes('leg press') || e.includes('smith') || e.includes('lat pull'))) {
+          bestMatch = 'Full Commercial Gym';
+        } else if (detectedLower.some(e => e.includes('barbell') || e.includes('rack') || e.includes('bench press'))) {
+          bestMatch = 'Home Gym (barbell + rack + bench)';
+        } else if (detectedLower.some(e => e.includes('dumbbell') || e.includes('band'))) {
+          bestMatch = 'Home Gym (basic — dumbbells, bands)';
+        } else if (detectedLower.some(e => e.includes('kettlebell'))) {
+          bestMatch = 'Kettlebells Only';
+        }
+        alert(`Detected equipment: ${equipment.join(', ')}\n\nBest match: ${bestMatch}`);
+        selectAnswer(bestMatch);
+      }
+    } catch (err) {
+      console.error('[ScanGym] error:', err);
+      alert('Could not detect equipment. Please select manually.');
+    } finally {
+      setScanningGym(false);
+      if (scanFileRef.current) scanFileRef.current.value = '';
+    }
   };
 
   const formatDate = (ts: number) => new Date(ts).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
@@ -522,6 +616,19 @@ Build a full weekly program. For each day, include: warm-up, main lifts (sets x 
           {!showComplete && currentQ ? (
             <div>
               <h2 className="text-xl font-bold mb-6 text-[#111827]">{currentQ.question}</h2>
+              {currentQ.id === 'equipment' && (
+                <div className="mb-4">
+                  <input ref={scanFileRef} type="file" accept="image/*" capture="environment" onChange={handleScanGym} className="hidden" />
+                  <button
+                    onClick={() => scanFileRef.current?.click()}
+                    disabled={scanningGym}
+                    className="w-full flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-blue-300 bg-blue-50 p-4 text-sm font-semibold text-blue-600 hover:border-blue-400 hover:bg-blue-100 transition-colors disabled:opacity-50"
+                  >
+                    {scanningGym ? (<><Loader2 size={18} className="animate-spin" /> Scanning...</>) : (<><Camera size={18} /> Scan Your Gym</>)}
+                  </button>
+                  <p className="text-xs text-[#9ca3af] text-center mt-1">Take a photo and we'll detect your equipment</p>
+                </div>
+              )}
               {(() => {
                 const displayOptions = currentQ.id === 'sport_movement' ? getSportMovementOptions(answers.sport || '') : currentQ.options;
                 return currentQ.type === 'select' ? (

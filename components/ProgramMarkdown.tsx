@@ -1,16 +1,17 @@
 'use client';
 
 import ReactMarkdown from 'react-markdown';
-import { ExerciseTable, parseExerciseTables } from './ExerciseTable';
+import { ExerciseCard, parseExerciseCards, cleanExerciseTableTags } from './ExerciseTable';
 
 export default function ProgramMarkdown({ content }: { content: string }) {
-  const parts = parseExerciseTables(content);
+  const cleaned = cleanExerciseTableTags(content);
+  const parts = parseExerciseCards(cleaned);
 
   return (
-    <div className="program-content text-sm">
+    <div className="program-content text-sm space-y-1.5">
       {parts.map((part, i) =>
-        part.type === 'table' ? (
-          <ExerciseTable key={i} header={part.header} rows={part.rows} />
+        part.type === 'exercise' ? (
+          <ExerciseCard key={i} name={part.name} details={part.details} />
         ) : (
           <div key={i}>
             <ReactMarkdown
@@ -25,7 +26,6 @@ export default function ProgramMarkdown({ content }: { content: string }) {
                 strong: ({ children }) => <strong className="font-bold text-[#111827]">{children}</strong>,
                 em: ({ children }) => <em className="text-[#6b7280]">{children}</em>,
                 hr: () => <hr className="my-4 border-[#e5e7eb]" />,
-                // Fallback: render any stray markdown tables as simple styled tables
                 table: ({ children }) => (
                   <div className="mb-4 overflow-x-auto rounded-lg border border-[#e5e7eb] shadow-sm">
                     <table className="w-full text-sm border-collapse min-w-[360px]">{children}</table>

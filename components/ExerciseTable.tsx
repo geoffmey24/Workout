@@ -1,87 +1,122 @@
 'use client';
 
-interface ExerciseTableProps {
-  header: string[];
-  rows: string[][];
+import { ExternalLink } from 'lucide-react';
+
+interface ExerciseCardProps {
+  name: string;
+  details: string[];
 }
 
-export function ExerciseTable({ header, rows }: ExerciseTableProps) {
+function ExerciseCard({ name, details }: ExerciseCardProps) {
+  const youtubeUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(name + ' exercise form')}`;
+  const exrxUrl = `https://exrx.net/Lists/ExList/${encodeURIComponent(name.replace(/\s+/g, ''))}`;
+
   return (
-    <div className="mb-4 overflow-x-auto rounded-lg border border-[#e5e7eb] shadow-sm">
-      <table className="w-full text-sm border-collapse min-w-[360px]">
-        <thead>
-          <tr className="bg-[#1e3a5f]">
-            {header.map((h, i) => (
-              <th
-                key={i}
-                className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-white whitespace-nowrap"
-              >
-                {h}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row, ri) => (
-            <tr
-              key={ri}
-              className={`${ri % 2 === 0 ? 'bg-white' : 'bg-[#f8f9fa]'} border-b border-[#e5e7eb] last:border-b-0`}
-            >
-              {row.map((cell, ci) => (
-                <td
-                  key={ci}
-                  className={`px-4 py-3 whitespace-nowrap ${ci === 0 ? 'font-medium text-[#111827]' : 'text-[#374151]'}`}
-                >
-                  {cell}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="flex items-center justify-between gap-2 rounded-lg border border-[#e5e7eb] bg-white px-3 py-2.5 shadow-sm">
+      <div className="flex items-center gap-2 min-w-0">
+        <span className="font-semibold text-sm text-[#111827] truncate">{name}</span>
+        <a href={youtubeUrl} target="_blank" rel="noopener noreferrer" className="shrink-0 text-red-500 hover:text-red-600" title="Watch on YouTube">
+          <ExternalLink size={12} />
+        </a>
+      </div>
+      <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
+        {details.map((detail, i) => (
+          <span
+            key={i}
+            className={`inline-block rounded-full px-2 py-0.5 text-[11px] font-medium whitespace-nowrap ${
+              detail.toLowerCase().includes('rpe')
+                ? 'bg-orange-100 text-orange-700'
+                : detail.toLowerCase().includes('rest') || detail.toLowerCase().includes('min') || detail.toLowerCase().includes('s')
+                ? 'bg-blue-100 text-blue-700'
+                : 'bg-gray-100 text-gray-700'
+            }`}
+          >
+            {detail}
+          </span>
+        ))}
+      </div>
     </div>
   );
 }
 
-/** Parse [EXERCISE_TABLE]...[/EXERCISE_TABLE] blocks from text */
-export function parseExerciseTables(text: string): Array<{ type: 'text'; content: string } | { type: 'table'; header: string[]; rows: string[][] }> {
-  const parts: Array<{ type: 'text'; content: string } | { type: 'table'; header: string[]; rows: string[][] }> = [];
-  const regex = /\[EXERCISE_TABLE\]\s*\n([\s\S]*?)\[\/EXERCISE_TABLE\]/g;
-  let lastIdx = 0;
-  let match;
+/** Parse numbered exercise lines like "1. Bench Press — 4 x 8 — RPE 7-8 — Rest 3 min" */
+export function parseExerciseCards(text: string): Array<{ type: 'text'; content: string } | { type: 'exercise'; name: string; details: string[] }> {
+  const lines = text.split('\n');
+  const parts: Array<{ type: 'text'; content: string } | { type: 'exercise'; name: string; details: string[] }> = [];
+  let textBuffer: string[] = [];
 
-  while ((match = regex.exec(text)) !== null) {
-    // Text before the table
-    if (match.index > lastIdx) {
-      const before = text.slice(lastIdx, match.index).trim();
-      if (before) parts.push({ type: 'text', content: before });
+  // Pattern: numbered list with em-dash or regular dash separated details
+  // Matches: "1. Exercise Name — details — details" or "1. Exercise Name - details - details"
+  // Also catches lines with pipe characters as fallback
+  const exercisePattern = /^\d+\.\s+(.+?)(?:\s*[\u2014\u2013\-]\s+|\s*\|\s*)(.+)$/;
+  // Fallback: lines with pipe characters (from old format)
+  const pipePattern = /^(.+?)\s*\|\s*(.+)$/;
+  // Simple numbered exercise with sets notation: "1. Exercise Name 4x8" or "1. Exercise Name — 4 x 8"
+  const simplePattern = /^\d+\.\s+(.+?)[\s\u2014\u2013\-]+(\d+\s*[xX\u00d7]\s*\d+.*)$/;
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed) {
+      textBuffer.push(line);
+      continue;
     }
 
-    // Parse the table content
-    const tableContent = match[1].trim();
-    const lines = tableContent.split('\n').map(l => l.trim()).filter(Boolean);
+    let match = trimmed.match(exercisePattern);
+    if (!match) match = trimmed.match(simplePattern);
 
-    if (lines.length >= 2) {
-      const header = lines[0].split('|').map(c => c.trim());
-      const rows = lines.slice(1).map(line =>
-        line.split('|').map(c => c.trim())
-      );
-      parts.push({ type: 'table', header, rows });
+    // Fallback: try pipe pattern (catches old [EXERCISE_TABLE] content)
+    if (!match && trimmed.includes('|') && !trimmed.startsWith('#') && !trimmed.startsWith('[')) {
+      const pipeMatch = trimmed.match(pipePattern);
+      if (pipeMatch) {
+        // Skip header-like rows (contain "Exercise", "Sets", "Reps" etc.)
+        const firstPart = pipeMatch[1].trim().toLowerCase();
+        if (['exercise', 'activity', 'movement'].some(h => firstPart === h)) {
+          textBuffer.push(line);
+          continue;
+        }
+        match = pipeMatch;
+      }
     }
 
-    lastIdx = match.index + match[0].length;
+    if (match) {
+      // Flush text buffer
+      if (textBuffer.length > 0) {
+        const text = textBuffer.join('\n').trim();
+        if (text) parts.push({ type: 'text', content: text });
+        textBuffer = [];
+      }
+
+      const name = match[1].trim().replace(/\*\*/g, '').replace(/^\d+\.\s*/, '');
+      const rest = match[2];
+      // Split remaining by em-dash, regular dash (surrounded by spaces), or pipe
+      const details = rest.split(/\s*[\u2014\u2013]\s*|\s*\|\s*/)
+        .map(d => d.trim())
+        .filter(d => d.length > 0);
+
+      parts.push({ type: 'exercise', name, details });
+    } else {
+      textBuffer.push(line);
+    }
   }
 
-  // Remaining text after last table
-  if (lastIdx < text.length) {
-    const remaining = text.slice(lastIdx).trim();
-    if (remaining) parts.push({ type: 'text', content: remaining });
+  // Flush remaining text
+  if (textBuffer.length > 0) {
+    const text = textBuffer.join('\n').trim();
+    if (text) parts.push({ type: 'text', content: text });
   }
 
-  // If no tables found, return entire text as one part
+  // If nothing was parsed, return entire text
   if (parts.length === 0 && text.trim()) {
     parts.push({ type: 'text', content: text });
   }
 
   return parts;
 }
+
+// Also strip any remaining [EXERCISE_TABLE] tags from old content
+export function cleanExerciseTableTags(text: string): string {
+  return text.replace(/\[\/?\s*EXERCISE_TABLE\s*\]/g, '');
+}
+
+export { ExerciseCard };
+export default ExerciseCard;
