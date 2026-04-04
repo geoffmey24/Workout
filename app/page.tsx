@@ -134,6 +134,7 @@ export default function HomePage() {
   // Onboarding
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [onboardingName, setOnboardingName] = useState('');
+  const [onboardingDislikedExercises, setOnboardingDislikedExercises] = useState('');
   const [showOnboarding, setShowOnboarding] = useState(false);
 
   // Day selection
@@ -189,7 +190,17 @@ export default function HomePage() {
   const handleOnboardingComplete = () => {
     const name = onboardingName.trim() || 'Athlete';
     const existingProfile = getProfile();
-    const p: UserProfile = { ...existingProfile, name, onboardingComplete: true, is_pro: existingProfile?.is_pro ?? false };
+    const disliked = onboardingDislikedExercises
+      .split(',')
+      .map(s => s.trim())
+      .filter(s => s.length > 0);
+    const p: UserProfile = {
+      ...existingProfile,
+      name,
+      onboardingComplete: true,
+      is_pro: existingProfile?.is_pro ?? false,
+      dislikedExercises: disliked.length > 0 ? disliked : existingProfile?.dislikedExercises,
+    };
     saveProfile(p);
     setProfile(p);
     setShowOnboarding(false);
@@ -313,11 +324,21 @@ export default function HomePage() {
               <input
                 value={onboardingName}
                 onChange={e => setOnboardingName(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleOnboardingComplete()}
                 placeholder="Your name"
                 className="w-full rounded-xl border border-[#e5e7eb] px-4 py-3 text-sm text-center"
                 autoFocus
               />
+            </div>
+            <div className="mb-4">
+              <label className="text-xs text-[#6b7280] text-left block mb-1">Exercises to avoid (optional)</label>
+              <input
+                value={onboardingDislikedExercises}
+                onChange={e => setOnboardingDislikedExercises(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleOnboardingComplete()}
+                placeholder="e.g. burpees, deadlifts, running"
+                className="w-full rounded-xl border border-[#e5e7eb] px-4 py-3 text-sm text-center"
+              />
+              <p className="text-[10px] text-[#9ca3af] mt-1">Separate with commas</p>
             </div>
             <button onClick={handleOnboardingComplete} className="w-full rounded-xl bg-[#1e3a5f] py-3 text-sm font-bold text-white hover:bg-[#162d4a] transition-colors">
               Get Started
@@ -344,8 +365,8 @@ export default function HomePage() {
       )}
       <div className="px-4 pt-12 pb-6 flex items-start justify-between">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-[#111827]">
-            ELITE <span className="text-[#1e3a5f]">COACH</span>
+          <h1 className="text-3xl font-extrabold tracking-tight text-[#1e3a5f]">
+            ELITE COACH
           </h1>
           {profile?.name && (
             <p className="mt-1 text-sm text-[#6b7280]">Welcome back, {profile.name}</p>
@@ -358,17 +379,17 @@ export default function HomePage() {
 
       {totalWorkouts > 0 && (
         <div className="px-4 mb-6 flex gap-3">
-          <div className="flex-1 rounded-xl bg-white border border-[#e5e7eb] p-3 text-center shadow-sm">
+          <div className="flex-1 rounded-2xl bg-white border border-[#e5e7eb] p-3 text-center shadow-sm">
             <Flame size={16} className="mx-auto text-orange-500 mb-1" />
             <p className="text-lg font-bold text-[#111827]">{streak}</p>
             <p className="text-[10px] text-[#6b7280] uppercase">Day Streak</p>
           </div>
-          <div className="flex-1 rounded-xl bg-white border border-[#e5e7eb] p-3 text-center shadow-sm">
+          <div className="flex-1 rounded-2xl bg-white border border-[#e5e7eb] p-3 text-center shadow-sm">
             <Calendar size={16} className="mx-auto text-blue-500 mb-1" />
             <p className="text-lg font-bold text-[#111827]">{weekCompletionCount}</p>
             <p className="text-[10px] text-[#6b7280] uppercase">This Week</p>
           </div>
-          <div className="flex-1 rounded-xl bg-white border border-[#e5e7eb] p-3 text-center shadow-sm">
+          <div className="flex-1 rounded-2xl bg-white border border-[#e5e7eb] p-3 text-center shadow-sm">
             <Trophy size={16} className="mx-auto text-yellow-500 mb-1" />
             <p className="text-lg font-bold text-[#111827]">{totalWorkouts}</p>
             <p className="text-[10px] text-[#6b7280] uppercase">Total</p>
@@ -546,6 +567,39 @@ export default function HomePage() {
         )}
       </div>
 
+      {/* Weekly Check-In Summary */}
+      {activeProgram && (
+        <div className="px-4 mb-4">
+          <div className="rounded-2xl border border-[#e5e7eb] bg-white p-4 shadow-sm">
+            <div className="flex items-center gap-2 mb-2">
+              <TrendingUp size={14} className="text-[#1e3a5f]" />
+              <span className="text-xs font-medium text-[#1e3a5f] uppercase tracking-wider">Weekly Check-In</span>
+            </div>
+            <p className="text-sm text-[#111827]">
+              <strong>{weekCompletionCount}</strong> workout{weekCompletionCount !== 1 ? 's' : ''} completed
+              {parseInt(activeProgram.answers?.days || '0') > 0 && (
+                <span> of <strong>{activeProgram.answers.days}</strong> planned</span>
+              )}
+            </p>
+            {weekVolume > 0 && (
+              <p className="text-xs text-[#4b5e78] mt-1">Total volume: {weekVolume.toLocaleString()} lbs this week</p>
+            )}
+            {bodyStatsEntries.length > 1 && (() => {
+              const latest = bodyStatsEntries[bodyStatsEntries.length - 1];
+              const prev = bodyStatsEntries[bodyStatsEntries.length - 2];
+              if (latest.weight && prev.weight) {
+                const change = latest.weight - prev.weight;
+                return <p className="text-xs text-[#4b5e78] mt-0.5">Body weight: {change > 0 ? '+' : ''}{change.toFixed(1)} lbs</p>;
+              }
+              return null;
+            })()}
+            {streak > 1 && (
+              <p className="text-xs text-[#4b5e78] mt-0.5">{streak}-day streak going strong!</p>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Body Stats Quick Section */}
       <div className="px-4 mb-6">
         <div className="rounded-2xl border border-[#e5e7eb] bg-white p-4 shadow-sm">
@@ -626,43 +680,10 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Weekly Check-In Summary */}
-      {activeProgram && (
-        <div className="px-4 mb-4">
-          <div className="rounded-2xl bg-[#f0f4f8] border border-[#d1d9e6] p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <TrendingUp size={14} className="text-[#1e3a5f]" />
-              <span className="text-xs font-medium text-[#1e3a5f] uppercase tracking-wider">Weekly Check-In</span>
-            </div>
-            <p className="text-sm text-[#111827]">
-              <strong>{weekCompletionCount}</strong> workout{weekCompletionCount !== 1 ? 's' : ''} completed
-              {parseInt(activeProgram.answers?.days || '0') > 0 && (
-                <span> of <strong>{activeProgram.answers.days}</strong> planned</span>
-              )}
-            </p>
-            {weekVolume > 0 && (
-              <p className="text-xs text-[#4b5e78] mt-1">Total volume: {weekVolume.toLocaleString()} lbs this week</p>
-            )}
-            {bodyStatsEntries.length > 1 && (() => {
-              const latest = bodyStatsEntries[bodyStatsEntries.length - 1];
-              const prev = bodyStatsEntries[bodyStatsEntries.length - 2];
-              if (latest.weight && prev.weight) {
-                const change = latest.weight - prev.weight;
-                return <p className="text-xs text-[#4b5e78] mt-0.5">Body weight: {change > 0 ? '+' : ''}{change.toFixed(1)} lbs</p>;
-              }
-              return null;
-            })()}
-            {streak > 1 && (
-              <p className="text-xs text-[#4b5e78] mt-0.5">{streak}-day streak going strong!</p>
-            )}
-          </div>
-        </div>
-      )}
-
       {/* Skipped Days Log */}
       {skippedDays.length > 0 && (
         <div className="px-4 mb-6">
-          <div className="rounded-xl border border-[#e5e7eb] bg-white p-4 shadow-sm">
+          <div className="rounded-2xl border border-[#e5e7eb] bg-white p-4 shadow-sm">
             <h3 className="text-xs font-medium uppercase tracking-wider text-[#6b7280] mb-2">Skipped Workouts</h3>
             <div className="space-y-1">
               {skippedDays.slice(-5).reverse().map((s, i) => (
@@ -722,13 +743,13 @@ export default function HomePage() {
       {/* Quick Actions */}
       <div className="px-4 mb-6 flex gap-3">
         <Link href="/chat" className="flex-1">
-          <div className="rounded-xl bg-[#1e3a5f] p-4 flex items-center gap-3 text-white hover:bg-[#162d4a] transition-colors shadow-sm">
+          <div className="rounded-2xl bg-[#1e3a5f] p-4 flex items-center gap-3 text-white hover:bg-[#162d4a] transition-colors shadow-sm">
             <MessageSquare size={20} />
             <span className="font-semibold text-sm">Talk to Coach</span>
           </div>
         </Link>
         <Link href="/program" className="flex-1">
-          <div className="rounded-xl bg-white border border-[#e5e7eb] p-4 flex items-center gap-3 hover:border-[#1e3a5f]/30 transition-colors shadow-sm">
+          <div className="rounded-2xl bg-white border border-[#e5e7eb] p-4 flex items-center gap-3 hover:border-[#1e3a5f]/30 transition-colors shadow-sm">
             <Zap size={20} className="text-[#1e3a5f]" />
             <span className="font-semibold text-sm text-[#111827]">My Program</span>
           </div>
