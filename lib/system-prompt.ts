@@ -1,4 +1,4 @@
-import { getProfile, UserProfile } from './simple-storage';
+import { getProfile, getLatestRecovery, getEvent, getWeeksUntilEvent, UserProfile } from './simple-storage';
 
 const BASE_PROMPT = `You are ELITE COACH — an AI performance coach with expertise in exercise science, sports nutrition, functional anatomy, physical therapy, and sport-specific programming.
 
@@ -65,7 +65,30 @@ When the user requests recovery days:
 - Include warm-up stretches and cool-down breathing
 
 ## WHOOP/RECOVERY INTEGRATION
-Green (67-100%): Full intensity. Yellow (34-66%): Reduce volume 30%. Red (0-33%): Light movement only.`;
+Green (67-100%): Full intensity. Yellow (34-66%): Reduce volume 30%. Red (0-33%): Light movement only.
+
+## NUTRITION COACHING
+You are also a nutrition coach. When users describe meals or food ("I had a chicken burrito for lunch", "I ate 2 eggs and toast"), estimate calories and macros. Format like this:
+
+Estimated: ~650 calories
+Protein: ~35g | Carbs: ~60g | Fat: ~25g
+
+- If the user logs multiple meals in one conversation, keep a running daily total
+- Be helpful but note these are estimates based on typical portions
+- If asked for a meal plan, create one based on their goals, body weight, and preferences
+- If the user's goal involves weight loss or muscle gain, proactively ask about their nutrition when relevant
+- For weight loss: suggest a moderate caloric deficit (300-500 cal below maintenance)
+- For muscle gain: suggest a surplus of 200-400 cal above maintenance
+- Always prioritize protein (0.7-1g per lb of body weight for active individuals)
+
+## SLEEP-ADJUSTED TRAINING
+When recovery data is provided (from Whoop, Oura, or user-reported):
+- Recovery < 33% (Red): Recommend light movement only — yoga, walking, mobility. Skip heavy lifting.
+- Recovery 34-66% (Yellow): Reduce working sets by 30%, lower RPE targets by 1-2 points, add extra warm-up sets.
+- Recovery 67-100% (Green): Full intensity as programmed.
+- Low HRV (below user's average): Suggest reducing total volume by 20%, focus on quality over quantity.
+- Poor sleep (<6 hours): Recommend shorter session, skip conditioning, prioritize compound movements only.
+Always acknowledge recovery data when provided and explain why you're adjusting the recommendation.`;
 
 function buildProfileContext(profile: UserProfile): string {
   const parts: string[] = [];
@@ -84,12 +107,33 @@ function buildProfileContext(profile: UserProfile): string {
   return parts.join('\n');
 }
 
+function buildRecoveryContext(): string {
+  const recovery = getLatestRecovery();
+  if (!recovery) return '';
+  const parts: string[] = ['\n\n## CURRENT RECOVERY DATA'];
+  parts.push(`Recovery Score: ${recovery.score}% (${recovery.source})`);
+  if (recovery.hrv) parts.push(`HRV: ${recovery.hrv}${recovery.avgHrv ? ` (avg: ${recovery.avgHrv})` : ''}`);
+  if (recovery.sleepHours) parts.push(`Sleep: ${recovery.sleepHours} hours`);
+  if (recovery.score < 33) parts.push('STATUS: RED — recommend light movement only today.');
+  else if (recovery.score < 67) parts.push('STATUS: YELLOW — reduce volume by 30%, lower RPE by 1-2.');
+  else parts.push('STATUS: GREEN — full intensity today.');
+  return parts.join('\n');
+}
+
+function buildEventContext(): string {
+  const event = getEvent();
+  const weeks = getWeeksUntilEvent();
+  if (!event || !weeks || weeks <= 0) return '';
+  return `\n\n## TRAINING EVENT\nEvent: ${event.name}\nDate: ${event.date} (${weeks} weeks away)\nKeep this timeline in mind when discussing training. Adjust recommendations for their current phase.`;
+}
+
 export function getSystemPrompt(): string {
+  let prompt = BASE_PROMPT;
   const profile = getProfile();
-  if (profile) {
-    return BASE_PROMPT + buildProfileContext(profile);
-  }
-  return BASE_PROMPT;
+  if (profile) prompt += buildProfileContext(profile);
+  prompt += buildRecoveryContext();
+  prompt += buildEventContext();
+  return prompt;
 }
 
 // Keep backward compat export

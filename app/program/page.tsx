@@ -14,6 +14,7 @@ import {
   setActiveProgram,
   migrateOldData,
   getProfile,
+  saveEvent,
   StoredProgram,
 } from '@/lib/simple-storage';
 import { getSystemPrompt } from '@/lib/system-prompt';
@@ -21,7 +22,7 @@ import { getSystemPrompt } from '@/lib/system-prompt';
 interface Question {
   id: string;
   question: string;
-  type: 'select' | 'text' | 'multi-select';
+  type: 'select' | 'text' | 'multi-select' | 'date';
   options?: string[];
   conditional?: (answers: Record<string, string>) => boolean;
 }
@@ -36,6 +37,26 @@ const QUESTIONS: Question[] = [
   { id: 'priority', question: 'Any muscle groups or movements to prioritize?', type: 'text' },
   { id: 'injuries', question: 'Any injuries or limitations?', type: 'text' },
   { id: 'avoid_exercises', question: 'Any exercises you want to avoid?', type: 'text' },
+  { id: 'event_training', question: 'Are you training for a specific event or date?', type: 'select', options: ['Yes', 'No'] },
+  {
+    id: 'event_name',
+    question: "What's the event?",
+    type: 'text',
+    conditional: (answers) => answers.event_training === 'Yes',
+  },
+  {
+    id: 'event_date',
+    question: "What's the event date?",
+    type: 'date',
+    conditional: (answers) => answers.event_training === 'Yes',
+  },
+  { id: 'hero_training', question: 'Want to train like a pro athlete?', type: 'select', options: ['Yes', 'No'] },
+  {
+    id: 'hero_athletes',
+    question: 'Which athlete(s) inspire you?',
+    type: 'text',
+    conditional: (answers) => answers.hero_training === 'Yes',
+  },
   {
     id: 'sport',
     question: 'What sport or activity are you training for?',
@@ -109,7 +130,22 @@ export default function ProgramPage() {
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [scanningGym, setScanningGym] = useState(false);
+  const [selectedOption, setSelectedOption] = useState<'A' | 'B'>('A');
   const scanFileRef = useRef<HTMLInputElement>(null);
+
+  const splitProgram = (text: string): { optionA: string; optionB: string } => {
+    const patterns = [/\*\*OPTION B\*\*/i, /##\s*OPTION B/i, /OPTION B[:\s]/i];
+    for (const pattern of patterns) {
+      const match = text.search(pattern);
+      if (match > 0) {
+        return {
+          optionA: text.slice(0, match).replace(/\*\*OPTION A\*\*|##\s*OPTION A|OPTION A[:\s]/i, '').trim(),
+          optionB: text.slice(match).replace(/\*\*OPTION B\*\*|##\s*OPTION B|OPTION B[:\s]/i, '').trim(),
+        };
+      }
+    }
+    return { optionA: text, optionB: '' };
+  };
 
   const refreshPrograms = () => {
     const programs = getPrograms();
@@ -224,11 +260,33 @@ Include dedicated RECOVERY DAY(s) on the off-days in the weekly schedule. For ea
     })()}
 - Sport focus: ${answers.sport || 'General'}${answers.sport_focus ? `\n- Sport aspects to focus on: ${answers.sport_focus}` : ''}${answers.sport_movement ? `\n- Specific movements/skills to improve: ${answers.sport_movement}` : ''}
 - Cardio preference: ${answers.cardio || 'No preference'}${recoverySection}
+${answers.event_training === 'Yes' && answers.event_name && answers.event_date ? (() => {
+  const eventDate = new Date(answers.event_date);
+  const now = new Date();
+  const weeksUntil = Math.ceil((eventDate.getTime() - now.getTime()) / (7 * 24 * 60 * 60 * 1000));
+  return `\n\nEVENT-BASED PERIODIZATION:
+- Event: ${answers.event_name}
+- Date: ${answers.event_date} (${weeksUntil} weeks from now)
+- Structure the program as a periodized plan leading to this event:
+  * Weeks 1-${Math.floor(weeksUntil * 0.4)}: Base/Building Phase (moderate volume, technique focus)
+  * Weeks ${Math.floor(weeksUntil * 0.4) + 1}-${Math.floor(weeksUntil * 0.8)}: Intensity Phase (progressive overload, sport-specific)
+  * Weeks ${Math.floor(weeksUntil * 0.8) + 1}-${weeksUntil - 1}: Peak Phase (high intensity, reduced volume)
+  * Week ${weeksUntil}: Taper Week (50% volume, maintain intensity, full recovery)
+  * Include a deload every 4th week (reduced volume by 40%)
+- Label each phase clearly in the program`;
+})() : ''}${answers.hero_training === 'Yes' && answers.hero_athletes ? `\n\nATHLETE INSPIRATION:
+- Train like: ${answers.hero_athletes}
+- Research and incorporate training principles known to be used by these athletes
+- Reference their training philosophy in the program overview
+- For example: Tom Brady → TB12 pliability + resistance bands + functional training; David Goggins → high-volume endurance + mental toughness; LeBron James → explosive power + recovery focus; Cristiano Ronaldo → speed + agility + core; Arnold Schwarzenegger → high-volume bodybuilding
+- Adapt their methods to the user's experience level and equipment` : ''}
 
-Build a full weekly program. For each day, include: warm-up, main lifts, accessories, conditioning if requested, and cool-down. Format ALL exercises using pipe-separated lines with a header row like:
+Generate TWO program options labeled **OPTION A** and **OPTION B**. Make them meaningfully different — different training splits, exercise selection, or intensity schemes. Both must match the user's goals and constraints.
+
+For each option, include: warm-up, main lifts, accessories, conditioning if requested, and cool-down for each day. Format ALL exercises using pipe-separated lines with a header row like:
 Exercise | Sets | Reps | RPE | Rest
 Bench Press | 4 | 8 | 7-8 | 3 min
-Do NOT use markdown table separators (|---|---|). Include progression rules and deload guidance.`;
+Do NOT use markdown table separators (|---|---|). Include progression rules and deload guidance for each option.`;
 
     try {
       // Switch to result view immediately to show streaming content
@@ -283,16 +341,23 @@ Do NOT use markdown table separators (|---|---|). Include progression rules and 
     try {
       const programId = crypto.randomUUID();
       const title = `${answers.goal || 'Custom'} - ${answers.days || '?'} days/wk`;
+      const { optionA, optionB } = splitProgram(program);
+      const contentToSave = optionB ? (selectedOption === 'A' ? optionA : optionB) : program;
       const newProgram: StoredProgram = {
         id: programId,
         title,
         answers,
-        content: program,
+        content: contentToSave,
         createdAt: Date.now(),
       };
 
       saveProgram(newProgram);
       setActiveProgram(newProgram);
+
+      // Save event if training for one
+      if (answers.event_training === 'Yes' && answers.event_name && answers.event_date) {
+        saveEvent({ name: answers.event_name, date: answers.event_date });
+      }
 
       // Verify
       const verify = getPrograms();
@@ -506,7 +571,24 @@ Do NOT use markdown table separators (|---|---|). Include progression rules and 
             <span className="text-sm text-red-700">Failed to save. Please try again.</span>
           </div>
         )}
-        <div className="px-4 py-6"><ProgramMarkdown content={program} /></div>
+        {/* Option tabs - only show if both options exist */}
+        {splitProgram(program).optionB && (
+          <div className="px-4 pt-4 flex gap-2">
+            <button onClick={() => setSelectedOption('A')} className={`flex-1 rounded-xl py-2.5 text-sm font-semibold transition-colors ${selectedOption === 'A' ? 'bg-[#1e3a5f] text-white' : 'bg-white border border-[#e5e7eb] text-[#6b7280]'}`}>
+              Option A
+            </button>
+            <button onClick={() => setSelectedOption('B')} className={`flex-1 rounded-xl py-2.5 text-sm font-semibold transition-colors ${selectedOption === 'B' ? 'bg-[#1e3a5f] text-white' : 'bg-white border border-[#e5e7eb] text-[#6b7280]'}`}>
+              Option B
+            </button>
+          </div>
+        )}
+        <div className="px-4 py-6">
+          <ProgramMarkdown content={
+            splitProgram(program).optionB
+              ? (selectedOption === 'A' ? splitProgram(program).optionA : splitProgram(program).optionB)
+              : program
+          } />
+        </div>
         <Navigation />
       </div>
     );
@@ -643,6 +725,11 @@ Do NOT use markdown table separators (|---|---|). Include progression rules and 
                   </div>
                   <p className="text-xs text-[#6b7280]">Select all that apply</p>
                   <button onClick={submitMultiSelect} className="flex items-center gap-2 rounded-xl bg-[#1e3a5f] px-6 py-3 text-sm font-semibold text-white hover:bg-[#162d4a] transition-colors">Next <ArrowRight size={16} /></button>
+                </div>
+              ) : currentQ.type === 'date' ? (
+                <div className="space-y-3">
+                  <input type="date" value={textInput} onChange={(e) => setTextInput(e.target.value)} className="w-full rounded-xl border border-[#e5e7eb] bg-white px-4 py-3 text-sm text-[#111827] placeholder-[#9ca3af] focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-sm" />
+                  <button onClick={submitText} className="flex items-center gap-2 rounded-xl bg-[#1e3a5f] px-6 py-3 text-sm font-semibold text-white hover:bg-[#162d4a] transition-colors">Next <ArrowRight size={16} /></button>
                 </div>
               ) : (
                 <div className="space-y-3">

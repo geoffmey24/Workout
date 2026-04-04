@@ -13,6 +13,8 @@ const PROFILE_KEY = 'ec_profile_v2';
 const DARK_MODE_KEY = 'ec_dark_mode_v2';
 const SKIPPED_KEY = 'ec_skipped_days_v2';
 const SELECTED_DAY_KEY = 'ec_selected_day_v2';
+const EVENT_KEY = 'ec_event_v2';
+const RECOVERY_KEY = 'ec_recovery_data_v2';
 
 // ── Generic helpers ───────────────────────────────────────
 
@@ -333,6 +335,62 @@ export function setSelectedDayIdx(idx: number): void {
 
 export function clearSelectedDayIdx(): void {
   remove(SELECTED_DAY_KEY);
+}
+
+// ── Event / Goal Countdown ────────────────────────────────
+
+export interface TrainingEvent {
+  name: string;
+  date: string; // ISO date string
+}
+
+export function getEvent(): TrainingEvent | null {
+  return read<TrainingEvent | null>(EVENT_KEY, null);
+}
+
+export function saveEvent(event: TrainingEvent): void {
+  write(EVENT_KEY, event);
+}
+
+export function clearEvent(): void {
+  remove(EVENT_KEY);
+}
+
+export function getWeeksUntilEvent(): number | null {
+  const event = getEvent();
+  if (!event) return null;
+  const eventDate = new Date(event.date);
+  const now = new Date();
+  const diff = eventDate.getTime() - now.getTime();
+  if (diff <= 0) return 0;
+  return Math.ceil(diff / (7 * 24 * 60 * 60 * 1000));
+}
+
+// ── Recovery Data (from Whoop/Oura) ──────────────────────
+
+export interface RecoveryData {
+  score: number; // 0-100
+  hrv?: number;
+  avgHrv?: number;
+  sleepHours?: number;
+  source: 'whoop' | 'oura' | 'manual';
+  date: string;
+}
+
+export function getLatestRecovery(): RecoveryData | null {
+  const data = read<RecoveryData[]>(RECOVERY_KEY, []);
+  if (data.length === 0) return null;
+  const today = new Date().toISOString().slice(0, 10);
+  // Return today's or most recent
+  return data.find(d => d.date === today) || data[data.length - 1] || null;
+}
+
+export function saveRecoveryData(entry: RecoveryData): void {
+  const data = read<RecoveryData[]>(RECOVERY_KEY, []);
+  const idx = data.findIndex(d => d.date === entry.date);
+  if (idx >= 0) data[idx] = entry;
+  else data.push(entry);
+  write(RECOVERY_KEY, data.slice(-30));
 }
 
 // ── 1RM Calculation ───────────────────────────────────────

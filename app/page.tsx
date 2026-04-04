@@ -19,6 +19,8 @@ import {
   getSkippedDays, addSkippedDay,
   getSelectedDayIdx, setSelectedDayIdx as storageSetSelectedDayIdx,
   calculate1RM,
+  getEvent, getWeeksUntilEvent, TrainingEvent,
+  getLatestRecovery, RecoveryData,
 } from '@/lib/simple-storage';
 
 function parseExercisesFromContent(content: string): { name: string; line: string }[] {
@@ -150,6 +152,11 @@ export default function HomePage() {
   // Workout completion
   const [workoutDone, setWorkoutDone] = useState(false);
 
+  // Event countdown & recovery
+  const [trainingEvent, setTrainingEvent] = useState<TrainingEvent | null>(null);
+  const [weeksUntilEvent, setWeeksUntilEvent] = useState<number | null>(null);
+  const [recoveryData, setRecoveryData] = useState<RecoveryData | null>(null);
+
   // Body stats quick input
   const [bodyStatsEntries, setBodyStatsEntries] = useState<BodyStat[]>([]);
   const [showWeightInput, setShowWeightInput] = useState(false);
@@ -185,6 +192,12 @@ export default function HomePage() {
     document.documentElement.classList.toggle('dark', dark);
     // Check if today's workout is done
     if (isTodayCompleted()) setWorkoutDone(true);
+    // Event countdown
+    const evt = getEvent();
+    setTrainingEvent(evt);
+    setWeeksUntilEvent(getWeeksUntilEvent());
+    // Recovery data
+    setRecoveryData(getLatestRecovery());
   }, [user]);
 
   const handleOnboardingComplete = () => {
@@ -376,6 +389,56 @@ export default function HomePage() {
           <SettingsIcon size={20} />
         </Link>
       </div>
+
+      {/* Event Countdown */}
+      {trainingEvent && weeksUntilEvent !== null && weeksUntilEvent > 0 && (
+        <div className="px-4 mb-4">
+          <div className="rounded-2xl bg-gradient-to-r from-[#1e3a5f] to-[#2d5a8e] p-4 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-white/70 uppercase tracking-wider">Training For</p>
+                <p className="text-lg font-bold text-white">{trainingEvent.name}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-3xl font-extrabold text-white">{weeksUntilEvent}</p>
+                <p className="text-xs text-white/70">weeks to go</p>
+              </div>
+            </div>
+            <div className="mt-2 h-1.5 rounded-full bg-white/20 overflow-hidden">
+              <div className="h-full rounded-full bg-white/80 transition-all" style={{ width: `${Math.max(5, 100 - (weeksUntilEvent / 20) * 100)}%` }} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Recovery Warning */}
+      {recoveryData && recoveryData.score < 50 && (
+        <div className="px-4 mb-4">
+          <div className={`rounded-2xl border p-4 shadow-sm ${
+            recoveryData.score < 33
+              ? 'bg-red-50 border-red-200'
+              : 'bg-amber-50 border-amber-200'
+          }`}>
+            <div className="flex items-center gap-2 mb-1">
+              <Heart size={14} className={recoveryData.score < 33 ? 'text-red-500' : 'text-amber-500'} />
+              <span className={`text-xs font-medium uppercase tracking-wider ${recoveryData.score < 33 ? 'text-red-700' : 'text-amber-700'}`}>
+                {recoveryData.score < 33 ? 'Low Recovery' : 'Moderate Recovery'}
+              </span>
+              <span className={`ml-auto text-xs font-bold ${recoveryData.score < 33 ? 'text-red-600' : 'text-amber-600'}`}>{recoveryData.score}%</span>
+            </div>
+            <p className={`text-sm ${recoveryData.score < 33 ? 'text-red-800' : 'text-amber-800'}`}>
+              {recoveryData.score < 33
+                ? 'Consider a light session today — yoga, walking, or mobility work.'
+                : 'Reduce volume by ~30% and lower RPE targets today.'}
+            </p>
+            {recoveryData.sleepHours && recoveryData.sleepHours < 6 && (
+              <p className={`text-xs mt-1 ${recoveryData.score < 33 ? 'text-red-600' : 'text-amber-600'}`}>
+                Only {recoveryData.sleepHours}h sleep — shorter session recommended.
+              </p>
+            )}
+          </div>
+        </div>
+      )}
 
       {totalWorkouts > 0 && (
         <div className="px-4 mb-6 flex gap-3">

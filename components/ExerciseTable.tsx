@@ -1,6 +1,7 @@
 'use client';
 
-import { ExternalLink } from 'lucide-react';
+import { Play } from 'lucide-react';
+import { getVideoUrl, getVideoForExercise } from '@/lib/exercise-videos';
 
 // ── Styled HTML Table (primary renderer for pipe-separated data) ──
 
@@ -36,20 +37,23 @@ function PipeTable({ header, rows }: PipeTableProps) {
                   key={ci}
                   className={`px-4 py-3 whitespace-nowrap ${ci === 0 ? 'font-medium text-[#111827]' : 'text-[#374151]'}`}
                 >
-                  {ci === 0 ? (
-                    <span className="inline-flex items-center gap-1.5">
-                      {cell}
-                      <a
-                        href={`https://www.youtube.com/results?search_query=${encodeURIComponent(cell + ' exercise form')}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-red-500 hover:text-red-600"
-                        title="Watch on YouTube"
-                      >
-                        <ExternalLink size={11} />
-                      </a>
-                    </span>
-                  ) : cell}
+                  {ci === 0 ? (() => {
+                    const video = getVideoForExercise(cell);
+                    return (
+                      <span className="inline-flex items-center gap-1.5">
+                        {cell}
+                        <a
+                          href={getVideoUrl(cell)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-red-500 hover:text-red-600 shrink-0"
+                          title={video ? `Watch on ${video.channel}` : 'Search on YouTube'}
+                        >
+                          <Play size={11} fill="currentColor" />
+                        </a>
+                      </span>
+                    );
+                  })() : cell}
                 </td>
               ))}
             </tr>
@@ -73,13 +77,13 @@ function ExerciseCard({ name, details }: ExerciseCardProps) {
       <div className="flex items-center gap-2 min-w-0">
         <span className="font-semibold text-sm text-[#111827] truncate">{name}</span>
         <a
-          href={`https://www.youtube.com/results?search_query=${encodeURIComponent(name + ' exercise form')}`}
+          href={getVideoUrl(name)}
           target="_blank"
           rel="noopener noreferrer"
           className="shrink-0 text-red-500 hover:text-red-600"
-          title="Watch on YouTube"
+          title={getVideoForExercise(name) ? `Watch on ${getVideoForExercise(name)!.channel}` : 'Search on YouTube'}
         >
-          <ExternalLink size={12} />
+          <Play size={12} fill="currentColor" />
         </a>
       </div>
       <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
