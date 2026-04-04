@@ -13,8 +13,10 @@ import {
   getActiveProgram,
   setActiveProgram,
   migrateOldData,
+  getProfile,
   StoredProgram,
 } from '@/lib/simple-storage';
+import { getSystemPrompt } from '@/lib/system-prompt';
 
 interface Question {
   id: string;
@@ -33,6 +35,7 @@ const QUESTIONS: Question[] = [
   { id: 'split', question: 'Preferred training split?', type: 'select', options: ['Full Body', 'Upper/Lower', 'Push/Pull/Legs', 'Bro Split (one muscle/day)', 'No preference — you decide'] },
   { id: 'priority', question: 'Any muscle groups or movements to prioritize?', type: 'text' },
   { id: 'injuries', question: 'Any injuries or limitations?', type: 'text' },
+  { id: 'avoid_exercises', question: 'Any exercises you want to avoid?', type: 'text' },
   {
     id: 'sport',
     question: 'What sport or activity are you training for?',
@@ -212,6 +215,13 @@ Include dedicated RECOVERY DAY(s) on the off-days in the weekly schedule. For ea
 - Preferred split: ${answers.split || 'No preference'}
 - Priority areas: ${answers.priority || 'None'}
 - Injuries/limitations: ${answers.injuries || 'None'}
+- Exercises to AVOID: ${(() => {
+      const profile = getProfile();
+      const fromForm = answers.avoid_exercises || '';
+      const fromProfile = profile?.dislikedExercises?.join(', ') || '';
+      const combined = [fromForm, fromProfile].filter(Boolean).join(', ');
+      return combined || 'None';
+    })()}
 - Sport focus: ${answers.sport || 'General'}${answers.sport_focus ? `\n- Sport aspects to focus on: ${answers.sport_focus}` : ''}${answers.sport_movement ? `\n- Specific movements/skills to improve: ${answers.sport_movement}` : ''}
 - Cardio preference: ${answers.cardio || 'No preference'}${recoverySection}
 
@@ -228,7 +238,7 @@ Do NOT use markdown table separators (|---|---|). Include progression rules and 
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: [{ role: 'user', content: prompt }], stream: true }),
+        body: JSON.stringify({ messages: [{ role: 'user', content: prompt }], stream: true, systemPrompt: getSystemPrompt() }),
       });
 
       if (!res.ok) throw new Error(`API error: ${res.status}`);
@@ -453,7 +463,7 @@ Do NOT use markdown table separators (|---|---|). Include progression rules and 
           </div>
           <button
             onClick={() => { handleSetActive(viewingProgram); }}
-            className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 transition-colors"
+            className="flex items-center gap-1.5 rounded-lg bg-[#1e3a5f] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#162d4a] transition-colors"
           >
             <Star size={14} /> Set Active
           </button>
@@ -523,13 +533,13 @@ Do NOT use markdown table separators (|---|---|). Include progression rules and 
               <button onClick={() => setViewingProgram(p)} className="flex-1 text-left min-w-0">
                 <div className="flex items-center gap-2">
                   <p className="font-semibold text-sm truncate text-[#111827]">{p.title}</p>
-                  {p.isActive && <span className="shrink-0 text-[10px] font-bold uppercase text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full">Active</span>}
+                  {p.isActive && <span className="shrink-0 text-[10px] font-bold uppercase text-[#1e3a5f] bg-blue-100 px-2 py-0.5 rounded-full">Active</span>}
                 </div>
                 <div className="flex items-center gap-2 mt-1 text-xs text-[#6b7280]">
                   <Clock size={10} /><span>{formatDate(p.createdAt)}</span>
                 </div>
               </button>
-              {!p.isActive && <button onClick={() => handleSetActive(p)} className="p-2 rounded-lg text-blue-600 hover:bg-blue-50 transition-colors" title="Set as active workout"><Star size={16} /></button>}
+              {!p.isActive && <button onClick={() => handleSetActive(p)} className="p-2 rounded-lg text-[#1e3a5f] hover:bg-blue-50 transition-colors" title="Set as active workout"><Star size={16} /></button>}
               <button onClick={() => setConfirmDelete(p.id)} className="p-2 rounded-lg text-[#9ca3af] hover:text-red-500 hover:bg-red-50 transition-colors"><Trash2 size={16} /></button>
             </div>
           ))}
@@ -561,7 +571,7 @@ Do NOT use markdown table separators (|---|---|). Include progression rules and 
           <button
             onClick={handleSavePastedWorkout}
             disabled={!pasteInput.trim()}
-            className="w-full mt-4 rounded-xl bg-blue-600 py-4 font-bold text-sm text-white hover:bg-blue-700 transition-colors disabled:opacity-40 flex items-center justify-center gap-2"
+            className="w-full mt-4 rounded-xl bg-[#1e3a5f] py-4 font-bold text-sm text-white hover:bg-[#162d4a] transition-colors disabled:opacity-40 flex items-center justify-center gap-2"
           >
             <Save size={18} /> Save as Active Program
           </button>
@@ -587,7 +597,7 @@ Do NOT use markdown table separators (|---|---|). Include progression rules and 
               <span>{Math.min(progressPercent, 100)}%</span>
             </div>
             <div className="h-1.5 rounded-full bg-[#e5e7eb]">
-              <div className="h-full rounded-full bg-blue-600 transition-all duration-300" style={{ width: `${Math.min(progressPercent, 100)}%` }} />
+              <div className="h-full rounded-full bg-[#1e3a5f] transition-all duration-300" style={{ width: `${Math.min(progressPercent, 100)}%` }} />
             </div>
           </div>
           {!showComplete && currentQ ? (
@@ -599,7 +609,7 @@ Do NOT use markdown table separators (|---|---|). Include progression rules and 
                   <button
                     onClick={() => scanFileRef.current?.click()}
                     disabled={scanningGym}
-                    className="w-full flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-blue-300 bg-blue-50 p-4 text-sm font-semibold text-blue-600 hover:border-blue-400 hover:bg-blue-100 transition-colors disabled:opacity-50"
+                    className="w-full flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-blue-300 bg-blue-50 p-4 text-sm font-semibold text-[#1e3a5f] hover:border-blue-400 hover:bg-blue-100 transition-colors disabled:opacity-50"
                   >
                     {scanningGym ? (<><Loader2 size={18} className="animate-spin" /> Scanning...</>) : (<><Camera size={18} /> Scan Your Gym</>)}
                   </button>
@@ -623,7 +633,7 @@ Do NOT use markdown table separators (|---|---|). Include progression rules and 
                         onClick={() => toggleMultiSelect(opt)}
                         className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
                           multiSelections.includes(opt)
-                            ? 'bg-blue-600 text-white'
+                            ? 'bg-[#1e3a5f] text-white'
                             : 'bg-white border border-[#e5e7eb] text-[#111827] hover:border-blue-300'
                         }`}
                       >
@@ -632,12 +642,12 @@ Do NOT use markdown table separators (|---|---|). Include progression rules and 
                     ))}
                   </div>
                   <p className="text-xs text-[#6b7280]">Select all that apply</p>
-                  <button onClick={submitMultiSelect} className="flex items-center gap-2 rounded-xl bg-blue-600 px-6 py-3 text-sm font-semibold text-white hover:bg-blue-700 transition-colors">Next <ArrowRight size={16} /></button>
+                  <button onClick={submitMultiSelect} className="flex items-center gap-2 rounded-xl bg-[#1e3a5f] px-6 py-3 text-sm font-semibold text-white hover:bg-[#162d4a] transition-colors">Next <ArrowRight size={16} /></button>
                 </div>
               ) : (
                 <div className="space-y-3">
                   <input value={textInput} onChange={(e) => setTextInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && submitText()} placeholder="Type your answer (or press Enter to skip)" className="w-full rounded-xl border border-[#e5e7eb] bg-white px-4 py-3 text-sm text-[#111827] placeholder-[#9ca3af] focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-sm" />
-                  <button onClick={submitText} className="flex items-center gap-2 rounded-xl bg-blue-600 px-6 py-3 text-sm font-semibold text-white hover:bg-blue-700 transition-colors">Next <ArrowRight size={16} /></button>
+                  <button onClick={submitText} className="flex items-center gap-2 rounded-xl bg-[#1e3a5f] px-6 py-3 text-sm font-semibold text-white hover:bg-[#162d4a] transition-colors">Next <ArrowRight size={16} /></button>
                 </div>
               );
               })()}
@@ -645,13 +655,13 @@ Do NOT use markdown table separators (|---|---|). Include progression rules and 
             </div>
           ) : (
             <div className="text-center py-8">
-              <Dumbbell size={48} className="mx-auto text-blue-600 mb-4" />
+              <Dumbbell size={48} className="mx-auto text-[#1e3a5f] mb-4" />
               <h2 className="text-xl font-bold mb-2 text-[#111827]">Ready to Generate</h2>
               <p className="text-sm text-[#6b7280] mb-6">Your personalized {answers.days}-day {answers.goal?.toLowerCase()} program</p>
               <div className="mb-6 rounded-xl bg-white border border-[#e5e7eb] p-4 text-left text-sm space-y-1 shadow-sm">
                 {Object.entries(answers).filter(([, val]) => val && val !== 'None').map(([key, val]) => (<div key={key} className="flex justify-between"><span className="text-[#6b7280] capitalize">{key.replace('_', ' ')}</span><span className="text-[#111827] text-right max-w-[60%]">{val}</span></div>))}
               </div>
-              <button onClick={generateProgram} disabled={loading} className="w-full rounded-xl bg-blue-600 py-4 font-bold text-sm text-white hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+              <button onClick={generateProgram} disabled={loading} className="w-full rounded-xl bg-[#1e3a5f] py-4 font-bold text-sm text-white hover:bg-[#162d4a] transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
                 {loading ? (<><Loader2 size={18} className="animate-spin" /> Generating...</>) : 'Generate My Program'}
               </button>
               <button onClick={() => setStep(0)} className="mt-3 text-sm text-[#6b7280] hover:text-[#111827]">Start over</button>
@@ -673,7 +683,7 @@ Do NOT use markdown table separators (|---|---|). Include progression rules and 
       </div>
       <div className="px-4 py-6 space-y-4">
         <div className="flex gap-3">
-          <button onClick={() => { setView('intake'); setStep(0); setAnswers({}); setMultiSelections([]); }} className="flex-1 rounded-xl bg-blue-600 p-4 text-left text-white hover:bg-blue-700 transition-colors shadow-sm">
+          <button onClick={() => { setView('intake'); setStep(0); setAnswers({}); setMultiSelections([]); }} className="flex-1 rounded-xl bg-[#1e3a5f] p-4 text-left text-white hover:bg-[#162d4a] transition-colors shadow-sm">
             <Dumbbell size={24} className="mb-2" />
             <h2 className="text-sm font-bold">Generate New</h2>
           </button>
@@ -699,13 +709,13 @@ Do NOT use markdown table separators (|---|---|). Include progression rules and 
                   <button onClick={() => setViewingProgram(p)} className="flex-1 text-left min-w-0">
                     <div className="flex items-center gap-2">
                       <p className="font-semibold text-sm truncate text-[#111827]">{p.title}</p>
-                      {p.isActive && <span className="shrink-0 text-[10px] font-bold uppercase text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full">Active</span>}
+                      {p.isActive && <span className="shrink-0 text-[10px] font-bold uppercase text-[#1e3a5f] bg-blue-100 px-2 py-0.5 rounded-full">Active</span>}
                     </div>
                     <div className="flex items-center gap-2 mt-1 text-xs text-[#6b7280]">
                       <Clock size={10} /><span>{formatDate(p.createdAt)}</span>
                     </div>
                   </button>
-                  {!p.isActive && <button onClick={() => handleSetActive(p)} className="p-2 rounded-lg text-blue-600 hover:bg-blue-50 transition-colors" title="Set as active"><Star size={16} /></button>}
+                  {!p.isActive && <button onClick={() => handleSetActive(p)} className="p-2 rounded-lg text-[#1e3a5f] hover:bg-blue-50 transition-colors" title="Set as active"><Star size={16} /></button>}
                   <button onClick={() => setConfirmDelete(p.id)} className="p-2 rounded-lg text-[#9ca3af] hover:text-red-500 hover:bg-red-50 transition-colors"><Trash2 size={16} /></button>
                 </div>
               ))}

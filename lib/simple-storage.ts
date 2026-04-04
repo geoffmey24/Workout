@@ -271,14 +271,30 @@ export function deleteBodyStat(date: string): void {
 export interface UserProfile {
   name: string;
   onboardingComplete: boolean;
+  is_pro: boolean;
+  fitnessLevel?: 'beginner' | 'intermediate' | 'advanced';
+  primaryGoal?: string;
+  injuries?: string;
+  dislikedExercises?: string[];
+  sport?: string;
+  preferredDuration?: string;
+  equipmentAvailable?: string;
+  coachNotes?: string;
 }
 
 export function getProfile(): UserProfile | null {
-  return read<UserProfile | null>(PROFILE_KEY, null);
+  const p = read<UserProfile | null>(PROFILE_KEY, null);
+  if (p && p.is_pro === undefined) p.is_pro = false;
+  return p;
 }
 
 export function saveProfile(profile: UserProfile): void {
+  if (profile.is_pro === undefined) profile.is_pro = false;
   write(PROFILE_KEY, profile);
+}
+
+export function isPro(): boolean {
+  return getProfile()?.is_pro ?? false;
 }
 
 // ── Dark Mode ─────────────────────────────────────────────

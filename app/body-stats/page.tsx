@@ -58,7 +58,7 @@ export default function BodyStatsPage() {
       <div className="flex items-center gap-3 border-b border-[#e5e7eb] bg-white px-4 py-3">
         <Link href="/settings" className="text-[#6b7280] hover:text-[#111827]"><ArrowLeft size={20} /></Link>
         <h1 className="font-bold text-sm text-[#111827]">Body Stats</h1>
-        <button onClick={() => setShowForm(!showForm)} className="ml-auto p-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700">
+        <button onClick={() => setShowForm(!showForm)} className="ml-auto p-1.5 rounded-lg bg-[#1e3a5f] text-white hover:bg-[#162d4a]">
           <Plus size={16} />
         </button>
       </div>
@@ -99,7 +99,7 @@ export default function BodyStatsPage() {
               <label className="text-xs text-[#6b7280] mb-1 block">Notes</label>
               <textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="Doctor visit, blood work results, how you're feeling..." rows={2} className="w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-sm resize-none" />
             </div>
-            <button onClick={handleSave} className="w-full rounded-xl bg-blue-600 py-3 text-sm font-semibold text-white hover:bg-blue-700 transition-colors">
+            <button onClick={handleSave} className="w-full rounded-xl bg-[#1e3a5f] py-3 text-sm font-semibold text-white hover:bg-[#162d4a] transition-colors">
               Save Entry
             </button>
           </div>
@@ -111,7 +111,7 @@ export default function BodyStatsPage() {
         <div className="px-4 pt-4">
           <div className="rounded-xl bg-white border border-[#e5e7eb] p-4 shadow-sm">
             <div className="flex items-center gap-2 mb-3">
-              <TrendingUp size={16} className="text-blue-600" />
+              <TrendingUp size={16} className="text-[#1e3a5f]" />
               <h2 className="text-xs font-medium uppercase tracking-wider text-[#6b7280]">Weight Trend</h2>
               {weightChange !== null && (
                 <span className={`ml-auto text-xs font-semibold ${weightChange > 0 ? 'text-orange-600' : weightChange < 0 ? 'text-green-600' : 'text-[#6b7280]'}`}>

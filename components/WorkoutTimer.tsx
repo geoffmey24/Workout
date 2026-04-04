@@ -51,7 +51,7 @@ export default function WorkoutTimer({ compact }: WorkoutTimerProps) {
   if (compact) {
     return (
       <div className="flex items-center gap-2">
-        <Timer size={14} className="text-blue-600" />
+        <Timer size={14} className="text-[#1e3a5f]" />
         <span className={`text-sm font-mono font-bold ${isFinished ? 'text-green-600 animate-pulse' : 'text-[#111827]'}`}>
           {format(seconds)}
         </span>
@@ -74,13 +74,13 @@ export default function WorkoutTimer({ compact }: WorkoutTimerProps) {
         <div className="flex gap-1">
           <button
             onClick={() => { setMode('stopwatch'); setSeconds(0); setIsRunning(false); }}
-            className={`px-2 py-1 rounded text-xs font-medium ${mode === 'stopwatch' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-[#6b7280]'}`}
+            className={`px-2 py-1 rounded text-xs font-medium ${mode === 'stopwatch' ? 'bg-[#1e3a5f] text-white' : 'bg-gray-100 text-[#6b7280]'}`}
           >
             Stopwatch
           </button>
           <button
             onClick={() => { setMode('rest'); setSeconds(restPreset); setIsRunning(false); }}
-            className={`px-2 py-1 rounded text-xs font-medium ${mode === 'rest' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-[#6b7280]'}`}
+            className={`px-2 py-1 rounded text-xs font-medium ${mode === 'rest' ? 'bg-[#1e3a5f] text-white' : 'bg-gray-100 text-[#6b7280]'}`}
           >
             Rest
           </button>
@@ -98,7 +98,7 @@ export default function WorkoutTimer({ compact }: WorkoutTimerProps) {
       <div className="flex gap-2 justify-center mb-4">
         <button
           onClick={() => setIsRunning(!isRunning)}
-          className="flex items-center gap-2 rounded-xl bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 transition-colors"
+          className="flex items-center gap-2 rounded-xl bg-[#1e3a5f] px-6 py-2.5 text-sm font-semibold text-white hover:bg-[#162d4a] transition-colors"
         >
           {isRunning ? <Pause size={16} /> : <Play size={16} />}
           {isRunning ? 'Pause' : 'Start'}
@@ -118,7 +118,7 @@ export default function WorkoutTimer({ compact }: WorkoutTimerProps) {
               key={s}
               onClick={() => startRest(s)}
               className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
-                restPreset === s && !isRunning ? 'bg-blue-600 text-white' : 'bg-gray-100 text-[#6b7280] hover:bg-gray-200'
+                restPreset === s && !isRunning ? 'bg-[#1e3a5f] text-white' : 'bg-gray-100 text-[#6b7280] hover:bg-gray-200'
               }`}
             >
               {s < 60 ? `${s}s` : `${s / 60}m`}

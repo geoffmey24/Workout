@@ -95,7 +95,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       <div className="flex items-center justify-center h-screen bg-[#f8f9fa]">
         <div className="text-center">
           <h1 className="text-2xl font-extrabold text-[#111827] mb-2">
-            ELITE <span className="text-blue-600">COACH</span>
+            ELITE <span className="text-[#1e3a5f]">COACH</span>
           </h1>
           <div className="flex gap-1.5 justify-center mt-4">
             <span className="typing-dot h-2 w-2 rounded-full bg-blue-500" />

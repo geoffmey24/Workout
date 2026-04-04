@@ -1,20 +1,47 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { ArrowLeft, LogOut, Mail, Shield, Moon, Sun, Scale, Download, ChevronRight } from 'lucide-react';
+import { ArrowLeft, LogOut, Moon, Sun, Scale, Download, ChevronRight, Crown, User, Save } from 'lucide-react';
 import Link from 'next/link';
 import Navigation from '@/components/Navigation';
 import { useAuth } from '@/components/AuthProvider';
-import { getDarkMode, setDarkMode as storageSaveDarkMode, getActiveProgram, StoredProgram } from '@/lib/simple-storage';
+import { getDarkMode, setDarkMode as storageSaveDarkMode, getActiveProgram, getProfile, saveProfile, StoredProgram, UserProfile } from '@/lib/simple-storage';
 
 export default function SettingsPage() {
   const { user, signOut } = useAuth();
   const [darkMode, setDarkMode] = useState(false);
   const [activeProgram, setActiveProgramState] = useState<StoredProgram | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  // Form fields
+  const [name, setName] = useState('');
+  const [fitnessLevel, setFitnessLevel] = useState<'beginner' | 'intermediate' | 'advanced' | ''>('');
+  const [primaryGoal, setPrimaryGoal] = useState('');
+  const [injuries, setInjuries] = useState('');
+  const [dislikedExercisesStr, setDislikedExercisesStr] = useState('');
+  const [sport, setSport] = useState('');
+  const [preferredDuration, setPreferredDuration] = useState('');
+  const [equipmentAvailable, setEquipmentAvailable] = useState('');
+  const [coachNotes, setCoachNotes] = useState('');
 
   useEffect(() => {
     setDarkMode(getDarkMode());
     setActiveProgramState(getActiveProgram());
+
+    const existing = getProfile();
+    if (existing) {
+      setProfile(existing);
+      setName(existing.name || '');
+      setFitnessLevel(existing.fitnessLevel || '');
+      setPrimaryGoal(existing.primaryGoal || '');
+      setInjuries(existing.injuries || '');
+      setDislikedExercisesStr((existing.dislikedExercises || []).join(', '));
+      setSport(existing.sport || '');
+      setPreferredDuration(existing.preferredDuration || '');
+      setEquipmentAvailable(existing.equipmentAvailable || '');
+      setCoachNotes(existing.coachNotes || '');
+    }
   }, [user]);
 
   const toggleDarkMode = () => {
@@ -22,6 +49,33 @@ export default function SettingsPage() {
     setDarkMode(newVal);
     storageSaveDarkMode(newVal);
     document.documentElement.classList.toggle('dark', newVal);
+  };
+
+  const handleSaveProfile = () => {
+    setSaving(true);
+    const dislikedExercises = dislikedExercisesStr
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    const updated: UserProfile = {
+      name,
+      onboardingComplete: profile?.onboardingComplete ?? true,
+      is_pro: profile?.is_pro ?? false,
+      fitnessLevel: fitnessLevel || undefined,
+      primaryGoal: primaryGoal || undefined,
+      injuries: injuries || undefined,
+      dislikedExercises: dislikedExercises.length > 0 ? dislikedExercises : undefined,
+      sport: sport || undefined,
+      preferredDuration: preferredDuration || undefined,
+      equipmentAvailable: equipmentAvailable || undefined,
+      coachNotes: coachNotes || undefined,
+    };
+
+    saveProfile(updated);
+    setProfile(updated);
+
+    setTimeout(() => setSaving(false), 600);
   };
 
   const handleExportProgram = () => {
@@ -36,8 +90,14 @@ export default function SettingsPage() {
     URL.revokeObjectURL(url);
   };
 
+  const isPro = profile?.is_pro ?? false;
+
+  const inputClasses = 'w-full rounded-lg border border-[#e5e7eb] dark:border-[#374151] bg-[#f8f9fa] dark:bg-[#111827] px-3 py-2.5 text-sm text-[#111827] dark:text-white placeholder-[#9ca3af] focus:outline-none focus:ring-2 focus:ring-[#1e3a5f] focus:border-transparent';
+  const labelClasses = 'block text-xs font-medium text-[#6b7280] mb-1.5';
+
   return (
     <div className="min-h-screen pb-24 bg-[#f8f9fa] dark:bg-[#111827]">
+      {/* Header */}
       <div className="flex items-center gap-3 border-b border-[#e5e7eb] bg-white dark:bg-[#1f2937] px-4 py-3">
         <Link href="/" className="text-[#6b7280] hover:text-[#111827] dark:hover:text-white">
           <ArrowLeft size={20} />
@@ -46,11 +106,11 @@ export default function SettingsPage() {
       </div>
 
       <div className="px-4 py-6 space-y-4">
-        {/* Profile Card */}
+        {/* Account Card */}
         <div className="rounded-2xl bg-white dark:bg-[#1f2937] border border-[#e5e7eb] dark:border-[#374151] p-5 shadow-sm">
           <h2 className="text-xs font-medium uppercase tracking-wider text-[#6b7280] mb-4">Account</h2>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-sm">
+            <div className="w-10 h-10 rounded-full bg-[#1e3a5f] flex items-center justify-center text-white font-bold text-sm">
               {user?.email?.[0]?.toUpperCase() || '?'}
             </div>
             <div className="flex-1 min-w-0">
@@ -62,10 +122,165 @@ export default function SettingsPage() {
           </div>
         </div>
 
+        {/* Upgrade to Pro */}
+        {!isPro && (
+          <Link href="/upgrade" className="block">
+            <div className="rounded-2xl border border-amber-300 dark:border-amber-500 bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20 p-5 shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-800/40 flex items-center justify-center">
+                  <Crown size={20} className="text-amber-600 dark:text-amber-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-amber-900 dark:text-amber-300">Upgrade to Pro</p>
+                  <p className="text-xs text-amber-700 dark:text-amber-400/80">Unlock voice coaching, coach memory, and more</p>
+                </div>
+                <ChevronRight size={18} className="text-amber-500" />
+              </div>
+            </div>
+          </Link>
+        )}
+
+        {/* My Preferences (Coach Memory) */}
+        <div className="rounded-2xl bg-white dark:bg-[#1f2937] border border-[#e5e7eb] dark:border-[#374151] p-5 shadow-sm">
+          <div className="flex items-center gap-2 mb-5">
+            <User size={16} className="text-[#1e3a5f]" />
+            <h2 className="text-xs font-medium uppercase tracking-wider text-[#6b7280]">My Preferences</h2>
+          </div>
+
+          <div className="space-y-4">
+            {/* Name */}
+            <div>
+              <label className={labelClasses}>Name</label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Your name"
+                className={inputClasses}
+              />
+            </div>
+
+            {/* Fitness Level */}
+            <div>
+              <label className={labelClasses}>Fitness Level</label>
+              <select
+                value={fitnessLevel}
+                onChange={(e) => setFitnessLevel(e.target.value as 'beginner' | 'intermediate' | 'advanced' | '')}
+                className={inputClasses}
+              >
+                <option value="">Select level</option>
+                <option value="beginner">Beginner</option>
+                <option value="intermediate">Intermediate</option>
+                <option value="advanced">Advanced</option>
+              </select>
+            </div>
+
+            {/* Primary Goal */}
+            <div>
+              <label className={labelClasses}>Primary Goal</label>
+              <input
+                type="text"
+                value={primaryGoal}
+                onChange={(e) => setPrimaryGoal(e.target.value)}
+                placeholder="e.g., Build muscle, Lose weight"
+                className={inputClasses}
+              />
+            </div>
+
+            {/* Injuries & Limitations */}
+            <div>
+              <label className={labelClasses}>Injuries & Limitations</label>
+              <textarea
+                value={injuries}
+                onChange={(e) => setInjuries(e.target.value)}
+                placeholder="Any injuries or physical limitations"
+                rows={2}
+                className={inputClasses + ' resize-none'}
+              />
+            </div>
+
+            {/* Exercises to Avoid */}
+            <div>
+              <label className={labelClasses}>Exercises to Avoid</label>
+              <input
+                type="text"
+                value={dislikedExercisesStr}
+                onChange={(e) => setDislikedExercisesStr(e.target.value)}
+                placeholder="e.g., Burpees, Box Jumps"
+                className={inputClasses}
+              />
+              <p className="text-[10px] text-[#9ca3af] mt-1">Comma-separated list</p>
+            </div>
+
+            {/* Sport */}
+            <div>
+              <label className={labelClasses}>Sport</label>
+              <input
+                type="text"
+                value={sport}
+                onChange={(e) => setSport(e.target.value)}
+                placeholder="e.g., Basketball, Running"
+                className={inputClasses}
+              />
+            </div>
+
+            {/* Preferred Session Duration */}
+            <div>
+              <label className={labelClasses}>Preferred Session Duration</label>
+              <select
+                value={preferredDuration}
+                onChange={(e) => setPreferredDuration(e.target.value)}
+                className={inputClasses}
+              >
+                <option value="">Select duration</option>
+                <option value="20 minutes">20 minutes</option>
+                <option value="30 minutes">30 minutes</option>
+                <option value="45 minutes">45 minutes</option>
+                <option value="60 minutes">60 minutes</option>
+                <option value="75 minutes">75 minutes</option>
+                <option value="90+ minutes">90+ minutes</option>
+              </select>
+            </div>
+
+            {/* Equipment Available */}
+            <div>
+              <label className={labelClasses}>Equipment Available</label>
+              <input
+                type="text"
+                value={equipmentAvailable}
+                onChange={(e) => setEquipmentAvailable(e.target.value)}
+                placeholder="e.g., Dumbbells, Pull-up bar, Full gym"
+                className={inputClasses}
+              />
+            </div>
+
+            {/* Coach Notes */}
+            <div>
+              <label className={labelClasses}>Coach Notes</label>
+              <textarea
+                value={coachNotes}
+                onChange={(e) => setCoachNotes(e.target.value)}
+                placeholder="Anything else your coach should know"
+                rows={3}
+                className={inputClasses + ' resize-none'}
+              />
+            </div>
+
+            {/* Save Button */}
+            <button
+              onClick={handleSaveProfile}
+              className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#1e3a5f] py-3 text-sm font-semibold text-white hover:bg-[#162d4a] active:scale-[0.98] transition-all"
+            >
+              <Save size={16} />
+              {saving ? 'Saved!' : 'Save Preferences'}
+            </button>
+          </div>
+        </div>
+
         {/* Quick Links */}
         <div className="rounded-2xl bg-white dark:bg-[#1f2937] border border-[#e5e7eb] dark:border-[#374151] shadow-sm divide-y divide-[#e5e7eb] dark:divide-[#374151]">
           <Link href="/body-stats" className="flex items-center gap-3 px-5 py-4 hover:bg-gray-50 dark:hover:bg-[#374151] transition-colors">
-            <Scale size={18} className="text-blue-600" />
+            <Scale size={18} className="text-[#1e3a5f]" />
             <span className="text-sm font-medium text-[#111827] dark:text-white flex-1">Body Stats & Measurements</span>
             <ChevronRight size={16} className="text-[#9ca3af]" />
           </Link>
@@ -88,25 +303,10 @@ export default function SettingsPage() {
             </div>
             <button
               onClick={toggleDarkMode}
-              className={`relative w-11 h-6 rounded-full transition-colors ${darkMode ? 'bg-blue-600' : 'bg-gray-300'}`}
+              className={`relative w-11 h-6 rounded-full transition-colors ${darkMode ? 'bg-[#1e3a5f]' : 'bg-gray-300'}`}
             >
               <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${darkMode ? 'translate-x-5' : ''}`} />
             </button>
-          </div>
-        </div>
-
-        {/* Info */}
-        <div className="rounded-2xl bg-white dark:bg-[#1f2937] border border-[#e5e7eb] dark:border-[#374151] p-5 shadow-sm space-y-3">
-          <h2 className="text-xs font-medium uppercase tracking-wider text-[#6b7280] mb-2">Details</h2>
-          <div className="flex items-center gap-3 text-sm">
-            <Mail size={16} className="text-[#6b7280]" />
-            <span className="text-[#111827] dark:text-white">{user?.email}</span>
-          </div>
-          <div className="flex items-center gap-3 text-sm">
-            <Shield size={16} className="text-[#6b7280]" />
-            <span className="text-[#111827] dark:text-white">
-              {user?.app_metadata?.provider === 'google' ? 'Signed in with Google' : 'Email & password'}
-            </span>
           </div>
         </div>
 

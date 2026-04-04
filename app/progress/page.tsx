@@ -157,7 +157,7 @@ export default function ProgressPage() {
           <Dumbbell size={56} className="mx-auto text-gray-300 mb-4" />
           <h2 className="text-lg font-bold text-[#111827] mb-2">No active program</h2>
           <p className="text-sm text-[#6b7280] max-w-xs mx-auto mb-6">Create or import a training program first.</p>
-          <Link href="/program" className="inline-block rounded-xl bg-blue-600 px-6 py-3 text-sm font-semibold text-white hover:bg-blue-700 transition-colors">Create a Program</Link>
+          <Link href="/program" className="inline-block rounded-xl bg-[#1e3a5f] px-6 py-3 text-sm font-semibold text-white hover:bg-[#162d4a] transition-colors">Create a Program</Link>
         </div>
         <Navigation />
       </div>
@@ -194,13 +194,13 @@ export default function ProgressPage() {
 
       {/* View Toggle */}
       <div className="px-4 mb-3 flex gap-2">
-        <button onClick={() => setViewMode('checklist')} className={`flex-1 rounded-xl py-2 text-xs font-semibold transition-colors ${viewMode === 'checklist' ? 'bg-blue-600 text-white' : 'bg-white border border-[#e5e7eb] text-[#6b7280]'}`}>
+        <button onClick={() => setViewMode('checklist')} className={`flex-1 rounded-xl py-2 text-xs font-semibold transition-colors ${viewMode === 'checklist' ? 'bg-[#1e3a5f] text-white' : 'bg-white border border-[#e5e7eb] text-[#6b7280]'}`}>
           Checklist ({completedCount}/{totalExercises})
         </button>
-        <button onClick={() => setViewMode('prs')} className={`flex-1 rounded-xl py-2 text-xs font-semibold transition-colors ${viewMode === 'prs' ? 'bg-blue-600 text-white' : 'bg-white border border-[#e5e7eb] text-[#6b7280]'}`}>
+        <button onClick={() => setViewMode('prs')} className={`flex-1 rounded-xl py-2 text-xs font-semibold transition-colors ${viewMode === 'prs' ? 'bg-[#1e3a5f] text-white' : 'bg-white border border-[#e5e7eb] text-[#6b7280]'}`}>
           PRs
         </button>
-        <button onClick={() => setViewMode('full')} className={`flex-1 rounded-xl py-2 text-xs font-semibold transition-colors ${viewMode === 'full' ? 'bg-blue-600 text-white' : 'bg-white border border-[#e5e7eb] text-[#6b7280]'}`}>
+        <button onClick={() => setViewMode('full')} className={`flex-1 rounded-xl py-2 text-xs font-semibold transition-colors ${viewMode === 'full' ? 'bg-[#1e3a5f] text-white' : 'bg-white border border-[#e5e7eb] text-[#6b7280]'}`}>
           Full Program
         </button>
       </div>
@@ -208,7 +208,7 @@ export default function ProgressPage() {
       {/* Progress Bar */}
       <div className="px-4 mb-4">
         <div className="h-2 rounded-full bg-[#e5e7eb]">
-          <div className={`h-full rounded-full transition-all duration-300 ${progress === 100 ? 'bg-green-500' : 'bg-blue-600'}`} style={{ width: `${progress}%` }} />
+          <div className={`h-full rounded-full transition-all duration-300 ${progress === 100 ? 'bg-green-500' : 'bg-[#1e3a5f]'}`} style={{ width: `${progress}%` }} />
         </div>
       </div>
 
@@ -231,7 +231,7 @@ export default function ProgressPage() {
                 </button>
                 {lastEntry && !done && (
                   <div className="ml-9 mt-1 flex items-center gap-2">
-                    <p className="text-[10px] text-blue-600">Last: {lastEntry.weight}lbs x {lastEntry.reps}r x {lastEntry.sets}s ({lastEntry.date})</p>
+                    <p className="text-[10px] text-[#1e3a5f]">Last: {lastEntry.weight}lbs x {lastEntry.reps}r x {lastEntry.sets}s ({lastEntry.date})</p>
                     {lastEntry.weight > 0 && lastEntry.reps > 0 && (
                       <span className="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded-full font-medium">
                         Est. 1RM: {calculate1RM(lastEntry.weight, lastEntry.reps)} lbs
@@ -281,7 +281,7 @@ export default function ProgressPage() {
             </div>
             <textarea value={workoutNote} onChange={e => { setWorkoutNote(e.target.value); setNoteSaved(false); }} placeholder="How did this workout feel? Any notes..." rows={2} className="w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-xs resize-none" />
             {workoutNote.trim() && (
-              <button onClick={handleSaveNote} className="mt-1 text-xs text-blue-600 font-medium">
+              <button onClick={handleSaveNote} className="mt-1 text-xs text-[#1e3a5f] font-medium">
                 {noteSaved ? 'Saved!' : 'Save Note'}
               </button>
             )}
@@ -341,7 +341,7 @@ export default function ProgressPage() {
       {/* Exercise Swap Suggestion */}
       <div className="px-4 mt-4">
         <Link href="/chat?topic=I%20need%20alternative%20exercises%20for%20my%20current%20workout.%20What%20can%20I%20swap%20in%3F" className="flex items-center gap-2 rounded-xl border border-[#e5e7eb] bg-white px-4 py-3 shadow-sm hover:border-blue-300 transition-colors">
-          <MessageSquare size={16} className="text-blue-600" />
+          <MessageSquare size={16} className="text-[#1e3a5f]" />
           <span className="text-xs font-medium text-[#6b7280]">Need to swap an exercise? Ask Coach</span>
         </Link>
       </div>

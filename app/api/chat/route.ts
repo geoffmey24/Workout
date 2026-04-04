@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { messages, stream } = (await req.json()) as { messages: ApiMessage[]; stream?: boolean };
+    const { messages, stream, systemPrompt } = (await req.json()) as { messages: ApiMessage[]; stream?: boolean; systemPrompt?: string };
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 4096,
-        system: SYSTEM_PROMPT,
+        system: systemPrompt || SYSTEM_PROMPT,
         messages,
         stream: !!stream,
       }),

@@ -53,7 +53,7 @@ export default function LoginPage() {
       <div className="min-h-screen flex items-center justify-center bg-[#f8f9fa] px-4">
         <div className="w-full max-w-sm text-center">
           <h1 className="text-2xl font-extrabold text-[#111827] mb-2">
-            ELITE <span className="text-blue-600">COACH</span>
+            ELITE <span className="text-[#1e3a5f]">COACH</span>
           </h1>
           <div className="mt-8 rounded-2xl bg-white border border-[#e5e7eb] p-6 shadow-sm">
             <div className="text-3xl mb-3">✉️</div>
@@ -63,7 +63,7 @@ export default function LoginPage() {
             </p>
             <button
               onClick={() => { setCheckEmail(false); setMode('login'); }}
-              className="mt-4 text-sm text-blue-600 hover:text-blue-500 font-medium"
+              className="mt-4 text-sm text-[#1e3a5f] hover:text-blue-500 font-medium"
             >
               Back to login
             </button>
@@ -78,7 +78,7 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-extrabold text-[#111827]">
-            ELITE <span className="text-blue-600">COACH</span>
+            ELITE <span className="text-[#1e3a5f]">COACH</span>
           </h1>
           <p className="mt-2 text-sm text-[#6b7280]">Your AI performance coach</p>
         </div>
@@ -140,7 +140,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-xl bg-blue-600 py-3 text-sm font-semibold text-white hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              className="w-full rounded-xl bg-[#1e3a5f] py-3 text-sm font-semibold text-white hover:bg-[#162d4a] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {loading && <Loader2 size={16} className="animate-spin" />}
               {mode === 'login' ? 'Sign In' : 'Create Account'}
@@ -151,7 +151,7 @@ export default function LoginPage() {
             {mode === 'login' ? "Don't have an account? " : 'Already have an account? '}
             <button
               onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError(''); }}
-              className="text-blue-600 font-medium hover:text-blue-500"
+              className="text-[#1e3a5f] font-medium hover:text-blue-500"
             >
               {mode === 'login' ? 'Sign up' : 'Sign in'}
             </button>

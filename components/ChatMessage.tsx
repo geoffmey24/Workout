@@ -48,7 +48,7 @@ export default function ChatMessage({ message }: { message: Message }) {
       <div
         className={`max-w-[85%] rounded-2xl px-4 py-3 ${
           isUser
-            ? 'bg-blue-600 text-white'
+            ? 'bg-[#1e3a5f] text-white'
             : 'bg-white border border-[#e5e7eb] text-[#111827] shadow-sm'
         }`}
       >

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { MessageSquare, Zap, Flame, Trophy, Calendar, Play, Pause, RotateCcw, Timer, Dumbbell, Heart, SkipForward, Trash2, TrendingUp, Scale, Plus, Check } from 'lucide-react';
+import { MessageSquare, Zap, Flame, Trophy, Calendar, Play, Pause, RotateCcw, Timer, Dumbbell, Heart, SkipForward, Trash2, TrendingUp, Scale, Plus, Check, Settings as SettingsIcon } from 'lucide-react';
 import Navigation from '@/components/Navigation';
 import ProgramMarkdown from '@/components/ProgramMarkdown';
 import { useAuth } from '@/components/AuthProvider';
@@ -160,6 +160,7 @@ export default function HomePage() {
   const [timerRunning, setTimerRunning] = useState(false);
   const [timerMode, setTimerMode] = useState<'stopwatch' | 'rest'>('stopwatch');
   const [restPreset, setRestPreset] = useState(90);
+  const [timerExpanded, setTimerExpanded] = useState(false);
 
   const refreshStats = () => {
     setStreak(getStreak());
@@ -187,7 +188,8 @@ export default function HomePage() {
 
   const handleOnboardingComplete = () => {
     const name = onboardingName.trim() || 'Athlete';
-    const p: UserProfile = { name, onboardingComplete: true };
+    const existingProfile = getProfile();
+    const p: UserProfile = { ...existingProfile, name, onboardingComplete: true, is_pro: existingProfile?.is_pro ?? false };
     saveProfile(p);
     setProfile(p);
     setShowOnboarding(false);
@@ -303,7 +305,7 @@ export default function HomePage() {
       {showOnboarding && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
           <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-xl text-center">
-            <Dumbbell size={40} className="mx-auto text-blue-600 mb-3" />
+            <Dumbbell size={40} className="mx-auto text-[#1e3a5f] mb-3" />
             <h2 className="text-xl font-bold text-[#111827] mb-1">Welcome to ELITE COACH</h2>
             <p className="text-sm text-[#6b7280] mb-6">Let&apos;s set up your profile</p>
             <div className="mb-4">
@@ -317,7 +319,7 @@ export default function HomePage() {
                 autoFocus
               />
             </div>
-            <button onClick={handleOnboardingComplete} className="w-full rounded-xl bg-blue-600 py-3 text-sm font-bold text-white hover:bg-blue-700 transition-colors">
+            <button onClick={handleOnboardingComplete} className="w-full rounded-xl bg-[#1e3a5f] py-3 text-sm font-bold text-white hover:bg-[#162d4a] transition-colors">
               Get Started
             </button>
           </div>
@@ -340,13 +342,18 @@ export default function HomePage() {
           </div>
         </div>
       )}
-      <div className="px-4 pt-12 pb-6">
-        <h1 className="text-3xl font-extrabold tracking-tight text-[#111827]">
-          ELITE <span className="text-blue-600">COACH</span>
-        </h1>
-        {profile?.name && (
-          <p className="mt-1 text-sm text-[#6b7280]">Welcome back, {profile.name}</p>
-        )}
+      <div className="px-4 pt-12 pb-6 flex items-start justify-between">
+        <div>
+          <h1 className="text-3xl font-extrabold tracking-tight text-[#111827]">
+            ELITE <span className="text-[#1e3a5f]">COACH</span>
+          </h1>
+          {profile?.name && (
+            <p className="mt-1 text-sm text-[#6b7280]">Welcome back, {profile.name}</p>
+          )}
+        </div>
+        <Link href="/settings" className="mt-1 p-2 rounded-lg text-[#6b7280] hover:text-[#111827] hover:bg-gray-100 transition-colors">
+          <SettingsIcon size={20} />
+        </Link>
       </div>
 
       {totalWorkouts > 0 && (
@@ -369,100 +376,16 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* Weekly Check-In Summary */}
-      {activeProgram && (
-        <div className="px-4 mb-4">
-          <div className="rounded-xl bg-blue-50 border border-blue-200 p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <TrendingUp size={14} className="text-blue-600" />
-              <span className="text-xs font-medium text-blue-800 uppercase tracking-wider">Weekly Check-In</span>
-            </div>
-            <p className="text-sm text-blue-900">
-              <strong>{weekCompletionCount}</strong> workout{weekCompletionCount !== 1 ? 's' : ''} completed
-              {parseInt(activeProgram.answers?.days || '0') > 0 && (
-                <span> of <strong>{activeProgram.answers.days}</strong> planned</span>
-              )}
-            </p>
-            {weekVolume > 0 && (
-              <p className="text-xs text-blue-700 mt-1">Total volume: {weekVolume.toLocaleString()} lbs this week</p>
-            )}
-            {bodyStatsEntries.length > 1 && (() => {
-              const latest = bodyStatsEntries[bodyStatsEntries.length - 1];
-              const prev = bodyStatsEntries[bodyStatsEntries.length - 2];
-              if (latest.weight && prev.weight) {
-                const change = latest.weight - prev.weight;
-                return <p className="text-xs text-blue-700 mt-0.5">Body weight: {change > 0 ? '+' : ''}{change.toFixed(1)} lbs</p>;
-              }
-              return null;
-            })()}
-            {streak > 1 && (
-              <p className="text-xs text-blue-700 mt-0.5">{streak}-day streak going strong!</p>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Workout Timer */}
-      <div className="px-4 mb-6">
-        <div className="rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <Timer size={16} className="text-blue-600" />
-              <h2 className="text-xs font-medium uppercase tracking-wider text-[#6b7280]">
-                {timerMode === 'rest' ? 'Rest Timer' : 'Workout Timer'}
-              </h2>
-            </div>
-            <div className="flex gap-1">
-              <button onClick={() => { setTimerMode('stopwatch'); setTimerSeconds(0); setTimerRunning(false); }} className={`px-2.5 py-1 rounded-lg text-xs font-medium ${timerMode === 'stopwatch' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-[#6b7280]'}`}>Stopwatch</button>
-              <button onClick={() => { setTimerMode('rest'); setTimerSeconds(restPreset); setTimerRunning(false); }} className={`px-2.5 py-1 rounded-lg text-xs font-medium ${timerMode === 'rest' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-[#6b7280]'}`}>Rest</button>
-            </div>
-          </div>
-          <div className={`text-center text-5xl font-mono font-extrabold mb-4 ${isTimerFinished ? 'text-green-600 animate-pulse' : 'text-[#111827]'}`}>{formatTime(timerSeconds)}</div>
-          {isTimerFinished && <p className="text-center text-sm text-green-600 mb-3 font-semibold">Time to work!</p>}
-          <div className="flex gap-2 justify-center mb-3">
-            <button onClick={() => setTimerRunning(!timerRunning)} className="flex items-center gap-2 rounded-xl bg-blue-600 px-8 py-3 text-sm font-semibold text-white hover:bg-blue-700 transition-colors">
-              {timerRunning ? <Pause size={18} /> : <Play size={18} />} {timerRunning ? 'Pause' : 'Start Workout'}
-            </button>
-            <button onClick={resetTimer} className="rounded-xl bg-gray-100 p-3 hover:bg-gray-200 transition-colors text-[#6b7280]"><RotateCcw size={18} /></button>
-          </div>
-          {timerMode === 'rest' && (
-            <div className="flex gap-2 justify-center">
-              {[30, 60, 90, 120, 180].map((s) => (
-                <button key={s} onClick={() => startRest(s)} className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${restPreset === s && !timerRunning ? 'bg-blue-600 text-white' : 'bg-gray-100 text-[#6b7280] hover:bg-gray-200'}`}>
-                  {s < 60 ? `${s}s` : `${s / 60}m`}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Quick Actions */}
-      <div className="px-4 mb-6 flex gap-3">
-        <Link href="/chat" className="flex-1">
-          <div className="rounded-xl bg-blue-600 p-4 flex items-center gap-3 text-white hover:bg-blue-700 transition-colors shadow-sm">
-            <MessageSquare size={20} />
-            <span className="font-semibold text-sm">Talk to Coach</span>
-          </div>
-        </Link>
-        <Link href="/program" className="flex-1">
-          <div className="rounded-xl bg-white border border-[#e5e7eb] p-4 flex items-center gap-3 hover:border-blue-300 transition-colors shadow-sm">
-            <Zap size={20} className="text-blue-600" />
-            <span className="font-semibold text-sm text-[#111827]">My Program</span>
-          </div>
-        </Link>
-      </div>
-
       {/* Active Program with Day Selection */}
       <div className="px-4 mb-6">
         {activeProgram && programDays.length > 0 ? (
           <div className="rounded-2xl border border-[#e5e7eb] bg-white shadow-sm overflow-hidden">
             {/* Program title */}
             <div className="px-4 pt-4 pb-2 flex items-center justify-between">
-              <h2 className="text-xs font-medium uppercase tracking-wider text-blue-600">
+              <h2 className="text-xs font-medium uppercase tracking-wider text-[#1e3a5f]">
                 {activeProgram.title}
               </h2>
-              <Link href="/progress" className="text-xs text-blue-600 font-medium">Track Progress &rarr;</Link>
+              <Link href="/progress" className="text-xs text-[#1e3a5f] font-medium">Track Progress &rarr;</Link>
             </div>
 
             {/* Horizontal scrollable day picker */}
@@ -478,7 +401,7 @@ export default function HomePage() {
                     }}
                     className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium whitespace-nowrap transition-colors ${
                       idx === selectedDayIdx
-                        ? day.isRecovery ? 'bg-green-600 text-white' : 'bg-blue-600 text-white'
+                        ? day.isRecovery ? 'bg-green-600 text-white' : 'bg-[#1e3a5f] text-white'
                         : day.isRecovery
                         ? 'bg-green-50 text-green-700 border border-green-200'
                         : 'bg-gray-100 text-[#6b7280] border border-[#e5e7eb]'
@@ -495,13 +418,13 @@ export default function HomePage() {
             <div className="px-4 pb-4 border-t border-[#e5e7eb]">
               <div className="flex items-center justify-between py-3">
                 <div className="flex items-center gap-2">
-                  {selectedDay?.isRecovery ? <Heart size={16} className="text-green-600" /> : <Dumbbell size={16} className="text-blue-600" />}
+                  {selectedDay?.isRecovery ? <Heart size={16} className="text-green-600" /> : <Dumbbell size={16} className="text-[#1e3a5f]" />}
                   <span className="font-semibold text-sm text-[#111827]">{selectedDay?.header}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setShowDayContent(!showDayContent)}
-                    className="text-xs text-blue-600 font-medium"
+                    className="text-xs text-[#1e3a5f] font-medium"
                   >
                     {showDayContent ? 'Hide' : 'Show'}
                   </button>
@@ -542,7 +465,7 @@ export default function HomePage() {
                               <div key={idx} className={`rounded-lg border p-3 ${isLogged ? 'border-green-200 bg-green-50' : 'border-[#e5e7eb] bg-white'}`}>
                                 <p className="font-medium text-sm text-[#111827] mb-1">{ex.name}</p>
                                 {lastLog && (
-                                  <p className="text-[10px] text-blue-600 mb-1">Last: {lastLog.weight}lbs x {lastLog.reps}r | Est. 1RM: {last1RM}lbs</p>
+                                  <p className="text-[10px] text-[#1e3a5f] mb-1">Last: {lastLog.weight}lbs x {lastLog.reps}r | Est. 1RM: {last1RM}lbs</p>
                                 )}
                                 {isLogged ? (
                                   <p className="text-xs text-green-600 font-medium flex items-center gap-1"><Check size={12} /> Logged!</p>
@@ -560,7 +483,7 @@ export default function HomePage() {
                                         className="w-16 rounded-lg border border-[#e5e7eb] px-2 py-2 text-sm text-center" />
                                       <button onClick={() => handleLogSet(ex.name)}
                                         disabled={!input.weight || !input.reps}
-                                        className="rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-40">
+                                        className="rounded-lg bg-[#1e3a5f] px-3 py-2 text-xs font-semibold text-white hover:bg-[#162d4a] disabled:opacity-40">
                                         Log
                                       </button>
                                     </div>
@@ -607,10 +530,10 @@ export default function HomePage() {
           </div>
         ) : activeProgram ? (
           <div className="rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-sm">
-            <h2 className="text-xs font-medium uppercase tracking-wider text-blue-600 mb-3">Active Program</h2>
+            <h2 className="text-xs font-medium uppercase tracking-wider text-[#1e3a5f] mb-3">Active Program</h2>
             <p className="font-bold text-sm text-[#111827] mb-1">{activeProgram.title}</p>
             <p className="text-xs text-[#6b7280] line-clamp-3 leading-relaxed">{activeProgram.content.slice(0, 200)}...</p>
-            <Link href="/progress" className="inline-block mt-3 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 transition-colors">Start Workout</Link>
+            <Link href="/progress" className="inline-block mt-3 rounded-xl bg-[#1e3a5f] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#162d4a] transition-colors">Start Workout</Link>
           </div>
         ) : (
           <Link href="/program">
@@ -628,14 +551,14 @@ export default function HomePage() {
         <div className="rounded-2xl border border-[#e5e7eb] bg-white p-4 shadow-sm">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <Scale size={16} className="text-blue-600" />
+              <Scale size={16} className="text-[#1e3a5f]" />
               <h2 className="text-xs font-medium uppercase tracking-wider text-[#6b7280]">Body Stats</h2>
             </div>
             <div className="flex items-center gap-2">
-              <button onClick={() => setShowWeightInput(!showWeightInput)} className="p-1 rounded-lg bg-blue-600 text-white hover:bg-blue-700">
+              <button onClick={() => setShowWeightInput(!showWeightInput)} className="p-1 rounded-lg bg-[#1e3a5f] text-white hover:bg-[#162d4a]">
                 <Plus size={14} />
               </button>
-              <Link href="/body-stats" className="text-xs text-blue-600 font-medium">View All</Link>
+              <Link href="/body-stats" className="text-xs text-[#1e3a5f] font-medium">View All</Link>
             </div>
           </div>
 
@@ -655,7 +578,7 @@ export default function HomePage() {
                   setBodyStatsEntries(getBodyStats());
                   setQuickWeight(''); setQuickBf(''); setShowWeightInput(false);
                 }}
-                className="rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-700"
+                className="rounded-lg bg-[#1e3a5f] px-3 py-2 text-xs font-semibold text-white hover:bg-[#162d4a]"
               >
                 Save
               </button>
@@ -703,6 +626,39 @@ export default function HomePage() {
         </div>
       </div>
 
+      {/* Weekly Check-In Summary */}
+      {activeProgram && (
+        <div className="px-4 mb-4">
+          <div className="rounded-2xl bg-[#f0f4f8] border border-[#d1d9e6] p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <TrendingUp size={14} className="text-[#1e3a5f]" />
+              <span className="text-xs font-medium text-[#1e3a5f] uppercase tracking-wider">Weekly Check-In</span>
+            </div>
+            <p className="text-sm text-[#111827]">
+              <strong>{weekCompletionCount}</strong> workout{weekCompletionCount !== 1 ? 's' : ''} completed
+              {parseInt(activeProgram.answers?.days || '0') > 0 && (
+                <span> of <strong>{activeProgram.answers.days}</strong> planned</span>
+              )}
+            </p>
+            {weekVolume > 0 && (
+              <p className="text-xs text-[#4b5e78] mt-1">Total volume: {weekVolume.toLocaleString()} lbs this week</p>
+            )}
+            {bodyStatsEntries.length > 1 && (() => {
+              const latest = bodyStatsEntries[bodyStatsEntries.length - 1];
+              const prev = bodyStatsEntries[bodyStatsEntries.length - 2];
+              if (latest.weight && prev.weight) {
+                const change = latest.weight - prev.weight;
+                return <p className="text-xs text-[#4b5e78] mt-0.5">Body weight: {change > 0 ? '+' : ''}{change.toFixed(1)} lbs</p>;
+              }
+              return null;
+            })()}
+            {streak > 1 && (
+              <p className="text-xs text-[#4b5e78] mt-0.5">{streak}-day streak going strong!</p>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Skipped Days Log */}
       {skippedDays.length > 0 && (
         <div className="px-4 mb-6">
@@ -719,6 +675,65 @@ export default function HomePage() {
           </div>
         </div>
       )}
+
+      {/* Workout Timer — collapsible */}
+      <div className="px-4 mb-6">
+        <div className="rounded-2xl border border-[#e5e7eb] bg-white shadow-sm overflow-hidden">
+          <button
+            onClick={() => setTimerExpanded(!timerExpanded)}
+            className="w-full flex items-center justify-between px-5 py-3"
+          >
+            <div className="flex items-center gap-2">
+              <Timer size={16} className="text-[#1e3a5f]" />
+              <h2 className="text-xs font-medium uppercase tracking-wider text-[#6b7280]">
+                {timerMode === 'rest' ? 'Rest Timer' : 'Workout Timer'}
+              </h2>
+            </div>
+            <span className="text-xs text-[#9ca3af]">{timerExpanded ? 'Hide' : 'Show'}</span>
+          </button>
+          {timerExpanded && (
+            <div className="px-5 pb-5">
+              <div className="flex gap-1 mb-4">
+                <button onClick={() => { setTimerMode('stopwatch'); setTimerSeconds(0); setTimerRunning(false); }} className={`px-2.5 py-1 rounded-lg text-xs font-medium ${timerMode === 'stopwatch' ? 'bg-[#1e3a5f] text-white' : 'bg-gray-100 text-[#6b7280]'}`}>Stopwatch</button>
+                <button onClick={() => { setTimerMode('rest'); setTimerSeconds(restPreset); setTimerRunning(false); }} className={`px-2.5 py-1 rounded-lg text-xs font-medium ${timerMode === 'rest' ? 'bg-[#1e3a5f] text-white' : 'bg-gray-100 text-[#6b7280]'}`}>Rest</button>
+              </div>
+              <div className={`text-center text-5xl font-mono font-extrabold mb-4 ${isTimerFinished ? 'text-green-600 animate-pulse' : 'text-[#111827]'}`}>{formatTime(timerSeconds)}</div>
+              {isTimerFinished && <p className="text-center text-sm text-green-600 mb-3 font-semibold">Time to work!</p>}
+              <div className="flex gap-2 justify-center mb-3">
+                <button onClick={() => setTimerRunning(!timerRunning)} className="flex items-center gap-2 rounded-xl bg-[#1e3a5f] px-8 py-3 text-sm font-semibold text-white hover:bg-[#162d4a] transition-colors">
+                  {timerRunning ? <Pause size={18} /> : <Play size={18} />} {timerRunning ? 'Pause' : 'Start'}
+                </button>
+                <button onClick={resetTimer} className="rounded-xl bg-gray-100 p-3 hover:bg-gray-200 transition-colors text-[#6b7280]"><RotateCcw size={18} /></button>
+              </div>
+              {timerMode === 'rest' && (
+                <div className="flex gap-2 justify-center">
+                  {[30, 60, 90, 120, 180].map((s) => (
+                    <button key={s} onClick={() => startRest(s)} className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${restPreset === s && !timerRunning ? 'bg-[#1e3a5f] text-white' : 'bg-gray-100 text-[#6b7280] hover:bg-gray-200'}`}>
+                      {s < 60 ? `${s}s` : `${s / 60}m`}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="px-4 mb-6 flex gap-3">
+        <Link href="/chat" className="flex-1">
+          <div className="rounded-xl bg-[#1e3a5f] p-4 flex items-center gap-3 text-white hover:bg-[#162d4a] transition-colors shadow-sm">
+            <MessageSquare size={20} />
+            <span className="font-semibold text-sm">Talk to Coach</span>
+          </div>
+        </Link>
+        <Link href="/program" className="flex-1">
+          <div className="rounded-xl bg-white border border-[#e5e7eb] p-4 flex items-center gap-3 hover:border-[#1e3a5f]/30 transition-colors shadow-sm">
+            <Zap size={20} className="text-[#1e3a5f]" />
+            <span className="font-semibold text-sm text-[#111827]">My Program</span>
+          </div>
+        </Link>
+      </div>
 
       <Navigation />
     </div>

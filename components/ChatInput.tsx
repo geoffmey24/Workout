@@ -230,7 +230,7 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
         <button
           onClick={handleSend}
           disabled={disabled || (!text.trim() && !image)}
-          className="rounded-lg bg-blue-600 p-2.5 text-white transition-colors hover:bg-blue-700 disabled:opacity-40"
+          className="rounded-lg bg-[#1e3a5f] p-2.5 text-white transition-colors hover:bg-[#162d4a] disabled:opacity-40"
         >
           <Send size={20} />
         </button>

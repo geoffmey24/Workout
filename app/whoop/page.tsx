@@ -175,7 +175,7 @@ function WhoopPageInner() {
 
       {loading ? (
         <div className="flex items-center justify-center py-20">
-          <Loader2 size={32} className="animate-spin text-blue-600" />
+          <Loader2 size={32} className="animate-spin text-[#1e3a5f]" />
         </div>
       ) : !hasData ? (
         /* Empty state — no device connected */

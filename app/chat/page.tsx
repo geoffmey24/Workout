@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, Suspense, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Settings } from 'lucide-react';
 import Link from 'next/link';
 import ChatMessage from '@/components/ChatMessage';
 import ChatInput from '@/components/ChatInput';
@@ -16,6 +16,7 @@ import {
   StoredMessage,
   migrateOldData,
 } from '@/lib/simple-storage';
+import { getSystemPrompt } from '@/lib/system-prompt';
 
 const SUGGESTIONS = [
   'How should I bench press?',
@@ -103,7 +104,7 @@ function ChatPageInner() {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: apiMessages, stream: true }),
+        body: JSON.stringify({ messages: apiMessages, stream: true, systemPrompt: getSystemPrompt() }),
       });
 
       if (!res.ok) throw new Error(`API error: ${res.status}`);
@@ -185,11 +186,12 @@ function ChatPageInner() {
       <div className="flex items-center gap-3 border-b border-[#e5e7eb] bg-white px-4 py-3">
         <Link href="/" className="text-[#6b7280] hover:text-[#111827]"><ArrowLeft size={20} /></Link>
         <div>
-          <h1 className="font-bold text-sm text-[#111827]">ELITE <span className="text-blue-600">COACH</span></h1>
+          <h1 className="font-bold text-sm text-[#111827]">ELITE <span className="text-[#1e3a5f]">COACH</span></h1>
         </div>
         <div className="ml-auto flex items-center gap-3">
           <button onClick={startNewChat} className="p-1.5 rounded-lg bg-gray-100 text-[#6b7280] hover:text-[#111827] hover:bg-gray-200 transition-colors" title="New Chat"><Plus size={16} /></button>
-          <button onClick={() => setHistoryOpen(!historyOpen)} className="text-xs text-blue-600 font-medium">{historyOpen ? 'Close' : `History (${conversations.length})`}</button>
+          <button onClick={() => setHistoryOpen(!historyOpen)} className="text-xs text-[#1e3a5f] font-medium">{historyOpen ? 'Close' : `History (${conversations.length})`}</button>
+          <Link href="/settings" className="text-[#6b7280] hover:text-[#111827]"><Settings size={16} /></Link>
         </div>
       </div>
 
@@ -199,7 +201,7 @@ function ChatPageInner() {
           {conversations.length === 0 ? (
             <p className="text-xs text-[#9ca3af] text-center py-2">No past conversations</p>
           ) : conversations.map(c => (
-            <div key={c.id} className={`flex items-center gap-2 py-1.5 ${c.id === convoId ? 'text-blue-600' : 'text-[#6b7280]'}`}>
+            <div key={c.id} className={`flex items-center gap-2 py-1.5 ${c.id === convoId ? 'text-[#1e3a5f]' : 'text-[#6b7280]'}`}>
               <button onClick={() => loadConversation(c)} className="flex-1 text-left text-xs truncate hover:text-[#111827]">{c.title}</button>
               <button onClick={() => handleDeleteConvo(c.id)} className="text-[#9ca3af] hover:text-red-500 p-0.5"><Trash2 size={12} /></button>
             </div>
@@ -211,11 +213,11 @@ function ChatPageInner() {
       <div className="flex-1 overflow-y-auto px-4 py-4">
         {messages.length === 0 && !loading && (
           <div className="flex flex-col items-center justify-center h-full text-center">
-            <h2 className="text-lg font-bold mb-2 text-[#111827]">ELITE <span className="text-blue-600">COACH</span></h2>
+            <h2 className="text-lg font-bold mb-2 text-[#111827]">ELITE <span className="text-[#1e3a5f]">COACH</span></h2>
             <p className="text-sm text-[#6b7280] mb-6 max-w-xs">Ask about training, nutrition, recovery, form — or upload a photo for analysis.</p>
             <div className="flex flex-wrap gap-2 justify-center max-w-sm">
               {SUGGESTIONS.map(s => (
-                <button key={s} onClick={() => handleSend(s)} className="rounded-full border border-[#e5e7eb] bg-white px-3 py-1.5 text-xs text-[#6b7280] hover:border-blue-300 hover:text-blue-600 transition-colors shadow-sm">{s}</button>
+                <button key={s} onClick={() => handleSend(s)} className="rounded-full border border-[#e5e7eb] bg-white px-3 py-1.5 text-xs text-[#6b7280] hover:border-blue-300 hover:text-[#1e3a5f] transition-colors shadow-sm">{s}</button>
               ))}
             </div>
           </div>

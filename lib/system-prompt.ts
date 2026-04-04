@@ -1,4 +1,6 @@
-export const SYSTEM_PROMPT = `You are ELITE COACH — an AI performance coach with expertise in exercise science, sports nutrition, functional anatomy, physical therapy, and sport-specific programming.
+import { getProfile, UserProfile } from './simple-storage';
+
+const BASE_PROMPT = `You are ELITE COACH — an AI performance coach with expertise in exercise science, sports nutrition, functional anatomy, physical therapy, and sport-specific programming.
 
 ## RESPONSE STYLE
 You are a COACH texting an athlete. Be direct and concise:
@@ -64,3 +66,31 @@ When the user requests recovery days:
 
 ## WHOOP/RECOVERY INTEGRATION
 Green (67-100%): Full intensity. Yellow (34-66%): Reduce volume 30%. Red (0-33%): Light movement only.`;
+
+function buildProfileContext(profile: UserProfile): string {
+  const parts: string[] = [];
+  parts.push(`\n\n## ATHLETE PROFILE`);
+  parts.push(`Name: ${profile.name}`);
+  if (profile.fitnessLevel) parts.push(`Fitness Level: ${profile.fitnessLevel}`);
+  if (profile.primaryGoal) parts.push(`Primary Goal: ${profile.primaryGoal}`);
+  if (profile.sport) parts.push(`Sport: ${profile.sport}`);
+  if (profile.preferredDuration) parts.push(`Preferred Session Duration: ${profile.preferredDuration}`);
+  if (profile.equipmentAvailable) parts.push(`Equipment Available: ${profile.equipmentAvailable}`);
+  if (profile.injuries) parts.push(`Injuries/Limitations: ${profile.injuries}\nIMPORTANT: Always keep these injuries in mind. Never program exercises that aggravate these conditions.`);
+  if (profile.dislikedExercises && profile.dislikedExercises.length > 0) {
+    parts.push(`Exercises to AVOID: ${profile.dislikedExercises.join(', ')}\nDo NOT include these exercises in any program or suggestion. Always suggest alternatives.`);
+  }
+  if (profile.coachNotes) parts.push(`Coach Notes: ${profile.coachNotes}`);
+  return parts.join('\n');
+}
+
+export function getSystemPrompt(): string {
+  const profile = getProfile();
+  if (profile) {
+    return BASE_PROMPT + buildProfileContext(profile);
+  }
+  return BASE_PROMPT;
+}
+
+// Keep backward compat export
+export const SYSTEM_PROMPT = BASE_PROMPT;

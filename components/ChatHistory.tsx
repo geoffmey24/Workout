@@ -61,7 +61,7 @@ export default function ChatHistory({ activeId, onSelect, onNew }: ChatHistoryPr
               onClick={() => onSelect(c)}
               className={`flex items-center gap-2 w-full rounded-lg px-3 py-2 text-xs transition-colors ${
                 activeId === c.id
-                  ? 'bg-blue-50 text-blue-600 border border-blue-200'
+                  ? 'bg-blue-50 text-[#1e3a5f] border border-blue-200'
                   : 'text-[#6b7280] hover:bg-gray-50 hover:text-[#111827]'
               }`}
             >
