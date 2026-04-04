@@ -2,16 +2,16 @@
 
 import { useState, useEffect } from 'react';
 import { Clock, Trash2, Plus, ChevronDown, ChevronUp } from 'lucide-react';
-import { Conversation, getConversations, deleteConversation } from '@/lib/chat-history';
+import { StoredConversation, getConversations, deleteConversation } from '@/lib/simple-storage';
 
 interface ChatHistoryProps {
   activeId: string | null;
-  onSelect: (convo: Conversation) => void;
+  onSelect: (convo: StoredConversation) => void;
   onNew: () => void;
 }
 
 export default function ChatHistory({ activeId, onSelect, onNew }: ChatHistoryProps) {
-  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [conversations, setConversations] = useState<StoredConversation[]>([]);
   const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {

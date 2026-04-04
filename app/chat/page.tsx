@@ -8,37 +8,14 @@ import ChatMessage from '@/components/ChatMessage';
 import ChatInput from '@/components/ChatInput';
 import LoadingDots from '@/components/LoadingDots';
 import { Message, ContentBlock, ApiMessage } from '@/types';
-
-// Direct localStorage — no db.ts wrapper
-const EC_CHAT_KEY = 'ec_chat_history';
-
-interface ChatConversation {
-  id: string;
-  title: string;
-  messages: Message[];
-  createdAt: number;
-  updatedAt: number;
-}
-
-function readConversations(): ChatConversation[] {
-  try {
-    const raw = localStorage.getItem(EC_CHAT_KEY);
-    if (!raw) return [];
-    return JSON.parse(raw) as ChatConversation[];
-  } catch (e) {
-    console.error('[readConversations] parse error:', e);
-    return [];
-  }
-}
-
-function writeConversations(convos: ChatConversation[]): void {
-  try {
-    localStorage.setItem(EC_CHAT_KEY, JSON.stringify(convos.slice(0, 20)));
-    console.log('[writeConversations] saved', convos.length, 'conversations');
-  } catch (e) {
-    console.error('[writeConversations] FAILED:', e);
-  }
-}
+import {
+  getConversations,
+  saveConversation,
+  deleteConversation,
+  StoredConversation,
+  StoredMessage,
+  migrateOldData,
+} from '@/lib/simple-storage';
 
 const SUGGESTIONS = [
   'How should I bench press?',
@@ -56,7 +33,7 @@ function ChatPageInner() {
   const [convoId, setConvoId] = useState(() => crypto.randomUUID());
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
-  const [conversations, setConversations] = useState<ChatConversation[]>([]);
+  const [conversations, setConversations] = useState<StoredConversation[]>([]);
   const [historyOpen, setHistoryOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -64,10 +41,11 @@ function ChatPageInner() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
 
-  // Load conversations list on mount
+  // Migrate old data and load conversations on mount
   useEffect(() => {
-    const loaded = readConversations();
-    console.log('[ChatPage] loaded', loaded.length, 'conversations from localStorage');
+    migrateOldData();
+    const loaded = getConversations();
+    console.log('[ChatPage] loaded', loaded.length, 'conversations');
     setConversations(loaded);
   }, []);
 
@@ -76,19 +54,21 @@ function ChatPageInner() {
     if (messages.length === 0) return;
     const title = messages.find(m => m.role === 'user')?.content.slice(0, 50) || 'New Chat';
 
-    const convos = readConversations();
-    const idx = convos.findIndex(c => c.id === convoId);
-    const updated: ChatConversation = {
+    const storedMessages: StoredMessage[] = messages.map(m => ({
+      role: m.role,
+      content: m.content,
+      image: m.image,
+      imageType: m.imageType,
+    }));
+
+    const updated: StoredConversation = {
       id: convoId,
       title,
-      messages,
-      createdAt: idx >= 0 ? convos[idx].createdAt : Date.now(),
+      messages: storedMessages,
       updatedAt: Date.now(),
     };
-    if (idx >= 0) convos[idx] = updated;
-    else convos.unshift(updated);
-    writeConversations(convos);
-    setConversations([...convos]);
+    saveConversation(updated);
+    setConversations(getConversations());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages]);
 
@@ -187,16 +167,15 @@ function ChatPageInner() {
     setHistoryOpen(false);
   };
 
-  const loadConversation = (c: ChatConversation) => {
+  const loadConversation = (c: StoredConversation) => {
     setConvoId(c.id);
     setMessages(c.messages);
     setHistoryOpen(false);
   };
 
   const handleDeleteConvo = (id: string) => {
-    const convos = readConversations().filter(c => c.id !== id);
-    writeConversations(convos);
-    setConversations(convos);
+    deleteConversation(id);
+    setConversations(getConversations());
     if (id === convoId) startNewChat();
   };
 

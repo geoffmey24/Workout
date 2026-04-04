@@ -6,51 +6,15 @@ import Link from 'next/link';
 import Navigation from '@/components/Navigation';
 import ProgramMarkdown from '@/components/ProgramMarkdown';
 import { useAuth } from '@/components/AuthProvider';
-
-// Direct localStorage helpers — no db.ts wrapper
-const EC_PROGRAMS_KEY = 'ec_saved_programs';
-const EC_ACTIVE_KEY = 'ec_active_program_id';
-
-interface SavedProgram {
-  id: string;
-  title: string;
-  answers: Record<string, string>;
-  content: string;
-  createdAt: number;
-  isActive?: boolean;
-}
-
-function lsReadPrograms(): SavedProgram[] {
-  try {
-    const raw = localStorage.getItem(EC_PROGRAMS_KEY);
-    if (!raw) return [];
-    return JSON.parse(raw) as SavedProgram[];
-  } catch (e) {
-    console.error('[lsReadPrograms] parse error, clearing:', e);
-    localStorage.removeItem(EC_PROGRAMS_KEY);
-    return [];
-  }
-}
-
-function lsWritePrograms(programs: SavedProgram[]): void {
-  try {
-    localStorage.setItem(EC_PROGRAMS_KEY, JSON.stringify(programs));
-    console.log('[lsWritePrograms] saved', programs.length, 'programs');
-  } catch (e) {
-    console.error('[lsWritePrograms] FAILED:', e);
-  }
-}
-
-function lsGetActiveId(): string | null {
-  try { return localStorage.getItem(EC_ACTIVE_KEY); } catch { return null; }
-}
-
-function lsSetActiveId(id: string | null): void {
-  try {
-    if (id) localStorage.setItem(EC_ACTIVE_KEY, id);
-    else localStorage.removeItem(EC_ACTIVE_KEY);
-  } catch { /* ignore */ }
-}
+import {
+  getPrograms,
+  saveProgram,
+  deleteProgram,
+  getActiveProgram,
+  setActiveProgram,
+  migrateOldData,
+  StoredProgram,
+} from '@/lib/simple-storage';
 
 interface Question {
   id: string;
@@ -137,39 +101,25 @@ export default function ProgramPage() {
   const [loading, setLoading] = useState(false);
   const [textInput, setTextInput] = useState('');
   const [pasteInput, setPasteInput] = useState('');
-  const [savedPrograms, setSavedPrograms] = useState<SavedProgram[]>([]);
-  const [viewingProgram, setViewingProgram] = useState<SavedProgram | null>(null);
+  const [savedPrograms, setSavedPrograms] = useState<(StoredProgram & { isActive?: boolean })[]>([]);
+  const [viewingProgram, setViewingProgram] = useState<(StoredProgram & { isActive?: boolean }) | null>(null);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [scanningGym, setScanningGym] = useState(false);
   const scanFileRef = useRef<HTMLInputElement>(null);
 
-  // Debug: dump all localStorage keys on mount
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const allKeys = Object.keys(localStorage);
-    console.log('[ProgramPage] All localStorage keys:', allKeys);
-    const programKeys = allKeys.filter(k => k.includes('program') || k.includes('elite'));
-    console.log('[ProgramPage] Relevant keys:', programKeys);
-    programKeys.forEach(k => {
-      try {
-        const val = localStorage.getItem(k);
-        if (val) {
-          const parsed = JSON.parse(val);
-          console.log(`[ProgramPage] ${k}:`, Array.isArray(parsed) ? `Array(${parsed.length})` : typeof parsed, parsed);
-        }
-      } catch { console.log(`[ProgramPage] ${k}: (not JSON)`); }
-    });
-  }, []);
-
   const refreshPrograms = () => {
-    const programs = lsReadPrograms();
-    const activeId = lsGetActiveId();
-    const withActive = programs.map(p => ({ ...p, isActive: p.id === activeId }));
-    console.log('[ProgramPage] refreshPrograms:', withActive.length, 'programs, activeId:', activeId);
+    const programs = getPrograms();
+    const active = getActiveProgram();
+    const withActive = programs.map(p => ({ ...p, isActive: p.id === active?.id }));
+    console.log('[ProgramPage] refreshPrograms:', withActive.length, 'programs, activeId:', active?.id ?? null);
     setSavedPrograms(withActive);
   };
-  useEffect(() => { refreshPrograms(); // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    migrateOldData();
+    refreshPrograms();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   // Get applicable questions (skip conditional ones that don't apply)
@@ -321,17 +271,9 @@ Do NOT use markdown table separators (|---|---|). Include progression rules and 
     if (!program || saveStatus === 'saving') return;
     setSaveStatus('saving');
     try {
-      // 1. Test localStorage works at all
-      const testKey = 'ec_test_save';
-      localStorage.setItem(testKey, 'hello');
-      const readBack = localStorage.getItem(testKey);
-      console.log('[handleSaveProgram] localStorage test:', readBack);
-      localStorage.removeItem(testKey);
-
-      // 2. Save program directly
       const programId = crypto.randomUUID();
       const title = `${answers.goal || 'Custom'} - ${answers.days || '?'} days/wk`;
-      const newProgram: SavedProgram = {
+      const newProgram: StoredProgram = {
         id: programId,
         title,
         answers,
@@ -339,15 +281,11 @@ Do NOT use markdown table separators (|---|---|). Include progression rules and 
         createdAt: Date.now(),
       };
 
-      const existing = lsReadPrograms();
-      existing.unshift(newProgram);
-      lsWritePrograms(existing.slice(0, 20));
+      saveProgram(newProgram);
+      setActiveProgram(newProgram);
 
-      // 3. Set as active
-      lsSetActiveId(programId);
-
-      // 4. Verify
-      const verify = lsReadPrograms();
+      // Verify
+      const verify = getPrograms();
       const found = verify.find(p => p.id === programId);
       console.log('[handleSaveProgram] verified:', found ? 'FOUND' : 'NOT FOUND', 'total:', verify.length);
 
@@ -366,24 +304,22 @@ Do NOT use markdown table separators (|---|---|). Include progression rules and 
     }
   };
 
-  const handleSetActive = (p: SavedProgram) => {
-    lsSetActiveId(p.id);
+  const handleSetActive = (p: StoredProgram) => {
+    setActiveProgram(p);
     refreshPrograms();
   };
 
   const handleSavePastedWorkout = () => {
     if (!pasteInput.trim()) return;
-    const saved: SavedProgram = {
+    const saved: StoredProgram = {
       id: crypto.randomUUID(),
       title: 'My Custom Workout',
       answers: { source: 'manual input' },
       content: pasteInput.trim(),
       createdAt: Date.now(),
     };
-    const existing = lsReadPrograms();
-    existing.unshift(saved);
-    lsWritePrograms(existing.slice(0, 20));
-    lsSetActiveId(saved.id);
+    saveProgram(saved);
+    setActiveProgram(saved);
     refreshPrograms();
     setPasteInput('');
     setView('saved');
@@ -391,9 +327,7 @@ Do NOT use markdown table separators (|---|---|). Include progression rules and 
 
   const handleDeleteProgram = (id: string) => {
     console.log('[ProgramPage] deleting program:', id);
-    const programs = lsReadPrograms();
-    lsWritePrograms(programs.filter(p => p.id !== id));
-    if (lsGetActiveId() === id) lsSetActiveId(null);
+    deleteProgram(id);
     setConfirmDelete(null);
     refreshPrograms();
     if (viewingProgram?.id === id) { setViewingProgram(null); setView('menu'); }

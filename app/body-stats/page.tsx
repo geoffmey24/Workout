@@ -4,10 +4,10 @@ import { useState, useEffect } from 'react';
 import { ArrowLeft, Plus, Trash2, TrendingUp, Scale, Ruler } from 'lucide-react';
 import Link from 'next/link';
 import Navigation from '@/components/Navigation';
-import { dbGetBodyStats, dbSaveBodyStat, dbDeleteBodyStat, BodyStatEntry } from '@/lib/db';
+import { getBodyStats, saveBodyStat, deleteBodyStat, BodyStat } from '@/lib/simple-storage';
 
 export default function BodyStatsPage() {
-  const [entries, setEntries] = useState<BodyStatEntry[]>([]);
+  const [entries, setEntries] = useState<BodyStat[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [weight, setWeight] = useState('');
@@ -18,7 +18,7 @@ export default function BodyStatsPage() {
   const [notes, setNotes] = useState('');
 
   useEffect(() => {
-    setEntries(dbGetBodyStats());
+    setEntries(getBodyStats());
   }, []);
 
   const handleSave = () => {
@@ -27,22 +27,22 @@ export default function BodyStatsPage() {
     if (chest) measurements.chest = parseFloat(chest);
     if (arms) measurements.arms = parseFloat(arms);
 
-    const entry: BodyStatEntry = {
+    const entry: BodyStat = {
       date,
       weight: weight ? parseFloat(weight) : undefined,
       bodyFat: bodyFat ? parseFloat(bodyFat) : undefined,
       measurements: Object.keys(measurements).length > 0 ? measurements : undefined,
       notes: notes.trim() || undefined,
     };
-    dbSaveBodyStat(entry);
-    setEntries(dbGetBodyStats());
+    saveBodyStat(entry);
+    setEntries(getBodyStats());
     setShowForm(false);
     setWeight(''); setBodyFat(''); setWaist(''); setChest(''); setArms(''); setNotes('');
   };
 
   const handleDelete = (d: string) => {
-    dbDeleteBodyStat(d);
-    setEntries(dbGetBodyStats());
+    deleteBodyStat(d);
+    setEntries(getBodyStats());
   };
 
   // Simple weight chart — text-based sparkline

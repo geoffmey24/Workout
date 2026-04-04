@@ -5,25 +5,22 @@ import { ArrowLeft, LogOut, Mail, Shield, Moon, Sun, Scale, Download, ChevronRig
 import Link from 'next/link';
 import Navigation from '@/components/Navigation';
 import { useAuth } from '@/components/AuthProvider';
-import { dbGetDarkMode, dbSetDarkMode, dbGetUserProfile, dbSaveUserProfile, dbGetActiveProgram } from '@/lib/db';
-import { SavedProgram } from '@/lib/program-history';
+import { getDarkMode, setDarkMode as storageSaveDarkMode, getActiveProgram, StoredProgram } from '@/lib/simple-storage';
 
 export default function SettingsPage() {
   const { user, signOut } = useAuth();
   const [darkMode, setDarkMode] = useState(false);
-  const [activeProgram, setActiveProgram] = useState<SavedProgram | null>(null);
+  const [activeProgram, setActiveProgramState] = useState<StoredProgram | null>(null);
 
   useEffect(() => {
-    setDarkMode(dbGetDarkMode());
-    if (user) {
-      dbGetActiveProgram(user.id).then(setActiveProgram);
-    }
+    setDarkMode(getDarkMode());
+    setActiveProgramState(getActiveProgram());
   }, [user]);
 
   const toggleDarkMode = () => {
     const newVal = !darkMode;
     setDarkMode(newVal);
-    dbSetDarkMode(newVal);
+    storageSaveDarkMode(newVal);
     document.documentElement.classList.toggle('dark', newVal);
   };
 

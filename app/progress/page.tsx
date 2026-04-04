@@ -6,94 +6,19 @@ import Link from 'next/link';
 import Navigation from '@/components/Navigation';
 import ProgramMarkdown from '@/components/ProgramMarkdown';
 import { useAuth } from '@/components/AuthProvider';
-
-// Direct localStorage keys
-const EC_PROGRAMS_KEY = 'ec_saved_programs';
-const EC_ACTIVE_KEY = 'ec_active_program_id';
-const EC_WORKOUT_LOGS_KEY = 'ec_workout_logs';
-const EC_COMPLETIONS_KEY = 'ec_workout_completions';
-
-interface SavedProgram {
-  id: string;
-  title: string;
-  answers: Record<string, string>;
-  content: string;
-  createdAt: number;
-}
-
-interface WorkoutLogEntry {
-  exerciseName: string;
-  weight: number;
-  reps: number;
-  sets: number;
-  date: string;
-  estimated1RM: number;
-}
-
-function lsGetActiveProgram(): SavedProgram | null {
-  try {
-    const activeId = localStorage.getItem(EC_ACTIVE_KEY);
-    if (!activeId) return null;
-    const raw = localStorage.getItem(EC_PROGRAMS_KEY);
-    if (!raw) return null;
-    const programs = JSON.parse(raw) as SavedProgram[];
-    return programs.find(p => p.id === activeId) || null;
-  } catch { return null; }
-}
-
-function lsGetWorkoutLogs(): WorkoutLogEntry[] {
-  try { return JSON.parse(localStorage.getItem(EC_WORKOUT_LOGS_KEY) || '[]'); } catch { return []; }
-}
-
-function lsSaveWorkoutLog(entry: WorkoutLogEntry): void {
-  try {
-    const logs = lsGetWorkoutLogs();
-    logs.push(entry);
-    localStorage.setItem(EC_WORKOUT_LOGS_KEY, JSON.stringify(logs.slice(-500)));
-  } catch { /* ignore */ }
-}
-
-function lsGetLastLog(exerciseName: string): WorkoutLogEntry | null {
-  const logs = lsGetWorkoutLogs();
-  for (let i = logs.length - 1; i >= 0; i--) {
-    if (logs[i].exerciseName.toLowerCase() === exerciseName.toLowerCase()) return logs[i];
-  }
-  return null;
-}
-
-function lsGetPersonalRecords(): Record<string, WorkoutLogEntry> {
-  const logs = lsGetWorkoutLogs();
-  const prs: Record<string, WorkoutLogEntry> = {};
-  for (const entry of logs) {
-    const key = entry.exerciseName.toLowerCase();
-    if (!prs[key] || entry.weight > prs[key].weight) prs[key] = entry;
-  }
-  return prs;
-}
-
-function lsSaveCompletion(dayName: string): void {
-  try {
-    const completions = JSON.parse(localStorage.getItem(EC_COMPLETIONS_KEY) || '[]');
-    completions.push({ date: new Date().toISOString().slice(0, 10), dayName, timestamp: Date.now() });
-    localStorage.setItem(EC_COMPLETIONS_KEY, JSON.stringify(completions.slice(-200)));
-  } catch { /* ignore */ }
-}
-
-function lsGetStreak(): number {
-  try {
-    const completions = JSON.parse(localStorage.getItem(EC_COMPLETIONS_KEY) || '[]') as { date: string }[];
-    if (completions.length === 0) return 0;
-    const dates = Array.from(new Set(completions.map(c => c.date))).sort().reverse();
-    let streak = 0;
-    const d = new Date();
-    for (let i = 0; i < 365; i++) {
-      if (dates.includes(d.toISOString().slice(0, 10))) streak++;
-      else if (i > 0) break;
-      d.setDate(d.getDate() - 1);
-    }
-    return streak;
-  } catch { return 0; }
-}
+import {
+  getActiveProgram,
+  addWorkoutLog,
+  getLastLog,
+  getPersonalRecords,
+  recordWorkoutCompletion,
+  getStreak,
+  getCompletions,
+  calculate1RM,
+  migrateOldData,
+  StoredProgram,
+  WorkoutLog,
+} from '@/lib/simple-storage';
 
 function parseExercises(content: string): string[] {
   const lines = content.split('\n');
@@ -137,16 +62,9 @@ function extractExerciseName(exerciseLine: string): string {
   return exerciseLine.split(/[\u2014\u2013]|[|]|[\d]+\s*[xX\u00d7]/)[0].trim().replace(/^\d+\.\s*/, '');
 }
 
-function calculate1RM(weight: number, reps: number): number {
-  // Epley formula: 1RM = weight × (1 + reps/30)
-  if (reps <= 0 || weight <= 0) return 0;
-  if (reps === 1) return weight;
-  return Math.round(weight * (1 + reps / 30));
-}
-
 export default function ProgressPage() {
   const { user } = useAuth();
-  const [activeProgram, setActiveProgram] = useState<SavedProgram | null>(null);
+  const [activeProgram, setActiveProgram] = useState<StoredProgram | null>(null);
   const [completed, setCompleted] = useState<Record<string, boolean>>({});
   const [streak, setStreak] = useState(0);
   const [totalWorkouts, setTotalWorkouts] = useState(0);
@@ -156,17 +74,15 @@ export default function ProgressPage() {
   const [exerciseWeights, setExerciseWeights] = useState<Record<string, { weight: string; reps: string; sets: string }>>({});
   const [workoutNote, setWorkoutNote] = useState('');
   const [noteSaved, setNoteSaved] = useState(false);
-  const [personalRecords, setPersonalRecords] = useState<Record<string, WorkoutLogEntry>>({});
+  const [personalRecords, setPersonalRecords] = useState<Record<string, WorkoutLog>>({});
 
   useEffect(() => {
     if (!user) return;
-    setActiveProgram(lsGetActiveProgram());
-    setPersonalRecords(lsGetPersonalRecords());
-    setStreak(lsGetStreak());
-    try {
-      const comps = JSON.parse(localStorage.getItem(EC_COMPLETIONS_KEY) || '[]');
-      setTotalWorkouts(comps.length);
-    } catch { /* ignore */ }
+    migrateOldData();
+    setActiveProgram(getActiveProgram());
+    setPersonalRecords(getPersonalRecords());
+    setStreak(getStreak());
+    setTotalWorkouts(getCompletions().length);
     setDataLoaded(true);
   }, [user]);
 
@@ -186,27 +102,24 @@ export default function ProgressPage() {
         const weight = parseFloat(input.weight);
         const reps = parseInt(input.reps) || 0;
         const sets = parseInt(input.sets) || 0;
-        lsSaveWorkoutLog({
-          exerciseName,
+        addWorkoutLog({
+          exercise: exerciseName,
           weight,
           reps,
           sets,
           date: new Date().toISOString().slice(0, 10),
           estimated1RM: calculate1RM(weight, reps),
         });
-        setPersonalRecords(lsGetPersonalRecords());
+        setPersonalRecords(getPersonalRecords());
       }
     }
   };
 
   const handleCompleteWorkout = () => {
     setWorkoutDone(true);
-    lsSaveCompletion(activeProgram?.title || 'Workout');
-    setStreak(lsGetStreak());
-    try {
-      const comps = JSON.parse(localStorage.getItem(EC_COMPLETIONS_KEY) || '[]');
-      setTotalWorkouts(comps.length);
-    } catch { /* ignore */ }
+    recordWorkoutCompletion(activeProgram?.title || 'Workout');
+    setStreak(getStreak());
+    setTotalWorkouts(getCompletions().length);
     if (workoutNote.trim()) {
       setNoteSaved(true);
     }
@@ -305,7 +218,7 @@ export default function ProgressPage() {
             const key = `ex-${i}`;
             const done = completed[key] || false;
             const exerciseName = extractExerciseName(ex);
-            const lastEntry = lsGetLastLog(exerciseName);
+            const lastEntry = getLastLog(exerciseName);
             const input = exerciseWeights[key] || { weight: '', reps: '', sets: '' };
 
             return (

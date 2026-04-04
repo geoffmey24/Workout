@@ -6,128 +6,20 @@ import { MessageSquare, Zap, Flame, Trophy, Calendar, Play, Pause, RotateCcw, Ti
 import Navigation from '@/components/Navigation';
 import ProgramMarkdown from '@/components/ProgramMarkdown';
 import { useAuth } from '@/components/AuthProvider';
-import { dbGetUserProfile, dbSaveUserProfile, UserProfile, dbGetDarkMode, dbGetBodyStats, dbSaveBodyStat, BodyStatEntry } from '@/lib/db';
-
-// Direct localStorage keys — same as program page
-const EC_PROGRAMS_KEY = 'ec_saved_programs';
-const EC_ACTIVE_KEY = 'ec_active_program_id';
-const EC_WORKOUT_LOGS_KEY = 'ec_workout_logs';
-const EC_COMPLETIONS_KEY = 'ec_workout_completions';
-
-interface SavedProgram {
-  id: string;
-  title: string;
-  answers: Record<string, string>;
-  content: string;
-  createdAt: number;
-}
-
-interface WorkoutLogEntry {
-  exerciseName: string;
-  weight: number;
-  reps: number;
-  sets: number;
-  date: string;
-  estimated1RM: number;
-}
-
-interface WorkoutCompletion {
-  date: string;
-  dayName: string;
-  timestamp: number;
-}
-
-function calculate1RM(weight: number, reps: number): number {
-  if (reps <= 0 || weight <= 0) return 0;
-  if (reps === 1) return weight;
-  return Math.round(weight * (1 + reps / 30));
-}
-
-function lsGetActiveProgram(): SavedProgram | null {
-  try {
-    const activeId = localStorage.getItem(EC_ACTIVE_KEY);
-    if (!activeId) return null;
-    const raw = localStorage.getItem(EC_PROGRAMS_KEY);
-    if (!raw) return null;
-    const programs = JSON.parse(raw) as SavedProgram[];
-    return programs.find(p => p.id === activeId) || null;
-  } catch { return null; }
-}
-
-function lsGetWorkoutLogs(): WorkoutLogEntry[] {
-  try {
-    const raw = localStorage.getItem(EC_WORKOUT_LOGS_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch { return []; }
-}
-
-function lsSaveWorkoutLog(entry: WorkoutLogEntry): void {
-  try {
-    const logs = lsGetWorkoutLogs();
-    logs.push(entry);
-    localStorage.setItem(EC_WORKOUT_LOGS_KEY, JSON.stringify(logs.slice(-500)));
-  } catch { /* ignore */ }
-}
-
-function lsGetLastLog(exerciseName: string): WorkoutLogEntry | null {
-  const logs = lsGetWorkoutLogs();
-  for (let i = logs.length - 1; i >= 0; i--) {
-    if (logs[i].exerciseName.toLowerCase() === exerciseName.toLowerCase()) return logs[i];
-  }
-  return null;
-}
-
-function lsGetCompletions(): WorkoutCompletion[] {
-  try {
-    const raw = localStorage.getItem(EC_COMPLETIONS_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch { return []; }
-}
-
-function lsSaveCompletion(c: WorkoutCompletion): void {
-  try {
-    const completions = lsGetCompletions();
-    completions.push(c);
-    localStorage.setItem(EC_COMPLETIONS_KEY, JSON.stringify(completions.slice(-200)));
-  } catch { /* ignore */ }
-}
-
-function getWeekCompletions(): WorkoutCompletion[] {
-  const now = new Date();
-  const dayOfWeek = now.getDay();
-  const monday = new Date(now);
-  monday.setDate(now.getDate() - ((dayOfWeek + 6) % 7));
-  const mondayStr = monday.toISOString().slice(0, 10);
-  return lsGetCompletions().filter(c => c.date >= mondayStr);
-}
-
-function getStreak(): number {
-  const completions = lsGetCompletions();
-  if (completions.length === 0) return 0;
-  const dates = Array.from(new Set(completions.map(c => c.date))).sort().reverse();
-  let streak = 0;
-  const d = new Date();
-  for (let i = 0; i < 365; i++) {
-    const key = d.toISOString().slice(0, 10);
-    if (dates.includes(key)) {
-      streak++;
-    } else if (i > 0) {
-      break;
-    }
-    d.setDate(d.getDate() - 1);
-  }
-  return streak;
-}
-
-function getWeekVolume(): number {
-  const now = new Date();
-  const dayOfWeek = now.getDay();
-  const monday = new Date(now);
-  monday.setDate(now.getDate() - ((dayOfWeek + 6) % 7));
-  const mondayStr = monday.toISOString().slice(0, 10);
-  const logs = lsGetWorkoutLogs().filter(l => l.date >= mondayStr);
-  return logs.reduce((sum, l) => sum + (l.weight * l.reps * l.sets), 0);
-}
+import {
+  migrateOldData,
+  StoredProgram, BodyStat, UserProfile, WorkoutLog,
+  getActiveProgram, clearActiveProgram, deleteProgram,
+  getWorkoutLogs, addWorkoutLog, getLastLog,
+  getCompletions, recordWorkoutCompletion,
+  getStreak, getWeekCompletionCount, getWeekVolume, isTodayCompleted,
+  getBodyStats, saveBodyStat,
+  getProfile, saveProfile,
+  getDarkMode,
+  getSkippedDays, addSkippedDay,
+  getSelectedDayIdx, setSelectedDayIdx as storageSetSelectedDayIdx,
+  calculate1RM,
+} from '@/lib/simple-storage';
 
 function parseExercisesFromContent(content: string): { name: string; line: string }[] {
   const lines = content.split('\n');
@@ -233,9 +125,9 @@ function parseProgramDays(content: string): ProgramDay[] {
 
 export default function HomePage() {
   const { user } = useAuth();
-  const [activeProgram, setActiveProgram] = useState<SavedProgram | null>(null);
+  const [activeProgram, setActiveProgram] = useState<StoredProgram | null>(null);
   const [streak, setStreak] = useState(0);
-  const [weekCompletions, setWeekCompletions] = useState<WorkoutCompletion[]>([]);
+  const [weekCompletionCount, setWeekCompletionCount] = useState(0);
   const [weekVolume, setWeekVolume] = useState(0);
   const [totalWorkouts, setTotalWorkouts] = useState(0);
 
@@ -245,7 +137,7 @@ export default function HomePage() {
   const [showOnboarding, setShowOnboarding] = useState(false);
 
   // Day selection
-  const [selectedDayIdx, setSelectedDayIdx] = useState(0);
+  const [selectedDayIdx, setSelectedDayIdxState] = useState(0);
   const [skippedDays, setSkippedDays] = useState<{ day: string; date: string }[]>([]);
   const [showDayContent, setShowDayContent] = useState(false);
   const [confirmDeleteProgram, setConfirmDeleteProgram] = useState(false);
@@ -258,7 +150,7 @@ export default function HomePage() {
   const [workoutDone, setWorkoutDone] = useState(false);
 
   // Body stats quick input
-  const [bodyStatsEntries, setBodyStatsEntries] = useState<BodyStatEntry[]>([]);
+  const [bodyStatsEntries, setBodyStatsEntries] = useState<BodyStat[]>([]);
   const [showWeightInput, setShowWeightInput] = useState(false);
   const [quickWeight, setQuickWeight] = useState('');
   const [quickBf, setQuickBf] = useState('');
@@ -271,43 +163,39 @@ export default function HomePage() {
 
   const refreshStats = () => {
     setStreak(getStreak());
-    setWeekCompletions(getWeekCompletions());
+    setWeekCompletionCount(getWeekCompletionCount());
     setWeekVolume(getWeekVolume());
-    setTotalWorkouts(lsGetCompletions().length);
+    setTotalWorkouts(getCompletions().length);
   };
 
   useEffect(() => {
     if (!user) return;
-    setActiveProgram(lsGetActiveProgram());
+    migrateOldData();
+    setActiveProgram(getActiveProgram());
     refreshStats();
     // Check onboarding
-    const p = dbGetUserProfile();
+    const p = getProfile();
     setProfile(p);
     if (!p || !p.onboardingComplete) setShowOnboarding(true);
-    setBodyStatsEntries(dbGetBodyStats());
+    setBodyStatsEntries(getBodyStats());
     // Apply dark mode
-    const dark = dbGetDarkMode();
+    const dark = getDarkMode();
     document.documentElement.classList.toggle('dark', dark);
     // Check if today's workout is done
-    const today = new Date().toISOString().slice(0, 10);
-    const todayDone = lsGetCompletions().some(c => c.date === today);
-    if (todayDone) setWorkoutDone(true);
+    if (isTodayCompleted()) setWorkoutDone(true);
   }, [user]);
 
   const handleOnboardingComplete = () => {
     const name = onboardingName.trim() || 'Athlete';
     const p: UserProfile = { name, onboardingComplete: true };
-    dbSaveUserProfile(p);
+    saveProfile(p);
     setProfile(p);
     setShowOnboarding(false);
   };
 
-  // Load skipped days from localStorage
+  // Load skipped days from simple-storage
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem('elite-coach-skipped-days');
-      if (saved) setSkippedDays(JSON.parse(saved));
-    } catch { /* ignore */ }
+    setSkippedDays(getSkippedDays());
   }, []);
 
   // Timer tick
@@ -353,47 +241,33 @@ export default function HomePage() {
   }
   const selectedDay = programDays[selectedDayIdx] || programDays[0] || null;
 
-  // Restore selected day from localStorage, or default to first non-recovery day
+  // Restore selected day from simple-storage, or default to first non-recovery day
   useEffect(() => {
     if (programDays.length === 0) return;
-    try {
-      const savedIdx = localStorage.getItem('elite-coach-selected-day-idx');
-      if (savedIdx !== null) {
-        const idx = parseInt(savedIdx, 10);
-        if (idx >= 0 && idx < programDays.length) {
-          setSelectedDayIdx(idx);
-          return;
-        }
-      }
-    } catch { /* ignore */ }
+    const savedIdx = getSelectedDayIdx();
+    if (savedIdx !== null && savedIdx >= 0 && savedIdx < programDays.length) {
+      setSelectedDayIdxState(savedIdx);
+      return;
+    }
     const firstTraining = programDays.findIndex(d => !d.isRecovery);
-    if (firstTraining > 0) setSelectedDayIdx(firstTraining);
+    if (firstTraining > 0) setSelectedDayIdxState(firstTraining);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeProgram]);
 
   const handleSkipDay = () => {
     if (!selectedDay) return;
-    const today = new Date().toISOString().slice(0, 10);
-    const newSkipped = [...skippedDays, { day: selectedDay.header, date: today }].slice(-20);
-    setSkippedDays(newSkipped);
-    localStorage.setItem('elite-coach-skipped-days', JSON.stringify(newSkipped));
+    addSkippedDay(selectedDay.header);
+    setSkippedDays(getSkippedDays());
     // Don't advance — keep showing the same day so they do it next time
   };
 
   const handleDeleteActiveProgram = () => {
     if (!activeProgram) return;
-    try {
-      const raw = localStorage.getItem(EC_PROGRAMS_KEY);
-      if (raw) {
-        const programs = JSON.parse(raw) as SavedProgram[];
-        localStorage.setItem(EC_PROGRAMS_KEY, JSON.stringify(programs.filter(p => p.id !== activeProgram.id)));
-      }
-      localStorage.removeItem(EC_ACTIVE_KEY);
-      localStorage.removeItem('elite-coach-selected-day-idx');
-    } catch { /* ignore */ }
+    deleteProgram(activeProgram.id);
+    clearActiveProgram();
     setActiveProgram(null);
     setShowDayContent(false);
-    setSelectedDayIdx(0);
+    setSelectedDayIdxState(0);
     setConfirmDeleteProgram(false);
   };
 
@@ -405,8 +279,8 @@ export default function HomePage() {
     const reps = parseInt(input.reps);
     const sets = parseInt(input.sets) || 1;
     const est1RM = calculate1RM(weight, reps);
-    lsSaveWorkoutLog({
-      exerciseName,
+    addWorkoutLog({
+      exercise: exerciseName,
       weight,
       reps,
       sets,
@@ -418,8 +292,7 @@ export default function HomePage() {
   };
 
   const handleCompleteWorkout = () => {
-    const today = new Date().toISOString().slice(0, 10);
-    lsSaveCompletion({ date: today, dayName: selectedDay?.header || 'Workout', timestamp: Date.now() });
+    recordWorkoutCompletion(selectedDay?.header || 'Workout');
     setWorkoutDone(true);
     refreshStats();
   };
@@ -485,7 +358,7 @@ export default function HomePage() {
           </div>
           <div className="flex-1 rounded-xl bg-white border border-[#e5e7eb] p-3 text-center shadow-sm">
             <Calendar size={16} className="mx-auto text-blue-500 mb-1" />
-            <p className="text-lg font-bold text-[#111827]">{weekCompletions.length}</p>
+            <p className="text-lg font-bold text-[#111827]">{weekCompletionCount}</p>
             <p className="text-[10px] text-[#6b7280] uppercase">This Week</p>
           </div>
           <div className="flex-1 rounded-xl bg-white border border-[#e5e7eb] p-3 text-center shadow-sm">
@@ -505,7 +378,7 @@ export default function HomePage() {
               <span className="text-xs font-medium text-blue-800 uppercase tracking-wider">Weekly Check-In</span>
             </div>
             <p className="text-sm text-blue-900">
-              <strong>{weekCompletions.length}</strong> workout{weekCompletions.length !== 1 ? 's' : ''} completed
+              <strong>{weekCompletionCount}</strong> workout{weekCompletionCount !== 1 ? 's' : ''} completed
               {parseInt(activeProgram.answers?.days || '0') > 0 && (
                 <span> of <strong>{activeProgram.answers.days}</strong> planned</span>
               )}
@@ -599,9 +472,9 @@ export default function HomePage() {
                   <button
                     key={idx}
                     onClick={() => {
-                      setSelectedDayIdx(idx);
+                      setSelectedDayIdxState(idx);
+                      storageSetSelectedDayIdx(idx);
                       setShowDayContent(true);
-                      try { localStorage.setItem('elite-coach-selected-day-idx', String(idx)); } catch {}
                     }}
                     className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium whitespace-nowrap transition-colors ${
                       idx === selectedDayIdx
@@ -657,7 +530,7 @@ export default function HomePage() {
                           {exercises.map((ex, idx) => {
                             const key = ex.name.toLowerCase();
                             const input = exerciseInputs[key] || { weight: '', reps: '', sets: '' };
-                            const lastLog = lsGetLastLog(ex.name);
+                            const lastLog = getLastLog(ex.name);
                             const isLogged = loggedExercises.has(key);
                             const currentWeight = parseFloat(input.weight);
                             const currentReps = parseInt(input.reps);
@@ -774,12 +647,12 @@ export default function HomePage() {
               <button
                 onClick={() => {
                   if (!quickWeight && !quickBf) return;
-                  dbSaveBodyStat({
+                  saveBodyStat({
                     date: new Date().toISOString().slice(0, 10),
                     weight: quickWeight ? parseFloat(quickWeight) : undefined,
                     bodyFat: quickBf ? parseFloat(quickBf) : undefined,
                   });
-                  setBodyStatsEntries(dbGetBodyStats());
+                  setBodyStatsEntries(getBodyStats());
                   setQuickWeight(''); setQuickBf(''); setShowWeightInput(false);
                 }}
                 className="rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-700"
