@@ -92,15 +92,15 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   // Show nothing while checking auth (prevents flash)
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-[var(--bg-page)]">
+      <div className="flex items-center justify-center h-screen bg-[#0f1219]">
         <div className="text-center">
-          <h1 className="text-2xl font-extrabold text-[var(--text-primary)] mb-2">
-            ELITE <span className="text-[var(--accent-light)]">COACH</span>
+          <h1 className="text-2xl font-extrabold text-white mb-2">
+            ELITE <span className="text-[#a5b4fc]">COACH</span>
           </h1>
           <div className="flex gap-1.5 justify-center mt-4">
-            <span className="typing-dot h-2 w-2 rounded-full bg-[var(--accent)]/100" />
-            <span className="typing-dot h-2 w-2 rounded-full bg-[var(--accent)]/100" />
-            <span className="typing-dot h-2 w-2 rounded-full bg-[var(--accent)]/100" />
+            <span className="typing-dot h-2 w-2 rounded-full bg-[#4f46e5]/100" />
+            <span className="typing-dot h-2 w-2 rounded-full bg-[#4f46e5]/100" />
+            <span className="typing-dot h-2 w-2 rounded-full bg-[#4f46e5]/100" />
           </div>
         </div>
       </div>

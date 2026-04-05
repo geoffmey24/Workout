@@ -323,21 +323,21 @@ export default function HomePage() {
       {/* Onboarding */}
       {showOnboarding && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
-          <div className="bg-[var(--bg-card)] rounded-2xl p-6 max-w-sm w-full text-center">
-            <Dumbbell size={40} className="mx-auto text-[var(--accent-light)] mb-3" />
-            <h2 className="text-xl font-bold text-[var(--text-primary)] mb-1">Welcome to ELITE COACH</h2>
-            <p className="text-sm text-[var(--text-secondary)] mb-6">What should I call you?</p>
+          <div className="bg-[#1a1d24] rounded-2xl p-6 max-w-sm w-full text-center">
+            <Dumbbell size={40} className="mx-auto text-[#a5b4fc] mb-3" />
+            <h2 className="text-xl font-bold text-white mb-1">Welcome to ELITE COACH</h2>
+            <p className="text-sm text-[#9ca3af] mb-6">What should I call you?</p>
             <div className="mb-6">
               <input
                 value={onboardingName}
                 onChange={e => setOnboardingName(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && handleOnboardingComplete()}
                 placeholder="Your name"
-                className="w-full rounded-xl border border-[var(--border)] px-4 py-3 text-sm text-center"
+                className="w-full rounded-xl border border-[#2a2d35] px-4 py-3 text-sm text-center"
                 autoFocus
               />
             </div>
-            <button onClick={handleOnboardingComplete} className="w-full rounded-xl bg-[var(--accent)] py-3 text-sm font-bold text-white hover:bg-[#3730a3] transition-colors">
+            <button onClick={handleOnboardingComplete} className="w-full rounded-xl bg-[#4f46e5] py-3 text-sm font-bold text-white hover:bg-[#3730a3] transition-colors">
               Let&apos;s Go
             </button>
           </div>
@@ -347,29 +347,29 @@ export default function HomePage() {
       {/* Delete confirmation dialog */}
       {confirmDeleteProgram && activeProgram && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
-          <div className="bg-[var(--bg-card)] rounded-2xl p-6 max-w-sm w-full">
-            <h3 className="font-bold text-lg text-[var(--text-primary)] mb-2">Delete Program?</h3>
-            <p className="text-sm text-[var(--text-secondary)] mb-1">
+          <div className="bg-[#1a1d24] rounded-2xl p-6 max-w-sm w-full">
+            <h3 className="font-bold text-lg text-white mb-2">Delete Program?</h3>
+            <p className="text-sm text-[#9ca3af] mb-1">
               Are you sure you want to delete <strong>{activeProgram.title}</strong>?
             </p>
-            <p className="text-xs text-[var(--text-tertiary)] mb-6">This can&apos;t be undone.</p>
+            <p className="text-xs text-[#6b7280] mb-6">This can&apos;t be undone.</p>
             <div className="flex gap-3">
-              <button onClick={() => setConfirmDeleteProgram(false)} className="flex-1 rounded-xl border border-[var(--border)] py-2.5 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] transition-colors">Cancel</button>
-              <button onClick={handleDeleteActiveProgram} className="flex-1 rounded-xl bg-[var(--danger)] py-2.5 text-sm font-bold text-white hover:bg-[#dc2626] transition-colors">Delete</button>
+              <button onClick={() => setConfirmDeleteProgram(false)} className="flex-1 rounded-xl border border-[#2a2d35] py-2.5 text-sm font-medium text-[#9ca3af] hover:bg-[#22252d] transition-colors">Cancel</button>
+              <button onClick={handleDeleteActiveProgram} className="flex-1 rounded-xl bg-[#ef4444] py-2.5 text-sm font-bold text-white hover:bg-[#dc2626] transition-colors">Delete</button>
             </div>
           </div>
         </div>
       )}
       <div className="px-4 pt-12 pb-6 flex items-start justify-between">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-[var(--accent-light)]">
+          <h1 className="text-3xl font-extrabold tracking-tight text-[#a5b4fc]">
             ELITE COACH
           </h1>
           {profile?.name && (
-            <p className="mt-1 text-sm text-[var(--text-secondary)]">Welcome back, {profile.name}</p>
+            <p className="mt-1 text-sm text-[#9ca3af]">Welcome back, {profile.name}</p>
           )}
         </div>
-        <Link href="/settings" className="mt-1 p-2 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-colors">
+        <Link href="/settings" className="mt-1 p-2 rounded-lg text-[#9ca3af] hover:text-white hover:bg-[#22252d] transition-colors">
           <SettingsIcon size={20} />
         </Link>
       </div>
@@ -377,7 +377,7 @@ export default function HomePage() {
       {/* Event Countdown */}
       {trainingEvent && weeksUntilEvent !== null && weeksUntilEvent > 0 && (
         <div className="px-4 mb-4">
-          <div className="rounded-2xl bg-gradient-to-r from-[var(--accent)] to-[#6366f1] p-4">
+          <div className="rounded-2xl bg-gradient-to-r from-[#4f46e5] to-[#6366f1] p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-medium text-white/70 uppercase tracking-wider">Training For</p>
@@ -388,8 +388,8 @@ export default function HomePage() {
                 <p className="text-xs text-white/70">weeks to go</p>
               </div>
             </div>
-            <div className="mt-2 h-1.5 rounded-full bg-[var(--bg-card)]/20 overflow-hidden">
-              <div className="h-full rounded-full bg-[var(--bg-card)]/80 transition-all" style={{ width: `${Math.max(5, 100 - (weeksUntilEvent / 20) * 100)}%` }} />
+            <div className="mt-2 h-1.5 rounded-full bg-[#1a1d24]/20 overflow-hidden">
+              <div className="h-full rounded-full bg-[#1a1d24]/80 transition-all" style={{ width: `${Math.max(5, 100 - (weeksUntilEvent / 20) * 100)}%` }} />
             </div>
           </div>
         </div>
@@ -400,15 +400,15 @@ export default function HomePage() {
         <div className="px-4 mb-4">
           <div className={`rounded-2xl border p-4 ${
             recoveryData.score < 33
-              ? 'bg-[var(--danger)]/10 border-[var(--danger)]/30'
-              : 'bg-[var(--warning)]/10 border-[var(--warning)]/30'
+              ? 'bg-[#ef4444]/10 border-[#ef4444]/30'
+              : 'bg-[#f59e0b]/10 border-[#f59e0b]/30'
           }`}>
             <div className="flex items-center gap-2 mb-1">
-              <Heart size={14} className={recoveryData.score < 33 ? 'text-[var(--danger)]' : 'text-amber-500'} />
-              <span className={`text-xs font-medium uppercase tracking-wider ${recoveryData.score < 33 ? 'text-[var(--danger)]' : 'text-[var(--warning)]'}`}>
+              <Heart size={14} className={recoveryData.score < 33 ? 'text-[#ef4444]' : 'text-amber-500'} />
+              <span className={`text-xs font-medium uppercase tracking-wider ${recoveryData.score < 33 ? 'text-[#ef4444]' : 'text-[#f59e0b]'}`}>
                 {recoveryData.score < 33 ? 'Low Recovery' : 'Moderate Recovery'}
               </span>
-              <span className={`ml-auto text-xs font-bold ${recoveryData.score < 33 ? 'text-[var(--danger)]' : 'text-[var(--warning)]'}`}>{recoveryData.score}%</span>
+              <span className={`ml-auto text-xs font-bold ${recoveryData.score < 33 ? 'text-[#ef4444]' : 'text-[#f59e0b]'}`}>{recoveryData.score}%</span>
             </div>
             <p className={`text-sm ${recoveryData.score < 33 ? 'text-red-800' : 'text-amber-800'}`}>
               {recoveryData.score < 33
@@ -416,7 +416,7 @@ export default function HomePage() {
                 : 'Reduce volume by ~30% and lower RPE targets today.'}
             </p>
             {recoveryData.sleepHours && recoveryData.sleepHours < 6 && (
-              <p className={`text-xs mt-1 ${recoveryData.score < 33 ? 'text-[var(--danger)]' : 'text-[var(--warning)]'}`}>
+              <p className={`text-xs mt-1 ${recoveryData.score < 33 ? 'text-[#ef4444]' : 'text-[#f59e0b]'}`}>
                 Only {recoveryData.sleepHours}h sleep — shorter session recommended.
               </p>
             )}
@@ -426,20 +426,20 @@ export default function HomePage() {
 
       {totalWorkouts > 0 && (
         <div className="px-4 mb-6 flex gap-3">
-          <div className="flex-1 rounded-2xl bg-[var(--bg-card)] border border-[var(--border)] p-3 text-center">
+          <div className="flex-1 rounded-2xl bg-[#1a1d24] border border-[#2a2d35] p-3 text-center">
             <Flame size={16} className="mx-auto text-orange-500 mb-1" />
-            <p className="text-lg font-bold text-[var(--text-primary)]">{streak}</p>
-            <p className="text-[10px] text-[var(--text-secondary)] uppercase">Day Streak</p>
+            <p className="text-lg font-bold text-white">{streak}</p>
+            <p className="text-[10px] text-[#9ca3af] uppercase">Day Streak</p>
           </div>
-          <div className="flex-1 rounded-2xl bg-[var(--bg-card)] border border-[var(--border)] p-3 text-center">
+          <div className="flex-1 rounded-2xl bg-[#1a1d24] border border-[#2a2d35] p-3 text-center">
             <Calendar size={16} className="mx-auto text-blue-500 mb-1" />
-            <p className="text-lg font-bold text-[var(--text-primary)]">{weekCompletionCount}</p>
-            <p className="text-[10px] text-[var(--text-secondary)] uppercase">This Week</p>
+            <p className="text-lg font-bold text-white">{weekCompletionCount}</p>
+            <p className="text-[10px] text-[#9ca3af] uppercase">This Week</p>
           </div>
-          <div className="flex-1 rounded-2xl bg-[var(--bg-card)] border border-[var(--border)] p-3 text-center">
+          <div className="flex-1 rounded-2xl bg-[#1a1d24] border border-[#2a2d35] p-3 text-center">
             <Trophy size={16} className="mx-auto text-yellow-500 mb-1" />
-            <p className="text-lg font-bold text-[var(--text-primary)]">{totalWorkouts}</p>
-            <p className="text-[10px] text-[var(--text-secondary)] uppercase">Total</p>
+            <p className="text-lg font-bold text-white">{totalWorkouts}</p>
+            <p className="text-[10px] text-[#9ca3af] uppercase">Total</p>
           </div>
         </div>
       )}
@@ -447,13 +447,13 @@ export default function HomePage() {
       {/* Active Program with Day Selection */}
       <div className="px-4 mb-6">
         {activeProgram && programDays.length > 0 ? (
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] overflow-hidden">
+          <div className="rounded-2xl border border-[#2a2d35] bg-[#1a1d24] overflow-hidden">
             {/* Program title */}
             <div className="px-4 pt-4 pb-2 flex items-center justify-between">
-              <h2 className="text-xs font-medium uppercase tracking-wider text-[var(--accent-light)]">
+              <h2 className="text-xs font-medium uppercase tracking-wider text-[#a5b4fc]">
                 {activeProgram.title}
               </h2>
-              <Link href="/progress" className="text-xs text-[var(--accent-light)] font-medium">Track Progress &rarr;</Link>
+              <Link href="/progress" className="text-xs text-[#a5b4fc] font-medium">Track Progress &rarr;</Link>
             </div>
 
             {/* Horizontal scrollable day picker */}
@@ -469,10 +469,10 @@ export default function HomePage() {
                     }}
                     className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium whitespace-nowrap transition-colors ${
                       idx === selectedDayIdx
-                        ? day.isRecovery ? 'bg-[var(--success)] text-white' : 'bg-[var(--accent)] text-white'
+                        ? day.isRecovery ? 'bg-[#4ade80] text-white' : 'bg-[#4f46e5] text-white'
                         : day.isRecovery
-                        ? 'bg-[var(--success)]/10 text-[var(--success)] border border-[var(--success)]/30'
-                        : 'bg-[var(--bg-elevated)] text-[var(--text-secondary)] border border-[var(--border)]'
+                        ? 'bg-[#4ade80]/10 text-[#4ade80] border border-[#4ade80]/30'
+                        : 'bg-[#22252d] text-[#9ca3af] border border-[#2a2d35]'
                     }`}
                   >
                     {day.isRecovery ? <Heart size={12} /> : <Dumbbell size={12} />}
@@ -483,22 +483,22 @@ export default function HomePage() {
             </div>
 
             {/* Selected day content */}
-            <div className="px-4 pb-4 border-t border-[var(--border)]">
+            <div className="px-4 pb-4 border-t border-[#2a2d35]">
               <div className="flex items-center justify-between py-3">
                 <div className="flex items-center gap-2">
-                  {selectedDay?.isRecovery ? <Heart size={16} className="text-[var(--success)]" /> : <Dumbbell size={16} className="text-[var(--accent-light)]" />}
-                  <span className="font-semibold text-sm text-[var(--text-primary)]">{selectedDay?.header}</span>
+                  {selectedDay?.isRecovery ? <Heart size={16} className="text-[#4ade80]" /> : <Dumbbell size={16} className="text-[#a5b4fc]" />}
+                  <span className="font-semibold text-sm text-white">{selectedDay?.header}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setShowDayContent(!showDayContent)}
-                    className="text-xs text-[var(--accent-light)] font-medium"
+                    className="text-xs text-[#a5b4fc] font-medium"
                   >
                     {showDayContent ? 'Hide' : 'Show'}
                   </button>
                   <button
                     onClick={handleSkipDay}
-                    className="text-xs text-[var(--text-secondary)] font-medium flex items-center gap-1"
+                    className="text-xs text-[#9ca3af] font-medium flex items-center gap-1"
                     title="Skip this day"
                   >
                     <SkipForward size={12} /> Skip
@@ -507,7 +507,7 @@ export default function HomePage() {
               </div>
 
               {showDayContent && selectedDay && (
-                <div className="pt-2 border-t border-[var(--border)]">
+                <div className="pt-2 border-t border-[#2a2d35]">
                   <ProgramMarkdown content={selectedDay.content} />
 
                   {/* Weight Logging for Exercises */}
@@ -515,8 +515,8 @@ export default function HomePage() {
                     const exercises = parseExercisesFromContent(selectedDay.content);
                     if (exercises.length === 0) return null;
                     return (
-                      <div className="mt-4 border-t border-[var(--border)] pt-3">
-                        <h3 className="text-xs font-medium uppercase tracking-wider text-[var(--text-secondary)] mb-3">Log Your Sets</h3>
+                      <div className="mt-4 border-t border-[#2a2d35] pt-3">
+                        <h3 className="text-xs font-medium uppercase tracking-wider text-[#9ca3af] mb-3">Log Your Sets</h3>
                         <div className="space-y-2">
                           {exercises.map((ex, idx) => {
                             const key = ex.name.toLowerCase();
@@ -530,28 +530,28 @@ export default function HomePage() {
                             const isNewPR = current1RM > 0 && current1RM > last1RM && last1RM > 0;
 
                             return (
-                              <div key={idx} className={`rounded-lg border p-3 ${isLogged ? 'border-[var(--success)]/30 bg-[var(--success)]/10' : 'border-[var(--border)] bg-[var(--bg-card)]'}`}>
-                                <p className="font-medium text-sm text-[var(--text-primary)] mb-1">{ex.name}</p>
+                              <div key={idx} className={`rounded-lg border p-3 ${isLogged ? 'border-[#4ade80]/30 bg-[#4ade80]/10' : 'border-[#2a2d35] bg-[#1a1d24]'}`}>
+                                <p className="font-medium text-sm text-white mb-1">{ex.name}</p>
                                 {lastLog && (
-                                  <p className="text-[10px] text-[var(--accent-light)] mb-1">Last: {lastLog.weight}lbs x {lastLog.reps}r | Est. 1RM: {last1RM}lbs</p>
+                                  <p className="text-[10px] text-[#a5b4fc] mb-1">Last: {lastLog.weight}lbs x {lastLog.reps}r | Est. 1RM: {last1RM}lbs</p>
                                 )}
                                 {isLogged ? (
-                                  <p className="text-xs text-[var(--success)] font-medium flex items-center gap-1"><Check size={12} /> Logged!</p>
+                                  <p className="text-xs text-[#4ade80] font-medium flex items-center gap-1"><Check size={12} /> Logged!</p>
                                 ) : (
                                   <>
                                     <div className="flex gap-1.5 mb-1">
                                       <input type="number" inputMode="decimal" placeholder="lbs" value={input.weight}
                                         onChange={e => setExerciseInputs(prev => ({ ...prev, [key]: { ...input, weight: e.target.value } }))}
-                                        className="flex-1 rounded-lg border border-[var(--border)] px-2 py-2 text-sm text-center" />
+                                        className="flex-1 rounded-lg border border-[#2a2d35] px-2 py-2 text-sm text-center" />
                                       <input type="number" inputMode="numeric" placeholder="reps" value={input.reps}
                                         onChange={e => setExerciseInputs(prev => ({ ...prev, [key]: { ...input, reps: e.target.value } }))}
-                                        className="w-16 rounded-lg border border-[var(--border)] px-2 py-2 text-sm text-center" />
+                                        className="w-16 rounded-lg border border-[#2a2d35] px-2 py-2 text-sm text-center" />
                                       <input type="number" inputMode="numeric" placeholder="sets" value={input.sets}
                                         onChange={e => setExerciseInputs(prev => ({ ...prev, [key]: { ...input, sets: e.target.value } }))}
-                                        className="w-16 rounded-lg border border-[var(--border)] px-2 py-2 text-sm text-center" />
+                                        className="w-16 rounded-lg border border-[#2a2d35] px-2 py-2 text-sm text-center" />
                                       <button onClick={() => handleLogSet(ex.name)}
                                         disabled={!input.weight || !input.reps}
-                                        className="rounded-lg bg-[var(--accent)] px-3 py-2 text-xs font-semibold text-white hover:bg-[#3730a3] disabled:opacity-40">
+                                        className="rounded-lg bg-[#4f46e5] px-3 py-2 text-xs font-semibold text-white hover:bg-[#3730a3] disabled:opacity-40">
                                         Log
                                       </button>
                                     </div>
@@ -571,14 +571,14 @@ export default function HomePage() {
                         {/* Complete Workout Button */}
                         {!workoutDone ? (
                           <button onClick={handleCompleteWorkout}
-                            className="w-full mt-3 rounded-xl bg-[var(--success)] py-3 text-sm font-bold text-white hover:bg-[#16a34a] transition-colors flex items-center justify-center gap-2">
+                            className="w-full mt-3 rounded-xl bg-[#4ade80] py-3 text-sm font-bold text-white hover:bg-[#16a34a] transition-colors flex items-center justify-center gap-2">
                             <Check size={18} /> Complete Workout
                           </button>
                         ) : (
-                          <div className="mt-3 rounded-xl bg-[var(--success)]/10 border border-[var(--success)]/30 p-3 text-center">
+                          <div className="mt-3 rounded-xl bg-[#4ade80]/10 border border-[#4ade80]/30 p-3 text-center">
                             <Trophy size={24} className="mx-auto text-yellow-500 mb-1" />
-                            <p className="font-bold text-sm text-[var(--text-primary)]">Workout Complete!</p>
-                            <p className="text-xs text-[var(--text-secondary)]">Streak: {streak} day{streak !== 1 ? 's' : ''}</p>
+                            <p className="font-bold text-sm text-white">Workout Complete!</p>
+                            <p className="text-xs text-[#9ca3af]">Streak: {streak} day{streak !== 1 ? 's' : ''}</p>
                           </div>
                         )}
                       </div>
@@ -590,25 +590,25 @@ export default function HomePage() {
               {/* Delete program button */}
               <button
                 onClick={() => setConfirmDeleteProgram(true)}
-                className="mt-3 w-full rounded-xl border border-[var(--danger)]/30 bg-[var(--danger)]/10 py-2.5 text-sm font-medium text-[var(--danger)] hover:bg-[var(--danger)]/15 transition-colors flex items-center justify-center gap-2"
+                className="mt-3 w-full rounded-xl border border-[#ef4444]/30 bg-[#ef4444]/10 py-2.5 text-sm font-medium text-[#ef4444] hover:bg-[#ef4444]/15 transition-colors flex items-center justify-center gap-2"
               >
                 <Trash2 size={16} /> Delete Program
               </button>
             </div>
           </div>
         ) : activeProgram ? (
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-5">
-            <h2 className="text-xs font-medium uppercase tracking-wider text-[var(--accent-light)] mb-3">Active Program</h2>
-            <p className="font-bold text-sm text-[var(--text-primary)] mb-1">{activeProgram.title}</p>
-            <p className="text-xs text-[var(--text-secondary)] line-clamp-3 leading-relaxed">{activeProgram.content.slice(0, 200)}...</p>
-            <Link href="/progress" className="inline-block mt-3 rounded-xl bg-[var(--accent)] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#3730a3] transition-colors">Start Workout</Link>
+          <div className="rounded-2xl border border-[#2a2d35] bg-[#1a1d24] p-5">
+            <h2 className="text-xs font-medium uppercase tracking-wider text-[#a5b4fc] mb-3">Active Program</h2>
+            <p className="font-bold text-sm text-white mb-1">{activeProgram.title}</p>
+            <p className="text-xs text-[#9ca3af] line-clamp-3 leading-relaxed">{activeProgram.content.slice(0, 200)}...</p>
+            <Link href="/progress" className="inline-block mt-3 rounded-xl bg-[#4f46e5] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#3730a3] transition-colors">Start Workout</Link>
           </div>
         ) : (
           <Link href="/program">
-            <div className="rounded-2xl border-2 border-dashed border-[var(--border)] bg-[var(--bg-card)] p-8 text-center hover:border-[var(--accent-light)]/50 transition-colors">
-              <Dumbbell size={40} className="mx-auto text-[var(--text-muted)] mb-3" />
-              <h2 className="text-lg font-bold text-[var(--text-primary)] mb-1">Create Your First Program</h2>
-              <p className="text-sm text-[var(--text-secondary)]">Generate a personalized training plan or add your existing workout to get started.</p>
+            <div className="rounded-2xl border-2 border-dashed border-[#2a2d35] bg-[#1a1d24] p-8 text-center hover:border-[#a5b4fc]/50 transition-colors">
+              <Dumbbell size={40} className="mx-auto text-[#4b5563] mb-3" />
+              <h2 className="text-lg font-bold text-white mb-1">Create Your First Program</h2>
+              <p className="text-sm text-[#9ca3af]">Generate a personalized training plan or add your existing workout to get started.</p>
             </div>
           </Link>
         )}
@@ -617,12 +617,12 @@ export default function HomePage() {
       {/* Weekly Check-In Summary */}
       {activeProgram && (
         <div className="px-4 mb-4">
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-4">
+          <div className="rounded-2xl border border-[#2a2d35] bg-[#1a1d24] p-4">
             <div className="flex items-center gap-2 mb-2">
-              <TrendingUp size={14} className="text-[var(--accent-light)]" />
-              <span className="text-xs font-medium text-[var(--accent-light)] uppercase tracking-wider">Weekly Check-In</span>
+              <TrendingUp size={14} className="text-[#a5b4fc]" />
+              <span className="text-xs font-medium text-[#a5b4fc] uppercase tracking-wider">Weekly Check-In</span>
             </div>
-            <p className="text-sm text-[var(--text-primary)]">
+            <p className="text-sm text-white">
               <strong>{weekCompletionCount}</strong> workout{weekCompletionCount !== 1 ? 's' : ''} completed
               {parseInt(activeProgram.answers?.days || '0') > 0 && (
                 <span> of <strong>{activeProgram.answers.days}</strong> planned</span>
@@ -649,25 +649,25 @@ export default function HomePage() {
 
       {/* Body Stats Quick Section */}
       <div className="px-4 mb-6">
-        <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-4">
+        <div className="rounded-2xl border border-[#2a2d35] bg-[#1a1d24] p-4">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <Scale size={16} className="text-[var(--accent-light)]" />
-              <h2 className="text-xs font-medium uppercase tracking-wider text-[var(--text-secondary)]">Body Stats</h2>
+              <Scale size={16} className="text-[#a5b4fc]" />
+              <h2 className="text-xs font-medium uppercase tracking-wider text-[#9ca3af]">Body Stats</h2>
             </div>
             <div className="flex items-center gap-2">
-              <button onClick={() => setShowWeightInput(!showWeightInput)} className="p-1 rounded-lg bg-[var(--accent)] text-white hover:bg-[#3730a3]">
+              <button onClick={() => setShowWeightInput(!showWeightInput)} className="p-1 rounded-lg bg-[#4f46e5] text-white hover:bg-[#3730a3]">
                 <Plus size={14} />
               </button>
-              <Link href="/body-stats" className="text-xs text-[var(--accent-light)] font-medium">View All</Link>
+              <Link href="/body-stats" className="text-xs text-[#a5b4fc] font-medium">View All</Link>
             </div>
           </div>
 
           {/* Quick weight input */}
           {showWeightInput && (
             <div className="mb-3 flex gap-2">
-              <input type="number" step="0.1" value={quickWeight} onChange={e => setQuickWeight(e.target.value)} placeholder="Weight (lbs)" className="flex-1 rounded-lg border border-[var(--border)] px-3 py-2 text-sm" />
-              <input type="number" step="0.1" value={quickBf} onChange={e => setQuickBf(e.target.value)} placeholder="BF %" className="w-20 rounded-lg border border-[var(--border)] px-3 py-2 text-sm" />
+              <input type="number" step="0.1" value={quickWeight} onChange={e => setQuickWeight(e.target.value)} placeholder="Weight (lbs)" className="flex-1 rounded-lg border border-[#2a2d35] px-3 py-2 text-sm" />
+              <input type="number" step="0.1" value={quickBf} onChange={e => setQuickBf(e.target.value)} placeholder="BF %" className="w-20 rounded-lg border border-[#2a2d35] px-3 py-2 text-sm" />
               <button
                 onClick={() => {
                   if (!quickWeight && !quickBf) return;
@@ -679,7 +679,7 @@ export default function HomePage() {
                   setBodyStatsEntries(getBodyStats());
                   setQuickWeight(''); setQuickBf(''); setShowWeightInput(false);
                 }}
-                className="rounded-lg bg-[var(--accent)] px-3 py-2 text-xs font-semibold text-white hover:bg-[#3730a3]"
+                className="rounded-lg bg-[#4f46e5] px-3 py-2 text-xs font-semibold text-white hover:bg-[#3730a3]"
               >
                 Save
               </button>
@@ -697,11 +697,11 @@ export default function HomePage() {
                   <>
                     {latest.weight && (
                       <div>
-                        <span className="text-[var(--text-secondary)] text-xs">Weight</span>
-                        <p className="font-bold text-[var(--text-primary)]">
+                        <span className="text-[#9ca3af] text-xs">Weight</span>
+                        <p className="font-bold text-white">
                           {latest.weight} lbs
                           {weightChange !== null && (
-                            <span className={`ml-1 text-xs font-medium ${weightChange > 0 ? 'text-orange-600' : weightChange < 0 ? 'text-[var(--success)]' : 'text-[var(--text-secondary)]'}`}>
+                            <span className={`ml-1 text-xs font-medium ${weightChange > 0 ? 'text-orange-600' : weightChange < 0 ? 'text-[#4ade80]' : 'text-[#9ca3af]'}`}>
                               {weightChange > 0 ? '+' : ''}{weightChange.toFixed(1)}
                             </span>
                           )}
@@ -710,19 +710,19 @@ export default function HomePage() {
                     )}
                     {latest.bodyFat && (
                       <div>
-                        <span className="text-[var(--text-secondary)] text-xs">Body Fat</span>
-                        <p className="font-bold text-[var(--text-primary)]">{latest.bodyFat}%</p>
+                        <span className="text-[#9ca3af] text-xs">Body Fat</span>
+                        <p className="font-bold text-white">{latest.bodyFat}%</p>
                       </div>
                     )}
                     <div className="ml-auto text-right">
-                      <span className="text-[var(--text-tertiary)] text-[10px]">{new Date(latest.date).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>
+                      <span className="text-[#6b7280] text-[10px]">{new Date(latest.date).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>
                     </div>
                   </>
                 );
               })()}
             </div>
           ) : (
-            <p className="text-xs text-[var(--text-tertiary)]">Tap + to log your weight and body fat</p>
+            <p className="text-xs text-[#6b7280]">Tap + to log your weight and body fat</p>
           )}
         </div>
       </div>
@@ -730,13 +730,13 @@ export default function HomePage() {
       {/* Skipped Days Log */}
       {skippedDays.length > 0 && (
         <div className="px-4 mb-6">
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-4">
-            <h3 className="text-xs font-medium uppercase tracking-wider text-[var(--text-secondary)] mb-2">Skipped Workouts</h3>
+          <div className="rounded-2xl border border-[#2a2d35] bg-[#1a1d24] p-4">
+            <h3 className="text-xs font-medium uppercase tracking-wider text-[#9ca3af] mb-2">Skipped Workouts</h3>
             <div className="space-y-1">
               {skippedDays.slice(-5).reverse().map((s, i) => (
                 <div key={i} className="flex items-center justify-between text-xs">
-                  <span className="text-[var(--text-secondary)]">{s.day}</span>
-                  <span className="text-[var(--text-tertiary)]">{new Date(s.date).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>
+                  <span className="text-[#9ca3af]">{s.day}</span>
+                  <span className="text-[#6b7280]">{new Date(s.date).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>
                 </div>
               ))}
             </div>
@@ -746,37 +746,37 @@ export default function HomePage() {
 
       {/* Workout Timer — collapsible */}
       <div className="px-4 mb-6">
-        <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] overflow-hidden">
+        <div className="rounded-2xl border border-[#2a2d35] bg-[#1a1d24] overflow-hidden">
           <button
             onClick={() => setTimerExpanded(!timerExpanded)}
             className="w-full flex items-center justify-between px-5 py-3"
           >
             <div className="flex items-center gap-2">
-              <Timer size={16} className="text-[var(--accent-light)]" />
-              <h2 className="text-xs font-medium uppercase tracking-wider text-[var(--text-secondary)]">
+              <Timer size={16} className="text-[#a5b4fc]" />
+              <h2 className="text-xs font-medium uppercase tracking-wider text-[#9ca3af]">
                 {timerMode === 'rest' ? 'Rest Timer' : 'Workout Timer'}
               </h2>
             </div>
-            <span className="text-xs text-[var(--text-tertiary)]">{timerExpanded ? 'Hide' : 'Show'}</span>
+            <span className="text-xs text-[#6b7280]">{timerExpanded ? 'Hide' : 'Show'}</span>
           </button>
           {timerExpanded && (
             <div className="px-5 pb-5">
               <div className="flex gap-1 mb-4">
-                <button onClick={() => { setTimerMode('stopwatch'); setTimerSeconds(0); setTimerRunning(false); }} className={`px-2.5 py-1 rounded-lg text-xs font-medium ${timerMode === 'stopwatch' ? 'bg-[var(--accent)] text-white' : 'bg-[var(--bg-elevated)] text-[var(--text-secondary)]'}`}>Stopwatch</button>
-                <button onClick={() => { setTimerMode('rest'); setTimerSeconds(restPreset); setTimerRunning(false); }} className={`px-2.5 py-1 rounded-lg text-xs font-medium ${timerMode === 'rest' ? 'bg-[var(--accent)] text-white' : 'bg-[var(--bg-elevated)] text-[var(--text-secondary)]'}`}>Rest</button>
+                <button onClick={() => { setTimerMode('stopwatch'); setTimerSeconds(0); setTimerRunning(false); }} className={`px-2.5 py-1 rounded-lg text-xs font-medium ${timerMode === 'stopwatch' ? 'bg-[#4f46e5] text-white' : 'bg-[#22252d] text-[#9ca3af]'}`}>Stopwatch</button>
+                <button onClick={() => { setTimerMode('rest'); setTimerSeconds(restPreset); setTimerRunning(false); }} className={`px-2.5 py-1 rounded-lg text-xs font-medium ${timerMode === 'rest' ? 'bg-[#4f46e5] text-white' : 'bg-[#22252d] text-[#9ca3af]'}`}>Rest</button>
               </div>
-              <div className={`text-center text-5xl font-mono font-extrabold mb-4 ${isTimerFinished ? 'text-[var(--success)] animate-pulse' : 'text-[var(--text-primary)]'}`}>{formatTime(timerSeconds)}</div>
-              {isTimerFinished && <p className="text-center text-sm text-[var(--success)] mb-3 font-semibold">Time to work!</p>}
+              <div className={`text-center text-5xl font-mono font-extrabold mb-4 ${isTimerFinished ? 'text-[#4ade80] animate-pulse' : 'text-white'}`}>{formatTime(timerSeconds)}</div>
+              {isTimerFinished && <p className="text-center text-sm text-[#4ade80] mb-3 font-semibold">Time to work!</p>}
               <div className="flex gap-2 justify-center mb-3">
-                <button onClick={() => setTimerRunning(!timerRunning)} className="flex items-center gap-2 rounded-xl bg-[var(--accent)] px-8 py-3 text-sm font-semibold text-white hover:bg-[#3730a3] transition-colors">
+                <button onClick={() => setTimerRunning(!timerRunning)} className="flex items-center gap-2 rounded-xl bg-[#4f46e5] px-8 py-3 text-sm font-semibold text-white hover:bg-[#3730a3] transition-colors">
                   {timerRunning ? <Pause size={18} /> : <Play size={18} />} {timerRunning ? 'Pause' : 'Start'}
                 </button>
-                <button onClick={resetTimer} className="rounded-xl bg-[var(--bg-elevated)] p-3 hover:bg-gray-200 transition-colors text-[var(--text-secondary)]"><RotateCcw size={18} /></button>
+                <button onClick={resetTimer} className="rounded-xl bg-[#22252d] p-3 hover:bg-gray-200 transition-colors text-[#9ca3af]"><RotateCcw size={18} /></button>
               </div>
               {timerMode === 'rest' && (
                 <div className="flex gap-2 justify-center">
                   {[30, 60, 90, 120, 180].map((s) => (
-                    <button key={s} onClick={() => startRest(s)} className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${restPreset === s && !timerRunning ? 'bg-[var(--accent)] text-white' : 'bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:bg-gray-200'}`}>
+                    <button key={s} onClick={() => startRest(s)} className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${restPreset === s && !timerRunning ? 'bg-[#4f46e5] text-white' : 'bg-[#22252d] text-[#9ca3af] hover:bg-gray-200'}`}>
                       {s < 60 ? `${s}s` : `${s / 60}m`}
                     </button>
                   ))}
@@ -790,15 +790,15 @@ export default function HomePage() {
       {/* Quick Actions */}
       <div className="px-4 mb-6 flex gap-3">
         <Link href="/chat" className="flex-1">
-          <div className="rounded-2xl bg-[var(--accent)] p-4 flex items-center gap-3 text-white hover:bg-[#3730a3] transition-colors">
+          <div className="rounded-2xl bg-[#4f46e5] p-4 flex items-center gap-3 text-white hover:bg-[#3730a3] transition-colors">
             <MessageSquare size={20} />
             <span className="font-semibold text-sm">Talk to Coach</span>
           </div>
         </Link>
         <Link href="/program" className="flex-1">
-          <div className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border)] p-4 flex items-center gap-3 hover:border-[var(--accent-light)]/30 transition-colors">
-            <Zap size={20} className="text-[var(--accent-light)]" />
-            <span className="font-semibold text-sm text-[var(--text-primary)]">My Program</span>
+          <div className="rounded-2xl bg-[#1a1d24] border border-[#2a2d35] p-4 flex items-center gap-3 hover:border-[#a5b4fc]/30 transition-colors">
+            <Zap size={20} className="text-[#a5b4fc]" />
+            <span className="font-semibold text-sm text-white">My Program</span>
           </div>
         </Link>
       </div>

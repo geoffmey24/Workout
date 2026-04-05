@@ -12,10 +12,10 @@ interface PipeTableProps {
 
 function PipeTable({ header, rows }: PipeTableProps) {
   return (
-    <div className="mb-4 overflow-x-auto rounded-lg border border-[var(--border)]">
+    <div className="mb-4 overflow-x-auto rounded-lg border border-[#2a2d35]">
       <table className="w-full text-sm border-collapse min-w-[360px]">
         <thead>
-          <tr className="bg-[var(--bg-deep)]">
+          <tr className="bg-[#2a2d35]">
             {header.map((h, i) => (
               <th
                 key={i}
@@ -30,12 +30,12 @@ function PipeTable({ header, rows }: PipeTableProps) {
           {rows.map((row, ri) => (
             <tr
               key={ri}
-              className={`${ri % 2 === 0 ? 'bg-[var(--bg-card)]' : 'bg-[var(--bg-page)]'} border-b border-[var(--border)] last:border-b-0`}
+              className={`${ri % 2 === 0 ? 'bg-[#1a1d24]' : 'bg-[#0f1219]'} border-b border-[#2a2d35] last:border-b-0`}
             >
               {row.map((cell, ci) => (
                 <td
                   key={ci}
-                  className={`px-4 py-3 whitespace-nowrap ${ci === 0 ? 'font-medium text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'}`}
+                  className={`px-4 py-3 whitespace-nowrap ${ci === 0 ? 'font-medium text-white' : 'text-[#9ca3af]'}`}
                 >
                   {ci === 0 ? (() => {
                     const video = getVideoForExercise(cell);
@@ -46,7 +46,7 @@ function PipeTable({ header, rows }: PipeTableProps) {
                           href={getVideoUrl(cell)}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-[var(--danger)] hover:text-[var(--danger)] shrink-0"
+                          className="text-[#ef4444] hover:text-[#ef4444] shrink-0"
                           title={video ? `Watch on ${video.channel}` : 'Search on YouTube'}
                         >
                           <Play size={11} fill="currentColor" />
@@ -73,14 +73,14 @@ interface ExerciseCardProps {
 
 function ExerciseCard({ name, details }: ExerciseCardProps) {
   return (
-    <div className="flex items-center justify-between gap-2 rounded-lg border border-[var(--border)] bg-[var(--bg-card)] px-3 py-2.5">
+    <div className="flex items-center justify-between gap-2 rounded-lg border border-[#2a2d35] bg-[#1a1d24] px-3 py-2.5">
       <div className="flex items-center gap-2 min-w-0">
-        <span className="font-semibold text-sm text-[var(--text-primary)] truncate">{name}</span>
+        <span className="font-semibold text-sm text-white truncate">{name}</span>
         <a
           href={getVideoUrl(name)}
           target="_blank"
           rel="noopener noreferrer"
-          className="shrink-0 text-[var(--danger)] hover:text-[var(--danger)]"
+          className="shrink-0 text-[#ef4444] hover:text-[#ef4444]"
           title={getVideoForExercise(name) ? `Watch on ${getVideoForExercise(name)!.channel}` : 'Search on YouTube'}
         >
           <Play size={12} fill="currentColor" />
@@ -94,8 +94,8 @@ function ExerciseCard({ name, details }: ExerciseCardProps) {
               detail.toLowerCase().includes('rpe')
                 ? 'bg-orange-100 text-orange-700'
                 : detail.toLowerCase().includes('rest') || detail.toLowerCase().includes('min') || detail.toLowerCase().includes('s')
-                ? 'bg-[var(--bg-deep)]/20 text-[var(--accent-light)]'
-                : 'bg-[var(--bg-elevated)] text-[var(--text-secondary)]'
+                ? 'bg-[#2a2d35]/20 text-[#a5b4fc]'
+                : 'bg-[#22252d] text-[#9ca3af]'
             }`}
           >
             {detail}
