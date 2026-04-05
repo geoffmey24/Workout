@@ -23,9 +23,6 @@ const PRO_FEATURES = [
   'Train Like Your Hero',
   'AI nutrition coaching',
   'Sleep-adjusted training intensity',
-  'Readiness score',
-  'Form check via photo',
-  'Accountability partner',
   'Weekly AI progress reports',
   'PDF export',
 ];
