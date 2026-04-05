@@ -136,7 +136,6 @@ export default function HomePage() {
   // Onboarding
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [onboardingName, setOnboardingName] = useState('');
-  const [onboardingDislikedExercises, setOnboardingDislikedExercises] = useState('');
   const [showOnboarding, setShowOnboarding] = useState(false);
 
   // Day selection
@@ -203,16 +202,11 @@ export default function HomePage() {
   const handleOnboardingComplete = () => {
     const name = onboardingName.trim() || 'Athlete';
     const existingProfile = getProfile();
-    const disliked = onboardingDislikedExercises
-      .split(',')
-      .map(s => s.trim())
-      .filter(s => s.length > 0);
     const p: UserProfile = {
       ...existingProfile,
       name,
       onboardingComplete: true,
       is_pro: existingProfile?.is_pro ?? false,
-      dislikedExercises: disliked.length > 0 ? disliked : existingProfile?.dislikedExercises,
     };
     saveProfile(p);
     setProfile(p);
@@ -332,30 +326,19 @@ export default function HomePage() {
           <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-xl text-center">
             <Dumbbell size={40} className="mx-auto text-[#1e3a5f] mb-3" />
             <h2 className="text-xl font-bold text-[#111827] mb-1">Welcome to ELITE COACH</h2>
-            <p className="text-sm text-[#6b7280] mb-6">Let&apos;s set up your profile</p>
-            <div className="mb-4">
-              <label className="text-xs text-[#6b7280] text-left block mb-1">What&apos;s your name?</label>
+            <p className="text-sm text-[#6b7280] mb-6">What should I call you?</p>
+            <div className="mb-6">
               <input
                 value={onboardingName}
                 onChange={e => setOnboardingName(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleOnboardingComplete()}
                 placeholder="Your name"
                 className="w-full rounded-xl border border-[#e5e7eb] px-4 py-3 text-sm text-center"
                 autoFocus
               />
             </div>
-            <div className="mb-4">
-              <label className="text-xs text-[#6b7280] text-left block mb-1">Exercises to avoid (optional)</label>
-              <input
-                value={onboardingDislikedExercises}
-                onChange={e => setOnboardingDislikedExercises(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleOnboardingComplete()}
-                placeholder="e.g. burpees, deadlifts, running"
-                className="w-full rounded-xl border border-[#e5e7eb] px-4 py-3 text-sm text-center"
-              />
-              <p className="text-[10px] text-[#9ca3af] mt-1">Separate with commas</p>
-            </div>
             <button onClick={handleOnboardingComplete} className="w-full rounded-xl bg-[#1e3a5f] py-3 text-sm font-bold text-white hover:bg-[#162d4a] transition-colors">
-              Get Started
+              Let&apos;s Go
             </button>
           </div>
         </div>

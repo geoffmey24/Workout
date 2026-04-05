@@ -99,11 +99,36 @@ function buildProfileContext(profile: UserProfile): string {
   if (profile.sport) parts.push(`Sport: ${profile.sport}`);
   if (profile.preferredDuration) parts.push(`Preferred Session Duration: ${profile.preferredDuration}`);
   if (profile.equipmentAvailable) parts.push(`Equipment Available: ${profile.equipmentAvailable}`);
-  if (profile.injuries) parts.push(`Injuries/Limitations: ${profile.injuries}\nIMPORTANT: Always keep these injuries in mind. Never program exercises that aggravate these conditions.`);
+  if (profile.injuries) parts.push(`Injuries/Limitations: ${profile.injuries}`);
   if (profile.dislikedExercises && profile.dislikedExercises.length > 0) {
-    parts.push(`Exercises to AVOID: ${profile.dislikedExercises.join(', ')}\nDo NOT include these exercises in any program or suggestion. Always suggest alternatives.`);
+    parts.push(`Exercises to AVOID: ${profile.dislikedExercises.join(', ')}`);
   }
   if (profile.coachNotes) parts.push(`Coach Notes: ${profile.coachNotes}`);
+
+  // Explicit personalization directives
+  parts.push(`\n## PERSONALIZATION RULES — MANDATORY`);
+  parts.push(`- Address this athlete as "${profile.name}" naturally in conversation.`);
+  if (profile.dislikedExercises && profile.dislikedExercises.length > 0) {
+    parts.push(`- NEVER suggest these exercises: ${profile.dislikedExercises.join(', ')}. Always substitute with alternatives. If the user asks for a program that would normally include a disliked exercise, replace it silently.`);
+  }
+  if (profile.injuries) {
+    parts.push(`- ALWAYS account for their injuries (${profile.injuries}) in every recommendation. Never program movements that aggravate these conditions. Proactively suggest modifications when relevant.`);
+  }
+  if (profile.fitnessLevel) {
+    parts.push(`- Tailor all advice to their ${profile.fitnessLevel} fitness level. ${
+      profile.fitnessLevel === 'beginner'
+        ? 'Use simple cues, avoid advanced techniques, keep volume conservative, emphasize form over load.'
+        : profile.fitnessLevel === 'intermediate'
+        ? 'Can handle moderate complexity — periodization, RPE-based loading, some advanced techniques.'
+        : 'Can handle advanced programming — complex periodization, high intensity techniques, detailed programming.'
+    }`);
+  }
+  if (profile.sport) {
+    parts.push(`- Reference their sport (${profile.sport}) when relevant. Suggest sport-specific drills, movement patterns, and energy system training that transfers to ${profile.sport}.`);
+  }
+  if (profile.equipmentAvailable) {
+    parts.push(`- ONLY suggest exercises using their available equipment: ${profile.equipmentAvailable}. Do not recommend exercises requiring equipment they do not have.`);
+  }
   return parts.join('\n');
 }
 
