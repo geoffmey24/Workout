@@ -45,9 +45,6 @@ function WhoopPageInner() {
   const [whoopData, setWhoopData] = useState<WhoopData | null>(null);
   const [dataSource, setDataSource] = useState<string>('none');
   const [loading, setLoading] = useState(true);
-  // HIDDEN: Requires native app — re-enable when building React Native version
-  // { id: 'apple', name: 'Apple Health', icon: 'A', description: 'Steps, heart rate, workouts, sleep', authUrl: '', dataUrl: '', disconnectUrl: '', color: '#ef4444', connected: false },
-  // { id: 'google', name: 'Google Health Connect', icon: 'G', description: 'Activity, nutrition, vitals', authUrl: '', dataUrl: '', disconnectUrl: '', color: '#3b82f6', connected: false },
   const [sources, setSources] = useState<HealthSource[]>([
     { id: 'whoop', name: 'WHOOP', icon: 'W', description: 'Recovery, strain, sleep tracking', authUrl: '/api/whoop/auth', dataUrl: '/api/whoop/data', disconnectUrl: '/api/whoop/disconnect', color: '#16a34a', connected: false },
     { id: 'oura', name: 'Oura Ring', icon: 'O', description: 'Readiness, sleep stages, HRV', authUrl: '/api/oura/auth', dataUrl: '/api/oura/data', disconnectUrl: '/api/oura/disconnect', color: '#a855f7', connected: false },

@@ -16,15 +16,11 @@ const FREE_FEATURES = [
 
 const PRO_FEATURES = [
   'Voice coaching (coach talks to you)',
-  'Talk to your coach (speech-to-text)',
   'Coach memory (remembers your history and adapts)',
   'Unlimited saved programs',
   'Goal-based training with countdown',
   'Train Like Your Hero',
   'AI nutrition coaching',
-  'Sleep-adjusted training intensity',
-  'Weekly AI progress reports',
-  'PDF export',
 ];
 
 export default function UpgradePage() {
