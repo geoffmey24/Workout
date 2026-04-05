@@ -400,11 +400,19 @@ export interface DiagnosticEntry {
   exercise: string;
   workingWeight: number;
   reps: number;
-  estimated1RM: number;
+  rpe: number;
+  rawEstimated1RM: number;
+  adjusted1RM: number;
+  bwRatio: number;
+  level: string;
+  estimated1RM: number; // kept for backward compat (= adjusted1RM)
 }
 
 export interface StrengthDiagnostic {
+  bodyWeight: number;
+  bodyWeightUnit: 'lbs' | 'kg';
   entries: DiagnosticEntry[];
+  overallLevel: string;
   date: string;
 }
 
@@ -418,6 +426,120 @@ export function saveDiagnostic(diagnostic: StrengthDiagnostic): void {
 
 export function clearDiagnostic(): void {
   remove(DIAGNOSTIC_KEY);
+}
+
+// ── Diagnostic Skip ──────────────────────────────────────
+
+const DIAGNOSTIC_SKIP_KEY = 'ec_diagnostic_skipped_v2';
+
+export function getDiagnosticSkipped(): { skipped: boolean; lastReminder?: string } {
+  return read<{ skipped: boolean; lastReminder?: string }>(DIAGNOSTIC_SKIP_KEY, { skipped: false });
+}
+
+export function setDiagnosticSkipped(): void {
+  write(DIAGNOSTIC_SKIP_KEY, { skipped: true, lastReminder: new Date().toISOString().slice(0, 10) });
+}
+
+export function updateDiagnosticReminderDate(): void {
+  const data = getDiagnosticSkipped();
+  write(DIAGNOSTIC_SKIP_KEY, { ...data, lastReminder: new Date().toISOString().slice(0, 10) });
+}
+
+export function clearDiagnosticSkipped(): void {
+  remove(DIAGNOSTIC_SKIP_KEY);
+}
+
+// ── getDiagnosticOrActual: self-correcting weight system ──
+
+export function getDiagnosticOrActual(exerciseName: string): { weight: number; reps: number; estimated1RM: number; source: 'log' | 'diagnostic' } | null {
+  // 1. Check workout logs for latest logged weight
+  const lastLog = getLastLog(exerciseName);
+  if (lastLog && lastLog.weight > 0) {
+    return {
+      weight: lastLog.weight,
+      reps: lastLog.reps,
+      estimated1RM: lastLog.estimated1RM || calculate1RM(lastLog.weight, lastLog.reps),
+      source: 'log',
+    };
+  }
+  // 2. Fall back to diagnostic estimate
+  const diag = getDiagnostic();
+  if (diag) {
+    const entry = diag.entries.find(e => e.exercise.toLowerCase() === exerciseName.toLowerCase());
+    if (entry) {
+      return {
+        weight: entry.workingWeight,
+        reps: entry.reps,
+        estimated1RM: entry.adjusted1RM || entry.estimated1RM,
+        source: 'diagnostic',
+      };
+    }
+  }
+  // 3. No data
+  return null;
+}
+
+// ── Strength Level Classification ────────────────────────
+
+export function getStrengthLevel(exercise: string, bwRatio: number): string {
+  const e = exercise.toLowerCase();
+  if (e.includes('bench') && !e.includes('incline') && !e.includes('close')) {
+    if (bwRatio < 0.5) return 'Beginner';
+    if (bwRatio < 0.75) return 'Novice';
+    if (bwRatio < 1.0) return 'Intermediate';
+    if (bwRatio < 1.25) return 'Advanced';
+    return 'Elite';
+  }
+  if (e.includes('squat') && !e.includes('front') && !e.includes('goblet') && !e.includes('split')) {
+    if (bwRatio < 0.75) return 'Beginner';
+    if (bwRatio < 1.0) return 'Novice';
+    if (bwRatio < 1.5) return 'Intermediate';
+    if (bwRatio < 2.0) return 'Advanced';
+    return 'Elite';
+  }
+  if (e.includes('deadlift') && !e.includes('romanian') && !e.includes('rdl')) {
+    if (bwRatio < 1.0) return 'Beginner';
+    if (bwRatio < 1.25) return 'Novice';
+    if (bwRatio < 1.75) return 'Intermediate';
+    if (bwRatio < 2.5) return 'Advanced';
+    return 'Elite';
+  }
+  if (e.includes('overhead press') || e.includes('ohp') || e.includes('military press')) {
+    if (bwRatio < 0.35) return 'Beginner';
+    if (bwRatio < 0.55) return 'Novice';
+    if (bwRatio < 0.75) return 'Intermediate';
+    if (bwRatio < 1.0) return 'Advanced';
+    return 'Elite';
+  }
+  if (e.includes('row') && (e.includes('barbell') || e.includes('bb'))) {
+    if (bwRatio < 0.5) return 'Beginner';
+    if (bwRatio < 0.75) return 'Novice';
+    if (bwRatio < 1.0) return 'Intermediate';
+    if (bwRatio < 1.25) return 'Advanced';
+    return 'Elite';
+  }
+  // For dumbbell exercises, use same ratios as bench but double the weight
+  if (e.includes('dumbbell') || e.includes('db') || e.includes('goblet')) {
+    const adjRatio = bwRatio * 2; // double for comparison
+    if (adjRatio < 0.5) return 'Beginner';
+    if (adjRatio < 0.75) return 'Novice';
+    if (adjRatio < 1.0) return 'Intermediate';
+    if (adjRatio < 1.25) return 'Advanced';
+    return 'Elite';
+  }
+  // Default: use bench press scale
+  if (bwRatio < 0.5) return 'Beginner';
+  if (bwRatio < 0.75) return 'Novice';
+  if (bwRatio < 1.0) return 'Intermediate';
+  if (bwRatio < 1.25) return 'Advanced';
+  return 'Elite';
+}
+
+export function getRpeFactor(rpe: number): number {
+  if (rpe <= 7) return 1.08;
+  if (rpe === 8) return 1.04;
+  if (rpe === 9) return 1.01;
+  return 1.0; // RPE 10
 }
 
 // ── 1RM Calculation ───────────────────────────────────────

@@ -186,12 +186,67 @@ function buildDiagnosticContext(): string {
   if (!diagnostic || diagnostic.entries.length === 0) return '';
   const parts: string[] = ['\n\n## STRENGTH ASSESSMENT DATA'];
   parts.push(`Assessment date: ${diagnostic.date}`);
-  parts.push('The user has completed a strength assessment. Here are their tested working weights and estimated 1 rep maxes:');
+  parts.push(`Body weight: ${diagnostic.bodyWeight} ${diagnostic.bodyWeightUnit || 'lbs'}`);
+  parts.push(`Overall strength level: ${diagnostic.overallLevel || 'Unknown'}`);
+  parts.push('\nThe user has completed a strength assessment. Here are their results:');
   for (const e of diagnostic.entries) {
-    parts.push(`- ${e.exercise}: Working weight ${e.workingWeight} lbs x ${e.reps} reps (Est. 1RM: ${e.estimated1RM} lbs)`);
+    const rm = e.adjusted1RM || e.estimated1RM;
+    parts.push(`- ${e.exercise}: Working weight ${e.workingWeight} lbs x ${e.reps} reps @ RPE ${e.rpe || '?'} (Est. 1RM: ${rm} lbs, ${e.bwRatio ? e.bwRatio.toFixed(2) : '?'}x bodyweight, Level: ${e.level || '?'})`);
   }
-  parts.push('\nUse these numbers to prescribe specific weights for exercises in the program. For exercises not tested, estimate appropriate weights based on the tested lifts and standard strength ratios (e.g., if their bench 1RM is 170, their incline dumbbell press working weight is approximately 50-60 lb dumbbells).');
-  parts.push('When prescribing weights, put the actual weight in pounds in the RPE column instead of RPE. For example: "Bench Press | 4 | 8-10 | 135 lbs | 2-3 min"');
+
+  // Find key lifts for ratio-based estimation
+  const benchEntry = diagnostic.entries.find(e => e.exercise.toLowerCase().includes('bench') && !e.exercise.toLowerCase().includes('incline'));
+  const squatEntry = diagnostic.entries.find(e => e.exercise.toLowerCase().includes('squat') && !e.exercise.toLowerCase().includes('front') && !e.exercise.toLowerCase().includes('goblet'));
+  const deadliftEntry = diagnostic.entries.find(e => e.exercise.toLowerCase().includes('deadlift') && !e.exercise.toLowerCase().includes('romanian'));
+
+  parts.push('\nPRESCRIBE SPECIFIC WEIGHTS for every exercise in the program based on these numbers and the user\'s goal.');
+  parts.push('\nFor exercises the user tested directly, use the percentage of 1RM that matches their goal (from the GOAL-BASED REP SCHEME GUIDELINES above).');
+  parts.push('\nFor exercises NOT tested, estimate their 1RM using these established strength ratios:');
+
+  if (benchEntry) {
+    const b1rm = benchEntry.adjusted1RM || benchEntry.estimated1RM;
+    parts.push(`\nUpper body ratios (relative to Bench Press 1RM of ${b1rm} lbs):`);
+    parts.push(`- Incline bench press: ${Math.round(b1rm * 0.85)} lbs (85% of bench 1RM)`);
+    parts.push(`- Close grip bench: ${Math.round(b1rm * 0.90)} lbs (90%)`);
+    parts.push(`- Dumbbell bench press: ${Math.round(b1rm * 0.40)} lbs per hand (40%)`);
+    parts.push(`- Overhead press: ${Math.round(b1rm * 0.65)} lbs (65%)`);
+    parts.push(`- Barbell row: ${Math.round(b1rm * 0.80)} lbs (80%)`);
+    parts.push(`- Dumbbell row: ${Math.round(b1rm * 0.35)} lbs per hand (35%)`);
+    parts.push(`- Dumbbell curl: ${Math.round(b1rm * 0.17)} lbs per hand (17%)`);
+    parts.push(`- Tricep extension: ${Math.round(b1rm * 0.20)} lbs (20%)`);
+    parts.push(`- Lateral raise: ${Math.round(b1rm * 0.10)} lbs per hand (10%)`);
+    parts.push(`- Face pull: ${Math.round(b1rm * 0.25)} lbs (25%)`);
+  }
+
+  if (squatEntry) {
+    const s1rm = squatEntry.adjusted1RM || squatEntry.estimated1RM;
+    parts.push(`\nLower body ratios (relative to Back Squat 1RM of ${s1rm} lbs):`);
+    parts.push(`- Front squat: ${Math.round(s1rm * 0.85)} lbs (85%)`);
+    parts.push(`- Leg press: ${Math.round(s1rm * 1.50)} lbs (150%)`);
+    parts.push(`- Romanian deadlift: ${Math.round(s1rm * 0.55)} lbs (55%)`);
+    parts.push(`- Bulgarian split squat: ${Math.round(s1rm * 0.30)} lbs per leg (30%)`);
+    parts.push(`- Goblet squat: ${Math.round(s1rm * 0.30)} lbs (30%)`);
+    parts.push(`- Leg curl: ${Math.round(s1rm * 0.25)} lbs (25%)`);
+    parts.push(`- Leg extension: ${Math.round(s1rm * 0.30)} lbs (30%)`);
+    parts.push(`- Calf raise: ${Math.round(s1rm * 0.60)} lbs (60%)`);
+    parts.push(`- Hip thrust: ${Math.round(s1rm * 0.80)} lbs (80%)`);
+  }
+
+  if (deadliftEntry) {
+    const d1rm = deadliftEntry.adjusted1RM || deadliftEntry.estimated1RM;
+    parts.push(`\nDeadlift ratios (relative to Deadlift 1RM of ${d1rm} lbs):`);
+    parts.push(`- Sumo deadlift: ${Math.round(d1rm * 0.95)} lbs (95%)`);
+    parts.push(`- Trap bar deadlift: ${Math.round(d1rm * 1.10)} lbs (110%)`);
+    parts.push(`- Barbell hip thrust: ${Math.round(d1rm * 0.75)} lbs (75%)`);
+  }
+
+  parts.push('\nCalculate working weight = estimated 1RM × goal percentage. Round all weights to the nearest 5 lbs.');
+  parts.push('\nFORMAT: Include the prescribed weight in the exercise table. Show WEIGHT instead of RPE when diagnostic data exists:');
+  parts.push('Exercise | Sets | Reps | Weight | Rest');
+  parts.push('Bench Press | 4 | 8-10 | 130 lbs | 90 sec');
+  parts.push('Incline DB Press | 3 | 10-12 | 45 lbs | 75 sec');
+  parts.push('\nThe weight IS the appropriate intensity — RPE becomes redundant when prescribing exact loads.');
+
   return parts.join('\n');
 }
 

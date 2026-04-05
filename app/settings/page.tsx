@@ -5,7 +5,7 @@ import { ArrowLeft, LogOut, ChevronRight, Crown, User, Save, Target } from 'luci
 import Link from 'next/link';
 import Navigation from '@/components/Navigation';
 import { useAuth } from '@/components/AuthProvider';
-import { getProfile, saveProfile, UserProfile, getDiagnostic, clearDiagnostic, StrengthDiagnostic } from '@/lib/simple-storage';
+import { getProfile, saveProfile, UserProfile, getDiagnostic, clearDiagnostic, clearDiagnosticSkipped, StrengthDiagnostic } from '@/lib/simple-storage';
 
 export default function SettingsPage() {
   const { user, signOut } = useAuth();
@@ -106,26 +106,51 @@ export default function SettingsPage() {
           {diagnostic ? (
             <div>
               <p className="text-sm text-[#6b7280] mb-1">Last tested: {new Date(diagnostic.date).toLocaleDateString([], { month: 'long', day: 'numeric', year: 'numeric' })}</p>
-              <div className="mb-3 space-y-1">
-                {diagnostic.entries.map((e, i) => (
-                  <div key={i} className="flex justify-between text-xs">
-                    <span className="text-[#111827]">{e.exercise}</span>
-                    <span className="text-[#6b7280]">{e.workingWeight} lbs (1RM: {e.estimated1RM})</span>
-                  </div>
-                ))}
+              {diagnostic.bodyWeight > 0 && (
+                <p className="text-sm text-[#6b7280] mb-1">Body weight: {diagnostic.bodyWeight} {diagnostic.bodyWeightUnit || 'lbs'}</p>
+              )}
+              {diagnostic.overallLevel && (
+                <p className="text-sm font-medium text-[#1e3a5f] mb-3">Overall: {diagnostic.overallLevel}</p>
+              )}
+              <div className="mb-3 space-y-2">
+                {diagnostic.entries.map((e, i) => {
+                  const rm = e.adjusted1RM || e.estimated1RM;
+                  return (
+                    <div key={i} className="rounded-xl bg-[#f8f9fa] border border-[#e5e7eb] p-3">
+                      <div className="flex justify-between items-start">
+                        <span className="text-sm font-medium text-[#111827]">{e.exercise}</span>
+                        {e.level && (
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                            e.level === 'Elite' ? 'bg-purple-100 text-purple-700' :
+                            e.level === 'Advanced' ? 'bg-blue-100 text-blue-700' :
+                            e.level === 'Intermediate' ? 'bg-emerald-100 text-emerald-700' :
+                            e.level === 'Novice' ? 'bg-yellow-100 text-yellow-700' :
+                            'bg-gray-100 text-gray-600'
+                          }`}>{e.level}</span>
+                        )}
+                      </div>
+                      <p className="text-xs text-[#6b7280] mt-1">
+                        {e.workingWeight} lbs x {e.reps} reps {e.rpe ? `@ RPE ${e.rpe}` : ''} | 1RM: {rm} lbs
+                        {e.bwRatio ? ` (${e.bwRatio.toFixed(2)}x BW)` : ''}
+                      </p>
+                    </div>
+                  );
+                })}
               </div>
-              <button
-                onClick={() => { clearDiagnostic(); setDiagnosticState(null); }}
+              <Link href="/diagnostic"
+                onClick={() => { clearDiagnostic(); clearDiagnosticSkipped(); setDiagnosticState(null); }}
                 className="w-full flex items-center justify-center gap-2 rounded-xl border border-[#1e3a5f]/20 bg-[#f8f9fa] py-2.5 text-sm font-medium text-[#1e3a5f] hover:bg-[#eef2ff] transition-colors"
               >
                 <Target size={14} /> Re-test Strength
-              </button>
-              <p className="text-[10px] text-[#9ca3af] mt-1.5 text-center">Clears current results. You&apos;ll be prompted to re-assess on the home page.</p>
+              </Link>
+              <p className="text-[10px] text-[#9ca3af] mt-1.5 text-center">Suggest re-testing every 6-8 weeks to track progress.</p>
             </div>
           ) : (
             <div>
-              <p className="text-sm text-[#6b7280] mb-2">No assessment completed yet. Go to the home page to start one.</p>
-              <Link href="/" className="text-sm text-[#1e3a5f] font-medium hover:underline">Go to Home</Link>
+              <p className="text-sm text-[#6b7280] mb-2">No assessment completed yet.</p>
+              <Link href="/diagnostic" className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#1e3a5f] py-2.5 text-sm font-semibold text-white hover:bg-[#162d4a] transition-colors">
+                <Target size={14} /> Take Assessment
+              </Link>
             </div>
           )}
         </div>

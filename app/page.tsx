@@ -2,13 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Flame, Calendar, Dumbbell, Heart, Check, Target, ChevronRight, ArrowLeft, RotateCcw } from 'lucide-react';
+import { Flame, Calendar, Dumbbell, Heart, Check, Target, ChevronRight } from 'lucide-react';
 import Navigation from '@/components/Navigation';
 import ProgramMarkdown from '@/components/ProgramMarkdown';
 import { useAuth } from '@/components/AuthProvider';
 import {
   migrateOldData,
-  StoredProgram, UserProfile, WorkoutLog,
+  StoredProgram, UserProfile,
   getActiveProgram,
   getWorkoutLogs, addWorkoutLog, getLastLog,
   getCompletions, recordWorkoutCompletion,
@@ -17,7 +17,7 @@ import {
   getProfile, saveProfile,
   getSelectedDayIdx, setSelectedDayIdx as storageSetSelectedDayIdx,
   calculate1RM,
-  getDiagnostic, saveDiagnostic, DiagnosticEntry, StrengthDiagnostic,
+  getDiagnostic, getDiagnosticSkipped, setDiagnosticSkipped, updateDiagnosticReminderDate, getDiagnosticOrActual,
 } from '@/lib/simple-storage';
 
 function parseExercisesFromContent(content: string): { name: string; line: string }[] {
@@ -126,15 +126,8 @@ export default function HomePage() {
   const [workoutDone, setWorkoutDone] = useState(false);
 
   // Strength diagnostic
-  const [showDiagnostic, setShowDiagnostic] = useState(false);
-  const [diagnosticExercises, setDiagnosticExercises] = useState<string[]>([]);
-  const [diagnosticIdx, setDiagnosticIdx] = useState(0);
-  const [diagnosticPhase, setDiagnosticPhase] = useState<'start' | 'ramp' | 'confirm' | 'log' | 'summary'>('start');
-  const [diagnosticResults, setDiagnosticResults] = useState<DiagnosticEntry[]>([]);
-  const [diagnosticWeight, setDiagnosticWeight] = useState('');
-  const [diagnosticReps, setDiagnosticReps] = useState('');
-  const [diagnosticSuggestion, setDiagnosticSuggestion] = useState('');
   const [needsDiagnostic, setNeedsDiagnostic] = useState(false);
+  const [showReminder, setShowReminder] = useState(false);
 
   const refreshStats = () => {
     setStreak(getStreak());
@@ -153,117 +146,22 @@ export default function HomePage() {
     if (isTodayCompleted()) setWorkoutDone(true);
     // Check if diagnostic is needed: has active program, no logs, no diagnostic
     const prog = getActiveProgram();
-    if (prog && getWorkoutLogs().length === 0 && !getDiagnostic()) {
+    const diag = getDiagnostic();
+    const skipData = getDiagnosticSkipped();
+    if (prog && getWorkoutLogs().length === 0 && !diag && !skipData.skipped) {
       setNeedsDiagnostic(true);
     }
+    // Check if we should show a periodic reminder (once per week max)
+    if (prog && !diag && skipData.skipped) {
+      const lastReminder = skipData.lastReminder;
+      if (lastReminder) {
+        const daysSince = Math.floor((Date.now() - new Date(lastReminder).getTime()) / (1000 * 60 * 60 * 24));
+        if (daysSince >= 7) setShowReminder(true);
+      } else {
+        setShowReminder(true);
+      }
+    }
   }, [user]);
-
-  // Extract compound exercises from program for diagnostic
-  const extractCompoundExercises = (content: string): string[] => {
-    const compounds = ['squat', 'bench press', 'deadlift', 'overhead press', 'barbell row', 'pull-up', 'hip thrust', 'lunge', 'incline press', 'front squat', 'romanian deadlift', 'pendlay row', 'military press', 'clean', 'snatch'];
-    const allExercises = parseExercisesFromContent(content);
-    const matched: string[] = [];
-    for (const ex of allExercises) {
-      const lower = ex.name.toLowerCase();
-      if (compounds.some(c => lower.includes(c)) && matched.length < 5) {
-        matched.push(ex.name);
-      }
-    }
-    // If fewer than 3 matched, take the first exercises from the program
-    if (matched.length < 3) {
-      for (const ex of allExercises) {
-        if (!matched.includes(ex.name) && matched.length < 5) {
-          matched.push(ex.name);
-        }
-      }
-    }
-    return matched.slice(0, 5);
-  };
-
-  const startDiagnostic = () => {
-    if (!activeProgram) return;
-    const exercises = extractCompoundExercises(activeProgram.content);
-    if (exercises.length === 0) return;
-    setDiagnosticExercises(exercises);
-    setDiagnosticIdx(0);
-    setDiagnosticResults([]);
-    setDiagnosticPhase('ramp');
-    setDiagnosticSuggestion('Start with an empty bar or light weight. Do a set of 8-10 reps.');
-    setShowDiagnostic(true);
-  };
-
-  const handleDiagnosticRating = (rating: 'easy' | 'moderate' | 'hard') => {
-    if (rating === 'easy') {
-      setDiagnosticSuggestion('Add 10-20 lbs and try another set of 8-10 reps.');
-      setDiagnosticPhase('ramp');
-    } else if (rating === 'moderate') {
-      setDiagnosticSuggestion("That's close. Do one more set. Was it Easy, Moderate, or Hard?");
-      setDiagnosticPhase('confirm');
-    } else {
-      // Hard — this is their working weight, go to log
-      setDiagnosticSuggestion("Got it. That's your working weight. Enter the weight and reps below.");
-      setDiagnosticPhase('log');
-    }
-  };
-
-  const handleDiagnosticConfirm = (rating: 'easy' | 'moderate' | 'hard') => {
-    if (rating === 'easy') {
-      setDiagnosticSuggestion('Add 5-10 lbs and try one more set.');
-      setDiagnosticPhase('ramp');
-    } else {
-      // Moderate or Hard on confirm = working weight found
-      setDiagnosticSuggestion("Got it. That's your working weight. Enter the weight and reps below.");
-      setDiagnosticPhase('log');
-    }
-  };
-
-  const handleDiagnosticLog = () => {
-    const w = parseFloat(diagnosticWeight);
-    const r = parseInt(diagnosticReps) || 8;
-    if (!w || w <= 0) return;
-    const est = calculate1RM(w, r);
-    const entry: DiagnosticEntry = {
-      exercise: diagnosticExercises[diagnosticIdx],
-      workingWeight: w,
-      reps: r,
-      estimated1RM: est,
-    };
-    const newResults = [...diagnosticResults, entry];
-    setDiagnosticResults(newResults);
-    setDiagnosticWeight('');
-    setDiagnosticReps('');
-
-    if (diagnosticIdx + 1 < diagnosticExercises.length) {
-      // Next exercise
-      setDiagnosticIdx(diagnosticIdx + 1);
-      setDiagnosticPhase('ramp');
-      setDiagnosticSuggestion('Start with an empty bar or light weight. Do a set of 8-10 reps.');
-    } else {
-      // Done — show summary
-      setDiagnosticPhase('summary');
-    }
-  };
-
-  const handleSaveDiagnostic = () => {
-    const diagnostic: StrengthDiagnostic = {
-      entries: diagnosticResults,
-      date: new Date().toISOString().slice(0, 10),
-    };
-    saveDiagnostic(diagnostic);
-    // Also save as workout logs
-    for (const e of diagnosticResults) {
-      addWorkoutLog({
-        exercise: e.exercise,
-        weight: e.workingWeight,
-        reps: e.reps,
-        sets: 1,
-        date: diagnostic.date,
-        estimated1RM: e.estimated1RM,
-      });
-    }
-    setShowDiagnostic(false);
-    setNeedsDiagnostic(false);
-  };
 
   const handleOnboardingComplete = () => {
     const name = onboardingName.trim() || 'Athlete';
@@ -397,7 +295,7 @@ export default function HomePage() {
       </div>
 
       {/* Strength Diagnostic Card */}
-      {needsDiagnostic && activeProgram && !showDiagnostic && (
+      {needsDiagnostic && activeProgram && (
         <div className="px-4 mb-5">
           <div className="rounded-2xl bg-white border border-[#e5e7eb] p-5 shadow-sm">
             <div className="flex items-center gap-2 mb-2">
@@ -405,16 +303,15 @@ export default function HomePage() {
               <h3 className="font-bold text-sm text-[#111827]">Let&apos;s find your starting weights</h3>
             </div>
             <p className="text-sm text-[#6b7280] mb-4">
-              Complete a quick assessment so I can prescribe the right weights for your program. Takes about 10 minutes.
+              A quick strength test so your program has real numbers, not guesses. Takes about 15 minutes.
             </p>
-            <button
-              onClick={startDiagnostic}
+            <Link href="/diagnostic"
               className="w-full rounded-xl bg-[#1e3a5f] py-3 text-sm font-bold text-white hover:bg-[#162d4a] transition-colors flex items-center justify-center gap-2"
             >
               Start Assessment <ChevronRight size={16} />
-            </button>
+            </Link>
             <button
-              onClick={() => setNeedsDiagnostic(false)}
+              onClick={() => { setDiagnosticSkipped(); setNeedsDiagnostic(false); }}
               className="w-full mt-2 text-center text-xs text-[#9ca3af] hover:text-[#6b7280] transition-colors py-1"
             >
               Skip for now
@@ -423,129 +320,27 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* Strength Diagnostic Flow */}
-      {showDiagnostic && (
-        <div className="fixed inset-0 z-50 bg-[#f8f9fa] overflow-y-auto">
-          <div className="px-4 pt-12 pb-24 max-w-lg mx-auto">
-            {/* Header */}
-            <div className="flex items-center gap-3 mb-6">
-              <button onClick={() => setShowDiagnostic(false)} className="text-[#9ca3af] hover:text-[#111827]">
-                <ArrowLeft size={20} />
-              </button>
-              <h1 className="font-bold text-lg text-[#111827]">Strength Assessment</h1>
-            </div>
-
-            {diagnosticPhase !== 'summary' ? (
-              <>
-                {/* Progress */}
-                <div className="mb-6">
-                  <div className="flex justify-between text-xs text-[#9ca3af] mb-1">
-                    <span>Exercise {diagnosticIdx + 1} of {diagnosticExercises.length}</span>
-                    <span>{Math.round(((diagnosticIdx) / diagnosticExercises.length) * 100)}%</span>
-                  </div>
-                  <div className="h-2 rounded-full bg-[#e5e7eb]">
-                    <div className="h-full rounded-full bg-[#1e3a5f] transition-all" style={{ width: `${(diagnosticIdx / diagnosticExercises.length) * 100}%` }} />
-                  </div>
-                </div>
-
-                {/* Current exercise */}
-                <div className="rounded-2xl bg-white border border-[#e5e7eb] p-5 mb-4 shadow-sm">
-                  <p className="text-xs font-medium text-[#9ca3af] uppercase tracking-wider mb-1">Find your working weight for</p>
-                  <h2 className="text-xl font-bold text-[#1e3a5f] mb-4">{diagnosticExercises[diagnosticIdx]}</h2>
-                  <div className="rounded-xl bg-[#f8f9fa] border border-[#e5e7eb] p-4 mb-4">
-                    <p className="text-sm text-[#111827]">{diagnosticSuggestion}</p>
-                  </div>
-
-                  {diagnosticPhase === 'ramp' && (
-                    <div>
-                      <p className="text-xs font-medium text-[#9ca3af] mb-3">How did that set feel?</p>
-                      <div className="flex gap-2">
-                        <button onClick={() => handleDiagnosticRating('easy')} className="flex-1 rounded-xl border border-emerald-200 bg-emerald-50 py-3 text-sm font-semibold text-emerald-700 hover:bg-emerald-100 transition-colors">Easy</button>
-                        <button onClick={() => handleDiagnosticRating('moderate')} className="flex-1 rounded-xl border border-amber-200 bg-amber-50 py-3 text-sm font-semibold text-amber-700 hover:bg-amber-100 transition-colors">Moderate</button>
-                        <button onClick={() => handleDiagnosticRating('hard')} className="flex-1 rounded-xl border border-red-200 bg-red-50 py-3 text-sm font-semibold text-red-700 hover:bg-red-100 transition-colors">Hard</button>
-                      </div>
-                    </div>
-                  )}
-
-                  {diagnosticPhase === 'confirm' && (
-                    <div>
-                      <p className="text-xs font-medium text-[#9ca3af] mb-3">How was the confirmation set?</p>
-                      <div className="flex gap-2">
-                        <button onClick={() => handleDiagnosticConfirm('easy')} className="flex-1 rounded-xl border border-emerald-200 bg-emerald-50 py-3 text-sm font-semibold text-emerald-700 hover:bg-emerald-100 transition-colors">Easy</button>
-                        <button onClick={() => handleDiagnosticConfirm('moderate')} className="flex-1 rounded-xl border border-amber-200 bg-amber-50 py-3 text-sm font-semibold text-amber-700 hover:bg-amber-100 transition-colors">Moderate</button>
-                        <button onClick={() => handleDiagnosticConfirm('hard')} className="flex-1 rounded-xl border border-red-200 bg-red-50 py-3 text-sm font-semibold text-red-700 hover:bg-red-100 transition-colors">Hard</button>
-                      </div>
-                    </div>
-                  )}
-
-                  {diagnosticPhase === 'log' && (
-                    <div>
-                      <p className="text-xs font-medium text-[#9ca3af] mb-3">Enter your final weight and reps</p>
-                      <div className="flex gap-2 mb-3">
-                        <div className="flex-1">
-                          <label className="text-[10px] text-[#9ca3af] mb-1 block">Weight (lbs)</label>
-                          <input type="number" inputMode="decimal" value={diagnosticWeight} onChange={e => setDiagnosticWeight(e.target.value)}
-                            placeholder="135" autoFocus
-                            className="w-full rounded-lg border border-[#e5e7eb] bg-[#f8f9fa] px-3 py-2.5 text-sm text-center text-[#111827] focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/30" />
-                        </div>
-                        <div className="w-24">
-                          <label className="text-[10px] text-[#9ca3af] mb-1 block">Reps</label>
-                          <input type="number" inputMode="numeric" value={diagnosticReps} onChange={e => setDiagnosticReps(e.target.value)}
-                            placeholder="8"
-                            className="w-full rounded-lg border border-[#e5e7eb] bg-[#f8f9fa] px-3 py-2.5 text-sm text-center text-[#111827] focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/30" />
-                        </div>
-                      </div>
-                      {diagnosticWeight && parseFloat(diagnosticWeight) > 0 && (
-                        <p className="text-xs text-[#1e3a5f] font-medium mb-3">
-                          Est. 1RM: {calculate1RM(parseFloat(diagnosticWeight), parseInt(diagnosticReps) || 8)} lbs
-                        </p>
-                      )}
-                      <button onClick={handleDiagnosticLog} disabled={!diagnosticWeight || parseFloat(diagnosticWeight) <= 0}
-                        className="w-full rounded-xl bg-[#1e3a5f] py-3 text-sm font-bold text-white hover:bg-[#162d4a] disabled:opacity-40 transition-colors flex items-center justify-center gap-2">
-                        {diagnosticIdx + 1 < diagnosticExercises.length ? 'Next Exercise' : 'See Results'} <ChevronRight size={16} />
-                      </button>
-                    </div>
-                  )}
-                </div>
-
-                {/* Already logged */}
-                {diagnosticResults.length > 0 && (
-                  <div className="rounded-2xl bg-white border border-[#e5e7eb] p-4">
-                    <p className="text-xs font-medium text-[#9ca3af] uppercase tracking-wider mb-2">Completed</p>
-                    {diagnosticResults.map((r, i) => (
-                      <div key={i} className="flex items-center justify-between py-1.5 text-sm">
-                        <span className="text-[#111827] font-medium">{r.exercise}</span>
-                        <span className="text-[#6b7280]">{r.workingWeight} lbs (1RM: {r.estimated1RM})</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </>
-            ) : (
-              /* Summary */
-              <div className="rounded-2xl bg-white border border-[#e5e7eb] p-5 shadow-sm">
-                <div className="text-center mb-5">
-                  <Target size={32} className="mx-auto text-[#1e3a5f] mb-2" />
-                  <h2 className="text-lg font-bold text-[#111827]">Here are your starting points</h2>
-                  <p className="text-sm text-[#6b7280] mt-1">Your program will use these to prescribe the right weights.</p>
-                </div>
-                <div className="divide-y divide-[#e5e7eb]">
-                  {diagnosticResults.map((r, i) => (
-                    <div key={i} className="flex items-center justify-between py-3">
-                      <span className="font-medium text-sm text-[#111827]">{r.exercise}</span>
-                      <div className="text-right">
-                        <p className="text-sm font-bold text-[#111827]">{r.workingWeight} lbs</p>
-                        <p className="text-[10px] text-[#6b7280]">Est. 1RM: {r.estimated1RM} lbs</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <button onClick={handleSaveDiagnostic}
-                  className="w-full mt-5 rounded-xl bg-emerald-600 py-3 text-sm font-bold text-white hover:bg-emerald-700 transition-colors flex items-center justify-center gap-2">
-                  <Check size={18} /> Save &amp; Start Training
-                </button>
+      {/* Periodic Reminder Card (for users who skipped) */}
+      {showReminder && !needsDiagnostic && activeProgram && (
+        <div className="px-4 mb-5">
+          <div className="rounded-2xl bg-white border border-[#e5e7eb] p-4 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-[#111827]">Want more precise weights?</p>
+                <p className="text-xs text-[#6b7280] mt-0.5">Take the strength assessment for exact prescriptions.</p>
               </div>
-            )}
+              <Link href="/diagnostic"
+                className="shrink-0 ml-3 rounded-xl bg-[#1e3a5f] px-4 py-2 text-xs font-semibold text-white hover:bg-[#162d4a] transition-colors"
+              >
+                Take Assessment
+              </Link>
+            </div>
+            <button
+              onClick={() => { updateDiagnosticReminderDate(); setShowReminder(false); }}
+              className="w-full mt-2 text-center text-[10px] text-[#9ca3af] hover:text-[#6b7280] transition-colors"
+            >
+              Dismiss
+            </button>
           </div>
         </div>
       )}
@@ -596,9 +391,25 @@ export default function HomePage() {
                         <span className="text-xs font-medium text-[#1e3a5f] bg-[#eef2ff] px-2 py-0.5 rounded-full">{setsReps}</span>
                       )}
                     </div>
-                    {lastLog && (
-                      <p className="text-[10px] text-[#6b7280] mb-1.5">Last: {lastLog.weight}lbs x {lastLog.reps}r | 1RM: {last1RM}lbs</p>
-                    )}
+                    {(() => {
+                      const diagData = getDiagnosticOrActual(ex.name);
+                      const prescribed = diagData ? `${diagData.weight} lbs` : null;
+                      return (
+                        <>
+                          {prescribed && (
+                            <p className="text-[10px] text-[#1e3a5f] font-medium mb-0.5">
+                              {diagData!.source === 'diagnostic' ? 'Prescribed' : 'Last time'}: {prescribed} {lastLog ? `x ${lastLog.reps}r` : ''}
+                            </p>
+                          )}
+                          {lastLog && diagData?.source !== 'log' && (
+                            <p className="text-[10px] text-[#6b7280] mb-0.5">Last: {lastLog.weight}lbs x {lastLog.reps}r | 1RM: {last1RM}lbs</p>
+                          )}
+                          {lastLog && diagData?.source === 'log' && (
+                            <p className="text-[10px] text-[#6b7280] mb-0.5">1RM: {last1RM}lbs</p>
+                          )}
+                        </>
+                      );
+                    })()}
                     {isLogged ? (
                       <p className="text-xs text-emerald-600 font-medium flex items-center gap-1 bg-[#f0fdf4] px-2 py-1 rounded-lg w-fit">
                         <Check size={12} /> Logged
