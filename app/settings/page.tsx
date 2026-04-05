@@ -1,17 +1,18 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { ArrowLeft, LogOut, ChevronRight, Crown, User, Save } from 'lucide-react';
+import { ArrowLeft, LogOut, ChevronRight, Crown, User, Save, Target } from 'lucide-react';
 import Link from 'next/link';
 import Navigation from '@/components/Navigation';
 import { useAuth } from '@/components/AuthProvider';
-import { getProfile, saveProfile, UserProfile } from '@/lib/simple-storage';
+import { getProfile, saveProfile, UserProfile, getDiagnostic, clearDiagnostic, StrengthDiagnostic } from '@/lib/simple-storage';
 
 export default function SettingsPage() {
   const { user, signOut } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [saving, setSaving] = useState(false);
   const [name, setName] = useState('');
+  const [diagnostic, setDiagnosticState] = useState<StrengthDiagnostic | null>(null);
 
   useEffect(() => {
     const existing = getProfile();
@@ -19,6 +20,7 @@ export default function SettingsPage() {
       setProfile(existing);
       setName(existing.name || '');
     }
+    setDiagnosticState(getDiagnostic());
   }, [user]);
 
   const handleSaveProfile = () => {
@@ -93,6 +95,39 @@ export default function SettingsPage() {
               {saving ? 'Saved!' : 'Save'}
             </button>
           </div>
+        </div>
+
+        {/* Strength Assessment */}
+        <div className="rounded-2xl bg-white border border-[#e5e7eb] p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <Target size={16} className="text-[#1e3a5f]" />
+            <h2 className="text-xs font-medium uppercase tracking-wider text-[#9ca3af]">Strength Assessment</h2>
+          </div>
+          {diagnostic ? (
+            <div>
+              <p className="text-sm text-[#6b7280] mb-1">Last tested: {new Date(diagnostic.date).toLocaleDateString([], { month: 'long', day: 'numeric', year: 'numeric' })}</p>
+              <div className="mb-3 space-y-1">
+                {diagnostic.entries.map((e, i) => (
+                  <div key={i} className="flex justify-between text-xs">
+                    <span className="text-[#111827]">{e.exercise}</span>
+                    <span className="text-[#6b7280]">{e.workingWeight} lbs (1RM: {e.estimated1RM})</span>
+                  </div>
+                ))}
+              </div>
+              <button
+                onClick={() => { clearDiagnostic(); setDiagnosticState(null); }}
+                className="w-full flex items-center justify-center gap-2 rounded-xl border border-[#1e3a5f]/20 bg-[#f8f9fa] py-2.5 text-sm font-medium text-[#1e3a5f] hover:bg-[#eef2ff] transition-colors"
+              >
+                <Target size={14} /> Re-test Strength
+              </button>
+              <p className="text-[10px] text-[#9ca3af] mt-1.5 text-center">Clears current results. You&apos;ll be prompted to re-assess on the home page.</p>
+            </div>
+          ) : (
+            <div>
+              <p className="text-sm text-[#6b7280] mb-2">No assessment completed yet. Go to the home page to start one.</p>
+              <Link href="/" className="text-sm text-[#1e3a5f] font-medium hover:underline">Go to Home</Link>
+            </div>
+          )}
         </div>
 
         {/* Sign Out */}

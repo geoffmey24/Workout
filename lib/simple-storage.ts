@@ -15,6 +15,7 @@ const SKIPPED_KEY = 'ec_skipped_days_v2';
 const SELECTED_DAY_KEY = 'ec_selected_day_v2';
 const EVENT_KEY = 'ec_event_v2';
 const RECOVERY_KEY = 'ec_recovery_data_v2';
+const DIAGNOSTIC_KEY = 'ec_diagnostic_v2';
 
 // ── Generic helpers ───────────────────────────────────────
 
@@ -391,6 +392,32 @@ export function saveRecoveryData(entry: RecoveryData): void {
   if (idx >= 0) data[idx] = entry;
   else data.push(entry);
   write(RECOVERY_KEY, data.slice(-30));
+}
+
+// ── Strength Diagnostic ──────────────────────────────────
+
+export interface DiagnosticEntry {
+  exercise: string;
+  workingWeight: number;
+  reps: number;
+  estimated1RM: number;
+}
+
+export interface StrengthDiagnostic {
+  entries: DiagnosticEntry[];
+  date: string;
+}
+
+export function getDiagnostic(): StrengthDiagnostic | null {
+  return read<StrengthDiagnostic | null>(DIAGNOSTIC_KEY, null);
+}
+
+export function saveDiagnostic(diagnostic: StrengthDiagnostic): void {
+  write(DIAGNOSTIC_KEY, diagnostic);
+}
+
+export function clearDiagnostic(): void {
+  remove(DIAGNOSTIC_KEY);
 }
 
 // ── 1RM Calculation ───────────────────────────────────────

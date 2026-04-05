@@ -1,4 +1,4 @@
-import { getProfile, getLatestRecovery, getEvent, getWeeksUntilEvent, UserProfile } from './simple-storage';
+import { getProfile, getLatestRecovery, getEvent, getWeeksUntilEvent, getDiagnostic, UserProfile } from './simple-storage';
 
 const BASE_PROMPT = `You are ELITE COACH — an AI performance coach with expertise in exercise science, sports nutrition, functional anatomy, physical therapy, and sport-specific programming.
 
@@ -81,6 +81,35 @@ Protein: ~35g | Carbs: ~60g | Fat: ~25g
 - For muscle gain: suggest a surplus of 200-400 cal above maintenance
 - Always prioritize protein (0.7-1g per lb of body weight for active individuals)
 
+## GOAL-BASED REP SCHEME GUIDELINES
+When generating programs, match rep ranges, rest periods, and intensity to the user's goal:
+
+STRENGTH (get stronger, powerlifting):
+- Main lifts: 3-5 reps, 3-5 sets, RPE 8-9. Rest: 3-5 min. Working weight: 80-90% of 1RM.
+- Accessories: 6-8 reps. Tempo: controlled eccentric, explosive concentric.
+
+MUSCLE BUILDING (hypertrophy, build muscle):
+- Main lifts: 8-12 reps, 3-4 sets, RPE 7-8. Rest: 60-90s. Working weight: 65-75% of 1RM.
+- Accessories: 10-15 reps. Tempo: slow eccentric (3s), controlled concentric.
+
+SPEED & POWER (sport performance, explosiveness):
+- Main lifts: 3-5 reps, 4-6 sets, RPE 7-8. Rest: 2-3 min. Working weight: 50-70% of 1RM.
+- Focus on bar speed, NOT grinding reps. Include plyometrics and dynamic movements.
+- Accessories: 6-10 reps with moderate weight.
+
+ENDURANCE (marathon, long-distance, sport endurance):
+- Main lifts: 12-20 reps, 2-3 sets, RPE 6-7. Rest: 30-60s. Working weight: 40-60% of 1RM.
+- Include circuit-style training. Accessories: 15-20 reps. Superset to maintain elevated HR.
+
+WEIGHT LOSS (fat loss, body recomposition):
+- Main lifts: 8-12 reps, 3-4 sets, RPE 7-8. Rest: 45-75s. Working weight: 60-70% of 1RM.
+- Include supersets, circuits, and conditioning finishers (HIIT, battle ropes, sled).
+- Accessories: 10-15 reps.
+
+GENERAL FITNESS:
+- Main lifts: 8-12 reps, 3 sets, RPE 6-7. Rest: 60-90s. Working weight: 60-70% of 1RM.
+- Mix of strength, conditioning, and mobility. Accessories: 10-12 reps.
+
 ## SLEEP-ADJUSTED TRAINING
 When recovery data is provided (from Whoop, Oura, or user-reported):
 - Recovery < 33% (Red): Recommend light movement only — yoga, walking, mobility. Skip heavy lifting.
@@ -152,10 +181,25 @@ function buildEventContext(): string {
   return `\n\n## TRAINING EVENT\nEvent: ${event.name}\nDate: ${event.date} (${weeks} weeks away)\nKeep this timeline in mind when discussing training. Adjust recommendations for their current phase.`;
 }
 
+function buildDiagnosticContext(): string {
+  const diagnostic = getDiagnostic();
+  if (!diagnostic || diagnostic.entries.length === 0) return '';
+  const parts: string[] = ['\n\n## STRENGTH ASSESSMENT DATA'];
+  parts.push(`Assessment date: ${diagnostic.date}`);
+  parts.push('The user has completed a strength assessment. Here are their tested working weights and estimated 1 rep maxes:');
+  for (const e of diagnostic.entries) {
+    parts.push(`- ${e.exercise}: Working weight ${e.workingWeight} lbs x ${e.reps} reps (Est. 1RM: ${e.estimated1RM} lbs)`);
+  }
+  parts.push('\nUse these numbers to prescribe specific weights for exercises in the program. For exercises not tested, estimate appropriate weights based on the tested lifts and standard strength ratios (e.g., if their bench 1RM is 170, their incline dumbbell press working weight is approximately 50-60 lb dumbbells).');
+  parts.push('When prescribing weights, put the actual weight in pounds in the RPE column instead of RPE. For example: "Bench Press | 4 | 8-10 | 135 lbs | 2-3 min"');
+  return parts.join('\n');
+}
+
 export function getSystemPrompt(): string {
   let prompt = BASE_PROMPT;
   const profile = getProfile();
   if (profile) prompt += buildProfileContext(profile);
+  prompt += buildDiagnosticContext();
   prompt += buildRecoveryContext();
   prompt += buildEventContext();
   return prompt;
