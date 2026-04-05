@@ -19,7 +19,7 @@ import {
   getSkippedDays, addSkippedDay,
   getSelectedDayIdx, setSelectedDayIdx as storageSetSelectedDayIdx,
   calculate1RM,
-  getEvent, getWeeksUntilEvent, TrainingEvent,
+  getEvent, getWeeksUntilEvent, clearEvent, TrainingEvent,
   getLatestRecovery, RecoveryData,
 } from '@/lib/simple-storage';
 
@@ -291,6 +291,7 @@ export default function HomePage() {
     if (!activeProgram) return;
     deleteProgram(activeProgram.id);
     clearActiveProgram();
+    clearEvent();
     setActiveProgram(null);
     setShowDayContent(false);
     setSelectedDayIdxState(0);

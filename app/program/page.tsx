@@ -20,6 +20,7 @@ import {
   migrateOldData,
   getProfile,
   saveEvent,
+  clearEvent,
   StoredProgram,
 } from '@/lib/simple-storage';
 import { getSystemPrompt } from '@/lib/system-prompt';
@@ -390,6 +391,8 @@ Do NOT use markdown table separators (|---|---|). Include progression rules and 
       setActiveProgram(newProgram);
       if (answers.event_training === 'Yes' && answers.event_name && answers.event_date) {
         saveEvent({ name: answers.event_name, date: answers.event_date });
+      } else {
+        clearEvent();
       }
       const verify = getPrograms();
       const found = verify.find(p => p.id === programId);
@@ -417,6 +420,7 @@ Do NOT use markdown table separators (|---|---|). Include progression rules and 
 
   const handleDeleteProgram = (id: string) => {
     deleteProgram(id);
+    clearEvent();
     setConfirmDelete(null);
     refreshPrograms();
     if (viewingProgram?.id === id) { setViewingProgram(null); setView('menu'); }
