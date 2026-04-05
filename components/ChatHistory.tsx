@@ -36,10 +36,10 @@ export default function ChatHistory({ activeId, onSelect, onNew }: ChatHistoryPr
   if (conversations.length === 0) return null;
 
   return (
-    <div className="border-b border-[#e5e7eb]">
+    <div className="border-b border-[var(--border)]">
       <button
         onClick={() => setExpanded(!expanded)}
-        className="flex items-center justify-between w-full px-4 py-2 text-xs text-[#6b7280] hover:text-[#111827]"
+        className="flex items-center justify-between w-full px-4 py-2 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
       >
         <span className="flex items-center gap-1.5">
           <Clock size={12} />
@@ -51,7 +51,7 @@ export default function ChatHistory({ activeId, onSelect, onNew }: ChatHistoryPr
         <div className="px-2 pb-2 space-y-1 max-h-48 overflow-y-auto">
           <button
             onClick={onNew}
-            className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-xs text-[#6b7280] hover:bg-gray-50 hover:text-[#111827]"
+            className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-xs text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]"
           >
             <Plus size={12} /> New Chat
           </button>
@@ -61,15 +61,15 @@ export default function ChatHistory({ activeId, onSelect, onNew }: ChatHistoryPr
               onClick={() => onSelect(c)}
               className={`flex items-center gap-2 w-full rounded-lg px-3 py-2 text-xs transition-colors ${
                 activeId === c.id
-                  ? 'bg-blue-50 text-[#1e3a5f] border border-blue-200'
-                  : 'text-[#6b7280] hover:bg-gray-50 hover:text-[#111827]'
+                  ? 'bg-[var(--accent)]/10 text-[var(--accent-light)] border border-blue-200'
+                  : 'text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]'
               }`}
             >
               <span className="flex-1 text-left truncate">{c.title}</span>
               <span className="text-[10px] opacity-60 flex-shrink-0">{formatTime(c.updatedAt)}</span>
               <button
                 onClick={(e) => handleDelete(e, c.id)}
-                className="flex-shrink-0 p-0.5 rounded hover:bg-red-50 hover:text-red-500"
+                className="flex-shrink-0 p-0.5 rounded hover:bg-[var(--danger)]/10 hover:text-[var(--danger)]"
               >
                 <Trash2 size={10} />
               </button>

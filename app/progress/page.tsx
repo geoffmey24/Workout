@@ -134,12 +134,12 @@ export default function ProgressPage() {
   if (!dataLoaded) {
     return (
       <div className="min-h-screen pb-24">
-        <div className="flex items-center gap-3 border-b border-[#e5e7eb] bg-white px-4 py-3">
-          <Link href="/" className="text-[#6b7280] hover:text-[#111827]"><ArrowLeft size={20} /></Link>
-          <h1 className="font-bold text-sm text-[#111827]">Workout Tracker</h1>
+        <div className="flex items-center gap-3 border-b border-[var(--border)] bg-[var(--bg-card)] px-4 py-3">
+          <Link href="/" className="text-[var(--text-secondary)] hover:text-[var(--text-primary)]"><ArrowLeft size={20} /></Link>
+          <h1 className="font-bold text-sm text-[var(--text-primary)]">Workout Tracker</h1>
         </div>
         <div className="flex items-center justify-center py-20">
-          <div className="flex gap-1.5"><span className="typing-dot h-2 w-2 rounded-full bg-blue-500" /><span className="typing-dot h-2 w-2 rounded-full bg-blue-500" /><span className="typing-dot h-2 w-2 rounded-full bg-blue-500" /></div>
+          <div className="flex gap-1.5"><span className="typing-dot h-2 w-2 rounded-full bg-[var(--accent)]/100" /><span className="typing-dot h-2 w-2 rounded-full bg-[var(--accent)]/100" /><span className="typing-dot h-2 w-2 rounded-full bg-[var(--accent)]/100" /></div>
         </div>
         <Navigation />
       </div>
@@ -149,15 +149,15 @@ export default function ProgressPage() {
   if (!activeProgram) {
     return (
       <div className="min-h-screen pb-24">
-        <div className="flex items-center gap-3 border-b border-[#e5e7eb] bg-white px-4 py-3">
-          <Link href="/" className="text-[#6b7280] hover:text-[#111827]"><ArrowLeft size={20} /></Link>
-          <h1 className="font-bold text-sm text-[#111827]">Workout Tracker</h1>
+        <div className="flex items-center gap-3 border-b border-[var(--border)] bg-[var(--bg-card)] px-4 py-3">
+          <Link href="/" className="text-[var(--text-secondary)] hover:text-[var(--text-primary)]"><ArrowLeft size={20} /></Link>
+          <h1 className="font-bold text-sm text-[var(--text-primary)]">Workout Tracker</h1>
         </div>
         <div className="px-4 py-16 text-center">
-          <Dumbbell size={56} className="mx-auto text-gray-300 mb-4" />
-          <h2 className="text-lg font-bold text-[#111827] mb-2">No active program</h2>
-          <p className="text-sm text-[#6b7280] max-w-xs mx-auto mb-6">Create or import a training program first.</p>
-          <Link href="/program" className="inline-block rounded-xl bg-[#1e3a5f] px-6 py-3 text-sm font-semibold text-white hover:bg-[#162d4a] transition-colors">Create a Program</Link>
+          <Dumbbell size={56} className="mx-auto text-[var(--text-muted)] mb-4" />
+          <h2 className="text-lg font-bold text-[var(--text-primary)] mb-2">No active program</h2>
+          <p className="text-sm text-[var(--text-secondary)] max-w-xs mx-auto mb-6">Create or import a training program first.</p>
+          <Link href="/program" className="inline-block rounded-xl bg-[var(--accent)] px-6 py-3 text-sm font-semibold text-white hover:bg-[#3730a3] transition-colors">Create a Program</Link>
         </div>
         <Navigation />
       </div>
@@ -168,12 +168,12 @@ export default function ProgressPage() {
 
   return (
     <div className="min-h-screen pb-24">
-      <div className="flex items-center gap-3 border-b border-[#e5e7eb] bg-white px-4 py-3">
-        <Link href="/" className="text-[#6b7280] hover:text-[#111827]"><ArrowLeft size={20} /></Link>
+      <div className="flex items-center gap-3 border-b border-[var(--border)] bg-[var(--bg-card)] px-4 py-3">
+        <Link href="/" className="text-[var(--text-secondary)] hover:text-[var(--text-primary)]"><ArrowLeft size={20} /></Link>
         <div className="flex-1 min-w-0">
-          <h1 className="font-bold text-sm text-[#111827] truncate">{activeProgram.title}</h1>
+          <h1 className="font-bold text-sm text-[var(--text-primary)] truncate">{activeProgram.title}</h1>
         </div>
-        <button onClick={() => { setCompleted({}); setWorkoutDone(false); setExerciseWeights({}); setWorkoutNote(''); setNoteSaved(false); }} className="text-[#6b7280] hover:text-[#111827]" title="Reset">
+        <button onClick={() => { setCompleted({}); setWorkoutDone(false); setExerciseWeights({}); setWorkoutNote(''); setNoteSaved(false); }} className="text-[var(--text-secondary)] hover:text-[var(--text-primary)]" title="Reset">
           <RotateCcw size={16} />
         </button>
       </div>
@@ -181,34 +181,34 @@ export default function ProgressPage() {
       {/* Stats Bar */}
       {totalWorkouts > 0 && (
         <div className="px-4 py-3 flex gap-3">
-          <div className="flex-1 rounded-xl bg-white border border-[#e5e7eb] p-3 text-center shadow-sm">
+          <div className="flex-1 rounded-xl bg-[var(--bg-card)] border border-[var(--border)] p-3 text-center">
             <Flame size={14} className="mx-auto text-orange-500 mb-1" />
-            <p className="text-lg font-bold text-[#111827]">{streak}<span className="text-xs text-[#6b7280] ml-0.5">d</span></p>
+            <p className="text-lg font-bold text-[var(--text-primary)]">{streak}<span className="text-xs text-[var(--text-secondary)] ml-0.5">d</span></p>
           </div>
-          <div className="flex-1 rounded-xl bg-white border border-[#e5e7eb] p-3 text-center shadow-sm">
+          <div className="flex-1 rounded-xl bg-[var(--bg-card)] border border-[var(--border)] p-3 text-center">
             <Trophy size={14} className="mx-auto text-yellow-500 mb-1" />
-            <p className="text-lg font-bold text-[#111827]">{totalWorkouts}</p>
+            <p className="text-lg font-bold text-[var(--text-primary)]">{totalWorkouts}</p>
           </div>
         </div>
       )}
 
       {/* View Toggle */}
       <div className="px-4 mb-3 flex gap-2">
-        <button onClick={() => setViewMode('checklist')} className={`flex-1 rounded-xl py-2 text-xs font-semibold transition-colors ${viewMode === 'checklist' ? 'bg-[#1e3a5f] text-white' : 'bg-white border border-[#e5e7eb] text-[#6b7280]'}`}>
+        <button onClick={() => setViewMode('checklist')} className={`flex-1 rounded-xl py-2 text-xs font-semibold transition-colors ${viewMode === 'checklist' ? 'bg-[var(--accent)] text-white' : 'bg-[var(--bg-card)] border border-[var(--border)] text-[var(--text-secondary)]'}`}>
           Checklist ({completedCount}/{totalExercises})
         </button>
-        <button onClick={() => setViewMode('prs')} className={`flex-1 rounded-xl py-2 text-xs font-semibold transition-colors ${viewMode === 'prs' ? 'bg-[#1e3a5f] text-white' : 'bg-white border border-[#e5e7eb] text-[#6b7280]'}`}>
+        <button onClick={() => setViewMode('prs')} className={`flex-1 rounded-xl py-2 text-xs font-semibold transition-colors ${viewMode === 'prs' ? 'bg-[var(--accent)] text-white' : 'bg-[var(--bg-card)] border border-[var(--border)] text-[var(--text-secondary)]'}`}>
           PRs
         </button>
-        <button onClick={() => setViewMode('full')} className={`flex-1 rounded-xl py-2 text-xs font-semibold transition-colors ${viewMode === 'full' ? 'bg-[#1e3a5f] text-white' : 'bg-white border border-[#e5e7eb] text-[#6b7280]'}`}>
+        <button onClick={() => setViewMode('full')} className={`flex-1 rounded-xl py-2 text-xs font-semibold transition-colors ${viewMode === 'full' ? 'bg-[var(--accent)] text-white' : 'bg-[var(--bg-card)] border border-[var(--border)] text-[var(--text-secondary)]'}`}>
           Full Program
         </button>
       </div>
 
       {/* Progress Bar */}
       <div className="px-4 mb-4">
-        <div className="h-2 rounded-full bg-[#e5e7eb]">
-          <div className={`h-full rounded-full transition-all duration-300 ${progress === 100 ? 'bg-green-500' : 'bg-[#1e3a5f]'}`} style={{ width: `${progress}%` }} />
+        <div className="h-2 rounded-full bg-[var(--bg-deep)]">
+          <div className={`h-full rounded-full transition-all duration-300 ${progress === 100 ? 'bg-[var(--success)]/100' : 'bg-[var(--accent)]'}`} style={{ width: `${progress}%` }} />
         </div>
       </div>
 
@@ -222,16 +222,16 @@ export default function ProgressPage() {
             const input = exerciseWeights[key] || { weight: '', reps: '', sets: '' };
 
             return (
-              <div key={key} className={`rounded-xl border p-3 transition-all ${done ? 'border-green-200 bg-green-50' : 'border-[#e5e7eb] bg-white shadow-sm'}`}>
+              <div key={key} className={`rounded-xl border p-3 transition-all ${done ? 'border-[var(--success)]/30 bg-[var(--success)]/10' : 'border-[var(--border)] bg-[var(--bg-card)]'}`}>
                 <button onClick={() => toggleExercise(key, i)} className="w-full flex items-center gap-3 text-left">
-                  <div className={`flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full border transition-colors ${done ? 'border-green-500 bg-green-500 text-white' : 'border-gray-300'}`}>
+                  <div className={`flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full border transition-colors ${done ? 'border-green-500 bg-[var(--success)]/100 text-white' : 'border-gray-300'}`}>
                     {done && <Check size={14} strokeWidth={3} />}
                   </div>
-                  <p className={`text-sm flex-1 ${done ? 'line-through text-[#9ca3af]' : 'text-[#111827]'}`}>{ex}</p>
+                  <p className={`text-sm flex-1 ${done ? 'line-through text-[var(--text-tertiary)]' : 'text-[var(--text-primary)]'}`}>{ex}</p>
                 </button>
                 {lastEntry && !done && (
                   <div className="ml-9 mt-1 flex items-center gap-2">
-                    <p className="text-[10px] text-[#1e3a5f]">Last: {lastEntry.weight}lbs x {lastEntry.reps}r x {lastEntry.sets}s ({lastEntry.date})</p>
+                    <p className="text-[10px] text-[var(--accent-light)]">Last: {lastEntry.weight}lbs x {lastEntry.reps}r x {lastEntry.sets}s ({lastEntry.date})</p>
                     {lastEntry.weight > 0 && lastEntry.reps > 0 && (
                       <span className="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded-full font-medium">
                         Est. 1RM: {calculate1RM(lastEntry.weight, lastEntry.reps)} lbs
@@ -242,9 +242,9 @@ export default function ProgressPage() {
                 {!done && (
                   <div className="ml-9 mt-2">
                     <div className="flex gap-2">
-                      <input type="number" placeholder="Weight" value={input.weight} onChange={e => setExerciseWeights(prev => ({ ...prev, [key]: { ...input, weight: e.target.value } }))} className="w-20 rounded-lg border border-[#e5e7eb] px-2 py-1 text-xs" />
-                      <input type="number" placeholder="Reps" value={input.reps} onChange={e => setExerciseWeights(prev => ({ ...prev, [key]: { ...input, reps: e.target.value } }))} className="w-16 rounded-lg border border-[#e5e7eb] px-2 py-1 text-xs" />
-                      <input type="number" placeholder="Sets" value={input.sets} onChange={e => setExerciseWeights(prev => ({ ...prev, [key]: { ...input, sets: e.target.value } }))} className="w-16 rounded-lg border border-[#e5e7eb] px-2 py-1 text-xs" />
+                      <input type="number" placeholder="Weight" value={input.weight} onChange={e => setExerciseWeights(prev => ({ ...prev, [key]: { ...input, weight: e.target.value } }))} className="w-20 rounded-lg border border-[var(--border)] px-2 py-1 text-xs" />
+                      <input type="number" placeholder="Reps" value={input.reps} onChange={e => setExerciseWeights(prev => ({ ...prev, [key]: { ...input, reps: e.target.value } }))} className="w-16 rounded-lg border border-[var(--border)] px-2 py-1 text-xs" />
+                      <input type="number" placeholder="Sets" value={input.sets} onChange={e => setExerciseWeights(prev => ({ ...prev, [key]: { ...input, sets: e.target.value } }))} className="w-16 rounded-lg border border-[var(--border)] px-2 py-1 text-xs" />
                     </div>
                     {input.weight && input.reps && parseFloat(input.weight) > 0 && parseInt(input.reps) > 0 && (
                       <div className="mt-1 flex items-center gap-1.5">
@@ -269,19 +269,19 @@ export default function ProgressPage() {
             );
           }) : (
             <div className="text-center py-8">
-              <p className="text-sm text-[#6b7280]">No exercises detected. Switch to "Full Program" view.</p>
+              <p className="text-sm text-[var(--text-secondary)]">No exercises detected. Switch to "Full Program" view.</p>
             </div>
           )}
 
           {/* Workout Note */}
-          <div className="mt-4 rounded-xl bg-white border border-[#e5e7eb] p-3 shadow-sm">
+          <div className="mt-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border)] p-3">
             <div className="flex items-center gap-2 mb-2">
-              <StickyNote size={14} className="text-[#6b7280]" />
-              <span className="text-xs font-medium text-[#6b7280]">Workout Notes</span>
+              <StickyNote size={14} className="text-[var(--text-secondary)]" />
+              <span className="text-xs font-medium text-[var(--text-secondary)]">Workout Notes</span>
             </div>
-            <textarea value={workoutNote} onChange={e => { setWorkoutNote(e.target.value); setNoteSaved(false); }} placeholder="How did this workout feel? Any notes..." rows={2} className="w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-xs resize-none" />
+            <textarea value={workoutNote} onChange={e => { setWorkoutNote(e.target.value); setNoteSaved(false); }} placeholder="How did this workout feel? Any notes..." rows={2} className="w-full rounded-lg border border-[var(--border)] px-3 py-2 text-xs resize-none" />
             {workoutNote.trim() && (
-              <button onClick={handleSaveNote} className="mt-1 text-xs text-[#1e3a5f] font-medium">
+              <button onClick={handleSaveNote} className="mt-1 text-xs text-[var(--accent-light)] font-medium">
                 {noteSaved ? 'Saved!' : 'Save Note'}
               </button>
             )}
@@ -289,16 +289,16 @@ export default function ProgressPage() {
 
           {/* Complete Workout Button */}
           {exercises.length > 0 && !workoutDone && (
-            <button onClick={handleCompleteWorkout} className="w-full mt-4 rounded-xl bg-green-600 py-3.5 text-sm font-bold text-white hover:bg-green-700 transition-colors flex items-center justify-center gap-2">
+            <button onClick={handleCompleteWorkout} className="w-full mt-4 rounded-xl bg-[var(--success)] py-3.5 text-sm font-bold text-white hover:bg-[#16a34a] transition-colors flex items-center justify-center gap-2">
               <Check size={18} /> Complete Workout
             </button>
           )}
 
           {workoutDone && (
-            <div className="mt-4 rounded-xl bg-green-50 border border-green-200 p-4 text-center">
+            <div className="mt-4 rounded-xl bg-[var(--success)]/10 border border-[var(--success)]/30 p-4 text-center">
               <Trophy size={32} className="mx-auto text-yellow-500 mb-2" />
-              <h3 className="font-bold text-[#111827] mb-1">Workout Complete!</h3>
-              <p className="text-sm text-[#6b7280]">Great work! Your streak is now {streak} day{streak !== 1 ? 's' : ''}.</p>
+              <h3 className="font-bold text-[var(--text-primary)] mb-1">Workout Complete!</h3>
+              <p className="text-sm text-[var(--text-secondary)]">Great work! Your streak is now {streak} day{streak !== 1 ? 's' : ''}.</p>
             </div>
           )}
         </div>
@@ -306,24 +306,24 @@ export default function ProgressPage() {
         <div className="px-4 space-y-2">
           <div className="flex items-center gap-2 mb-2">
             <TrendingUp size={16} className="text-yellow-500" />
-            <h2 className="text-xs font-medium uppercase tracking-wider text-[#6b7280]">Personal Records</h2>
+            <h2 className="text-xs font-medium uppercase tracking-wider text-[var(--text-secondary)]">Personal Records</h2>
           </div>
           {prEntries.length === 0 ? (
             <div className="text-center py-8">
-              <Trophy size={40} className="mx-auto text-gray-300 mb-3" />
-              <p className="text-sm text-[#6b7280]">No PRs yet. Log your weights during workouts!</p>
+              <Trophy size={40} className="mx-auto text-[var(--text-muted)] mb-3" />
+              <p className="text-sm text-[var(--text-secondary)]">No PRs yet. Log your weights during workouts!</p>
             </div>
           ) : prEntries.map(([name, entry]) => {
             const est1RM = calculate1RM(entry.weight, entry.reps);
             return (
-              <div key={name} className="rounded-xl bg-white border border-[#e5e7eb] p-3 shadow-sm flex items-center justify-between">
+              <div key={name} className="rounded-xl bg-[var(--bg-card)] border border-[var(--border)] p-3 flex items-center justify-between">
                 <div>
-                  <p className="font-semibold text-sm text-[#111827] capitalize">{name}</p>
-                  <p className="text-xs text-[#6b7280]">{entry.date}</p>
+                  <p className="font-semibold text-sm text-[var(--text-primary)] capitalize">{name}</p>
+                  <p className="text-xs text-[var(--text-secondary)]">{entry.date}</p>
                 </div>
                 <div className="text-right">
-                  <p className="font-bold text-sm text-[#111827]">{entry.weight} lbs</p>
-                  <p className="text-xs text-[#6b7280]">{entry.reps}r x {entry.sets}s</p>
+                  <p className="font-bold text-sm text-[var(--text-primary)]">{entry.weight} lbs</p>
+                  <p className="text-xs text-[var(--text-secondary)]">{entry.reps}r x {entry.sets}s</p>
                   {est1RM > 0 && (
                     <p className="text-[10px] text-purple-600 font-medium mt-0.5">Est. 1RM: {est1RM} lbs</p>
                   )}
@@ -340,9 +340,9 @@ export default function ProgressPage() {
 
       {/* Exercise Swap Suggestion */}
       <div className="px-4 mt-4">
-        <Link href="/chat?topic=I%20need%20alternative%20exercises%20for%20my%20current%20workout.%20What%20can%20I%20swap%20in%3F" className="flex items-center gap-2 rounded-xl border border-[#e5e7eb] bg-white px-4 py-3 shadow-sm hover:border-blue-300 transition-colors">
-          <MessageSquare size={16} className="text-[#1e3a5f]" />
-          <span className="text-xs font-medium text-[#6b7280]">Need to swap an exercise? Ask Coach</span>
+        <Link href="/chat?topic=I%20need%20alternative%20exercises%20for%20my%20current%20workout.%20What%20can%20I%20swap%20in%3F" className="flex items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--bg-card)] px-4 py-3 hover:border-[var(--accent-light)]/50 transition-colors">
+          <MessageSquare size={16} className="text-[var(--accent-light)]" />
+          <span className="text-xs font-medium text-[var(--text-secondary)]">Need to swap an exercise? Ask Coach</span>
         </Link>
       </div>
 

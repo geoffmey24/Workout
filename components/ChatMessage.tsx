@@ -18,19 +18,19 @@ function MarkdownContent({ text }: { text: string }) {
         strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
         em: ({ children }) => <em>{children}</em>,
         table: ({ children }) => (
-          <div className="mb-3 overflow-x-auto rounded-lg border border-[#e5e7eb] shadow-sm">
+          <div className="mb-3 overflow-x-auto rounded-lg border border-[var(--border)]">
             <table className="w-full text-sm border-collapse min-w-[350px]">{children}</table>
           </div>
         ),
-        thead: ({ children }) => <thead className="bg-[#1e3a5f] text-white">{children}</thead>,
+        thead: ({ children }) => <thead className="bg-[var(--accent)] text-white">{children}</thead>,
         tbody: ({ children }) => <tbody>{children}</tbody>,
-        tr: ({ children }) => <tr className="even:bg-[#f8f9fa] odd:bg-white border-b border-[#e5e7eb] last:border-b-0">{children}</tr>,
+        tr: ({ children }) => <tr className="even:bg-[var(--bg-page)] odd:bg-[var(--bg-card)] border-b border-[var(--border)] last:border-b-0">{children}</tr>,
         th: ({ children }) => <th className="px-3 py-2.5 text-left text-xs font-bold uppercase tracking-wider whitespace-nowrap">{children}</th>,
-        td: ({ children }) => <td className="px-3 py-2 text-[#374151] whitespace-nowrap">{children}</td>,
+        td: ({ children }) => <td className="px-3 py-2 text-[var(--text-secondary)] whitespace-nowrap">{children}</td>,
         code: ({ children, className }) => {
           const isBlock = className?.includes('language-');
-          if (isBlock) return <code className="block bg-gray-50 rounded-lg p-3 text-xs font-mono overflow-x-auto my-2">{children}</code>;
-          return <code className="bg-gray-100 px-1 py-0.5 rounded text-xs font-mono">{children}</code>;
+          if (isBlock) return <code className="block bg-[var(--bg-elevated)] rounded-lg p-3 text-xs font-mono overflow-x-auto my-2">{children}</code>;
+          return <code className="bg-[var(--bg-elevated)] px-1 py-0.5 rounded text-xs font-mono">{children}</code>;
         },
         pre: ({ children }) => <>{children}</>,
       }}
@@ -48,8 +48,8 @@ export default function ChatMessage({ message }: { message: Message }) {
       <div
         className={`max-w-[85%] rounded-2xl px-4 py-3 ${
           isUser
-            ? 'bg-[#1e3a5f] text-white'
-            : 'bg-white border border-[#e5e7eb] text-[#111827] shadow-sm'
+            ? 'bg-[var(--accent)] text-white'
+            : 'bg-[var(--bg-card)] border border-[var(--border)] text-[var(--text-primary)]'
         }`}
       >
         {message.image && (

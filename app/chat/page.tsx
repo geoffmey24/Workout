@@ -181,29 +181,29 @@ function ChatPageInner() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-[#f8f9fa]">
+    <div className="flex flex-col h-screen bg-[var(--bg-page)]">
       {/* Header */}
-      <div className="flex items-center gap-3 border-b border-[#e5e7eb] bg-white px-4 py-3">
-        <Link href="/" className="text-[#6b7280] hover:text-[#111827]"><ArrowLeft size={20} /></Link>
+      <div className="flex items-center gap-3 border-b border-[var(--border)] bg-[var(--bg-card)] px-4 py-3">
+        <Link href="/" className="text-[var(--text-secondary)] hover:text-[var(--text-primary)]"><ArrowLeft size={20} /></Link>
         <div>
-          <h1 className="font-bold text-sm text-[#111827]">ELITE <span className="text-[#1e3a5f]">COACH</span></h1>
+          <h1 className="font-bold text-sm text-[var(--text-primary)]">ELITE <span className="text-[var(--accent-light)]">COACH</span></h1>
         </div>
         <div className="ml-auto flex items-center gap-3">
-          <button onClick={startNewChat} className="p-1.5 rounded-lg bg-gray-100 text-[#6b7280] hover:text-[#111827] hover:bg-gray-200 transition-colors" title="New Chat"><Plus size={16} /></button>
-          <button onClick={() => setHistoryOpen(!historyOpen)} className="text-xs text-[#1e3a5f] font-medium">{historyOpen ? 'Close' : `History (${conversations.length})`}</button>
-          <Link href="/settings" className="text-[#6b7280] hover:text-[#111827]"><Settings size={16} /></Link>
+          <button onClick={startNewChat} className="p-1.5 rounded-lg bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-gray-200 transition-colors" title="New Chat"><Plus size={16} /></button>
+          <button onClick={() => setHistoryOpen(!historyOpen)} className="text-xs text-[var(--accent-light)] font-medium">{historyOpen ? 'Close' : `History (${conversations.length})`}</button>
+          <Link href="/settings" className="text-[var(--text-secondary)] hover:text-[var(--text-primary)]"><Settings size={16} /></Link>
         </div>
       </div>
 
       {/* History Panel */}
       {historyOpen && (
-        <div className="border-b border-[#e5e7eb] bg-white px-4 py-3 max-h-48 overflow-y-auto">
+        <div className="border-b border-[var(--border)] bg-[var(--bg-card)] px-4 py-3 max-h-48 overflow-y-auto">
           {conversations.length === 0 ? (
-            <p className="text-xs text-[#9ca3af] text-center py-2">No past conversations</p>
+            <p className="text-xs text-[var(--text-tertiary)] text-center py-2">No past conversations</p>
           ) : conversations.map(c => (
-            <div key={c.id} className={`flex items-center gap-2 py-1.5 ${c.id === convoId ? 'text-[#1e3a5f]' : 'text-[#6b7280]'}`}>
-              <button onClick={() => loadConversation(c)} className="flex-1 text-left text-xs truncate hover:text-[#111827]">{c.title}</button>
-              <button onClick={() => handleDeleteConvo(c.id)} className="text-[#9ca3af] hover:text-red-500 p-0.5"><Trash2 size={12} /></button>
+            <div key={c.id} className={`flex items-center gap-2 py-1.5 ${c.id === convoId ? 'text-[var(--accent-light)]' : 'text-[var(--text-secondary)]'}`}>
+              <button onClick={() => loadConversation(c)} className="flex-1 text-left text-xs truncate hover:text-[var(--text-primary)]">{c.title}</button>
+              <button onClick={() => handleDeleteConvo(c.id)} className="text-[var(--text-tertiary)] hover:text-[var(--danger)] p-0.5"><Trash2 size={12} /></button>
             </div>
           ))}
         </div>
@@ -213,11 +213,11 @@ function ChatPageInner() {
       <div className="flex-1 overflow-y-auto px-4 py-4">
         {messages.length === 0 && !loading && (
           <div className="flex flex-col items-center justify-center h-full text-center">
-            <h2 className="text-lg font-bold mb-2 text-[#111827]">ELITE <span className="text-[#1e3a5f]">COACH</span></h2>
-            <p className="text-sm text-[#6b7280] mb-6 max-w-xs">Ask about training, nutrition, recovery, form — or upload a photo for analysis.</p>
+            <h2 className="text-lg font-bold mb-2 text-[var(--text-primary)]">ELITE <span className="text-[var(--accent-light)]">COACH</span></h2>
+            <p className="text-sm text-[var(--text-secondary)] mb-6 max-w-xs">Ask about training, nutrition, recovery, form — or upload a photo for analysis.</p>
             <div className="flex flex-wrap gap-2 justify-center max-w-sm">
               {SUGGESTIONS.map(s => (
-                <button key={s} onClick={() => handleSend(s)} className="rounded-full border border-[#e5e7eb] bg-white px-3 py-1.5 text-xs text-[#6b7280] hover:border-blue-300 hover:text-[#1e3a5f] transition-colors shadow-sm">{s}</button>
+                <button key={s} onClick={() => handleSend(s)} className="rounded-full border border-[var(--border)] bg-[var(--bg-card)] px-3 py-1.5 text-xs text-[var(--text-secondary)] hover:border-[var(--accent-light)]/50 hover:text-[var(--accent-light)] transition-colors">{s}</button>
               ))}
             </div>
           </div>
@@ -234,7 +234,7 @@ function ChatPageInner() {
 
 export default function ChatPage() {
   return (
-    <Suspense fallback={<div className="flex items-center justify-center h-screen text-[#6b7280]">Loading...</div>}>
+    <Suspense fallback={<div className="flex items-center justify-center h-screen text-[var(--text-secondary)]">Loading...</div>}>
       <ChatPageInner />
     </Suspense>
   );

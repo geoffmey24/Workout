@@ -92,30 +92,30 @@ export default function SettingsPage() {
 
   const isPro = profile?.is_pro ?? false;
 
-  const inputClasses = 'w-full rounded-lg border border-[#e5e7eb] dark:border-[#374151] bg-[#f8f9fa] dark:bg-[#111827] px-3 py-2.5 text-sm text-[#111827] dark:text-white placeholder-[#9ca3af] focus:outline-none focus:ring-2 focus:ring-[#1e3a5f] focus:border-transparent';
-  const labelClasses = 'block text-xs font-medium text-[#6b7280] mb-1.5';
+  const inputClasses = 'w-full rounded-lg border border-[var(--border)] bg-[var(--bg-page)] px-3 py-2.5 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent';
+  const labelClasses = 'block text-xs font-medium text-[var(--text-secondary)] mb-1.5';
 
   return (
-    <div className="min-h-screen pb-24 bg-[#f8f9fa] dark:bg-[#111827]">
+    <div className="min-h-screen pb-24 bg-[var(--bg-page)]">
       {/* Header */}
-      <div className="flex items-center gap-3 border-b border-[#e5e7eb] bg-white dark:bg-[#1f2937] px-4 py-3">
-        <Link href="/" className="text-[#6b7280] hover:text-[#111827] dark:hover:text-white">
+      <div className="flex items-center gap-3 border-b border-[var(--border)] bg-[var(--bg-card)] px-4 py-3">
+        <Link href="/" className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] dark:hover:text-white">
           <ArrowLeft size={20} />
         </Link>
-        <h1 className="font-bold text-sm text-[#111827] dark:text-white">Settings</h1>
+        <h1 className="font-bold text-sm text-[var(--text-primary)]">Settings</h1>
       </div>
 
       <div className="px-4 py-6 space-y-4">
         {/* Account Card */}
-        <div className="rounded-2xl bg-white dark:bg-[#1f2937] border border-[#e5e7eb] dark:border-[#374151] p-5 shadow-sm">
-          <h2 className="text-xs font-medium uppercase tracking-wider text-[#6b7280] mb-4">Account</h2>
+        <div className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border)] p-5">
+          <h2 className="text-xs font-medium uppercase tracking-wider text-[var(--text-secondary)] mb-4">Account</h2>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-[#1e3a5f] flex items-center justify-center text-white font-bold text-sm">
+            <div className="w-10 h-10 rounded-full bg-[var(--accent)] flex items-center justify-center text-white font-bold text-sm">
               {user?.email?.[0]?.toUpperCase() || '?'}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-[#111827] dark:text-white truncate">{user?.email}</p>
-              <p className="text-xs text-[#6b7280]">
+              <p className="text-sm font-semibold text-[var(--text-primary)] truncate">{user?.email}</p>
+              <p className="text-xs text-[var(--text-secondary)]">
                 Member since {user?.created_at ? new Date(user.created_at).toLocaleDateString([], { month: 'long', year: 'numeric' }) : 'Unknown'}
               </p>
             </div>
@@ -125,14 +125,14 @@ export default function SettingsPage() {
         {/* Upgrade to Pro */}
         {!isPro && (
           <Link href="/upgrade" className="block">
-            <div className="rounded-2xl border border-amber-300 dark:border-amber-500 bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20 p-5 shadow-sm hover:shadow-md transition-shadow">
+            <div className="rounded-2xl border border-amber-300 dark:border-amber-500 bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20 p-5 hover:shadow-md transition-shadow">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-800/40 flex items-center justify-center">
-                  <Crown size={20} className="text-amber-600 dark:text-amber-400" />
+                  <Crown size={20} className="text-[var(--warning)] dark:text-amber-400" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-amber-900 dark:text-amber-300">Upgrade to Pro</p>
-                  <p className="text-xs text-amber-700 dark:text-amber-400/80">Unlock voice coaching, coach memory, and more</p>
+                  <p className="text-xs text-[var(--warning)] dark:text-amber-400/80">Unlock voice coaching, coach memory, and more</p>
                 </div>
                 <ChevronRight size={18} className="text-amber-500" />
               </div>
@@ -141,10 +141,10 @@ export default function SettingsPage() {
         )}
 
         {/* My Preferences (Coach Memory) */}
-        <div className="rounded-2xl bg-white dark:bg-[#1f2937] border border-[#e5e7eb] dark:border-[#374151] p-5 shadow-sm">
+        <div className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border)] p-5">
           <div className="flex items-center gap-2 mb-5">
-            <User size={16} className="text-[#1e3a5f]" />
-            <h2 className="text-xs font-medium uppercase tracking-wider text-[#6b7280]">My Preferences</h2>
+            <User size={16} className="text-[var(--accent-light)]" />
+            <h2 className="text-xs font-medium uppercase tracking-wider text-[var(--text-secondary)]">My Preferences</h2>
           </div>
 
           <div className="space-y-4">
@@ -209,7 +209,7 @@ export default function SettingsPage() {
                 placeholder="e.g., Burpees, Box Jumps"
                 className={inputClasses}
               />
-              <p className="text-[10px] text-[#9ca3af] mt-1">Comma-separated list</p>
+              <p className="text-[10px] text-[var(--text-tertiary)] mt-1">Comma-separated list</p>
             </div>
 
             {/* Sport */}
@@ -269,7 +269,7 @@ export default function SettingsPage() {
             {/* Save Button */}
             <button
               onClick={handleSaveProfile}
-              className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#1e3a5f] py-3 text-sm font-semibold text-white hover:bg-[#162d4a] active:scale-[0.98] transition-all"
+              className="w-full flex items-center justify-center gap-2 rounded-xl bg-[var(--accent)] py-3 text-sm font-semibold text-white hover:bg-[#3730a3] active:scale-[0.98] transition-all"
             >
               <Save size={16} />
               {saving ? 'Saved!' : 'Save Preferences'}
@@ -278,34 +278,34 @@ export default function SettingsPage() {
         </div>
 
         {/* Quick Links */}
-        <div className="rounded-2xl bg-white dark:bg-[#1f2937] border border-[#e5e7eb] dark:border-[#374151] shadow-sm divide-y divide-[#e5e7eb] dark:divide-[#374151]">
-          <Link href="/body-stats" className="flex items-center gap-3 px-5 py-4 hover:bg-gray-50 dark:hover:bg-[#374151] transition-colors">
-            <Scale size={18} className="text-[#1e3a5f]" />
-            <span className="text-sm font-medium text-[#111827] dark:text-white flex-1">Body Stats & Measurements</span>
-            <ChevronRight size={16} className="text-[#9ca3af]" />
+        <div className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border)] divide-y divide-[var(--border)]">
+          <Link href="/body-stats" className="flex items-center gap-3 px-5 py-4 hover:bg-[var(--bg-elevated)] transition-colors">
+            <Scale size={18} className="text-[var(--accent-light)]" />
+            <span className="text-sm font-medium text-[var(--text-primary)] flex-1">Body Stats & Measurements</span>
+            <ChevronRight size={16} className="text-[var(--text-tertiary)]" />
           </Link>
           {activeProgram && (
-            <button onClick={handleExportProgram} className="flex items-center gap-3 px-5 py-4 w-full text-left hover:bg-gray-50 dark:hover:bg-[#374151] transition-colors">
-              <Download size={18} className="text-green-600" />
-              <span className="text-sm font-medium text-[#111827] dark:text-white flex-1">Export Active Program</span>
-              <ChevronRight size={16} className="text-[#9ca3af]" />
+            <button onClick={handleExportProgram} className="flex items-center gap-3 px-5 py-4 w-full text-left hover:bg-[var(--bg-elevated)] transition-colors">
+              <Download size={18} className="text-[var(--success)]" />
+              <span className="text-sm font-medium text-[var(--text-primary)] flex-1">Export Active Program</span>
+              <ChevronRight size={16} className="text-[var(--text-tertiary)]" />
             </button>
           )}
         </div>
 
         {/* Preferences */}
-        <div className="rounded-2xl bg-white dark:bg-[#1f2937] border border-[#e5e7eb] dark:border-[#374151] p-5 shadow-sm">
-          <h2 className="text-xs font-medium uppercase tracking-wider text-[#6b7280] mb-4">Preferences</h2>
+        <div className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border)] p-5">
+          <h2 className="text-xs font-medium uppercase tracking-wider text-[var(--text-secondary)] mb-4">Preferences</h2>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               {darkMode ? <Moon size={18} className="text-indigo-500" /> : <Sun size={18} className="text-yellow-500" />}
-              <span className="text-sm font-medium text-[#111827] dark:text-white">Dark Mode</span>
+              <span className="text-sm font-medium text-[var(--text-primary)]">Dark Mode</span>
             </div>
             <button
               onClick={toggleDarkMode}
-              className={`relative w-11 h-6 rounded-full transition-colors ${darkMode ? 'bg-[#1e3a5f]' : 'bg-gray-300'}`}
+              className={`relative w-11 h-6 rounded-full transition-colors ${darkMode ? 'bg-[var(--accent)]' : 'bg-gray-300'}`}
             >
-              <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${darkMode ? 'translate-x-5' : ''}`} />
+              <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-[var(--bg-card)] shadow transition-transform ${darkMode ? 'translate-x-5' : ''}`} />
             </button>
           </div>
         </div>
@@ -313,7 +313,7 @@ export default function SettingsPage() {
         {/* Sign Out */}
         <button
           onClick={signOut}
-          className="w-full flex items-center justify-center gap-2 rounded-xl border border-red-200 bg-white dark:bg-[#1f2937] py-3 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+          className="w-full flex items-center justify-center gap-2 rounded-xl border border-[var(--danger)]/30 bg-[var(--bg-card)] py-3 text-sm font-medium text-[var(--danger)] hover:bg-[var(--danger)]/10 transition-colors"
         >
           <LogOut size={16} /> Sign Out
         </button>

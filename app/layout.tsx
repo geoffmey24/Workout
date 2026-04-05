@@ -40,7 +40,7 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
         <meta name="mobile-web-app-capable" content="yes" />
       </head>
-      <body className="min-h-screen bg-[#f8f9fa] text-[#111827] antialiased">
+      <body className="min-h-screen bg-[var(--bg-page)] text-[var(--text-primary)] antialiased">
         <AuthProvider>
           <main className="pb-20">{children}</main>
         </AuthProvider>

@@ -110,13 +110,13 @@ const RECOVERY_TOOLS = [
 function CoachBubble({ message }: { message: string }) {
   return (
     <div className="flex items-start gap-3 mb-6">
-      <div className="w-10 h-10 rounded-full bg-[#1e3a5f] flex items-center justify-center shrink-0">
+      <div className="w-10 h-10 rounded-full bg-[var(--accent)] flex items-center justify-center shrink-0">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
           <circle cx="12" cy="7" r="4" />
         </svg>
       </div>
-      <div className="bg-white rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm border border-[#e5e7eb] text-sm text-[#374151] max-w-[85%]">
+      <div className="bg-[var(--bg-card)] rounded-2xl rounded-tl-sm px-4 py-3 border border-[var(--border)] text-sm text-[var(--text-secondary)] max-w-[85%]">
         {message}
       </div>
     </div>
@@ -484,15 +484,15 @@ Do NOT use markdown table separators (|---|---|). Include progression rules and 
     const prog = savedPrograms.find(p => p.id === confirmDelete);
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
-        <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-xl">
-          <h3 className="font-bold text-lg text-[#111827] mb-2">Delete Program?</h3>
-          <p className="text-sm text-[#6b7280] mb-1">
+        <div className="bg-[var(--bg-card)] rounded-2xl p-6 max-w-sm w-full">
+          <h3 className="font-bold text-lg text-[var(--text-primary)] mb-2">Delete Program?</h3>
+          <p className="text-sm text-[var(--text-secondary)] mb-1">
             Are you sure you want to delete <strong>{prog?.title || 'this program'}</strong>?
           </p>
-          <p className="text-xs text-[#9ca3af] mb-6">This cannot be undone.</p>
+          <p className="text-xs text-[var(--text-tertiary)] mb-6">This cannot be undone.</p>
           <div className="flex gap-3">
-            <button onClick={() => setConfirmDelete(null)} className="flex-1 rounded-xl border border-[#e5e7eb] py-2.5 text-sm font-medium text-[#6b7280] hover:bg-gray-50 transition-colors">Cancel</button>
-            <button onClick={() => handleDeleteProgram(confirmDelete)} className="flex-1 rounded-xl bg-red-600 py-2.5 text-sm font-bold text-white hover:bg-red-700 transition-colors">Delete</button>
+            <button onClick={() => setConfirmDelete(null)} className="flex-1 rounded-xl border border-[var(--border)] py-2.5 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] transition-colors">Cancel</button>
+            <button onClick={() => handleDeleteProgram(confirmDelete)} className="flex-1 rounded-xl bg-[var(--danger)] py-2.5 text-sm font-bold text-white hover:bg-[#dc2626] transition-colors">Delete</button>
           </div>
         </div>
       </div>
@@ -509,9 +509,9 @@ Do NOT use markdown table separators (|---|---|). Include progression rules and 
           <div className="grid grid-cols-2 gap-3">
             {GOALS.map(({ label, value, Icon }) => (
               <button key={value} onClick={() => selectAndAdvance('goal', value)}
-                className={`flex flex-col items-center gap-2 rounded-xl border p-4 min-h-[100px] transition-all ${answers.goal === value ? 'border-[#1e3a5f] bg-blue-50 shadow-md' : 'border-[#e5e7eb] bg-white hover:border-[#1e3a5f]/40'}`}>
-                <Icon size={28} className="text-[#1e3a5f]" />
-                <span className="text-sm font-semibold text-[#111827] text-center">{label}</span>
+                className={`flex flex-col items-center gap-2 rounded-xl border p-4 min-h-[100px] transition-all ${answers.goal === value ? 'border-[var(--accent-light)] bg-[var(--accent)]/10' : 'border-[var(--border)] bg-[var(--bg-card)] hover:border-[var(--accent-light)]/40'}`}>
+                <Icon size={28} className="text-[var(--accent-light)]" />
+                <span className="text-sm font-semibold text-[var(--text-primary)] text-center">{label}</span>
               </button>
             ))}
           </div>
@@ -523,9 +523,9 @@ Do NOT use markdown table separators (|---|---|). Include progression rules and 
             <input value={textInput} onChange={e => setTextInput(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && textInput.trim() && submitTextStep('sport')}
               placeholder="e.g. Golf, Basketball, Swimming..."
-              className="w-full rounded-xl border border-[#e5e7eb] bg-white px-4 py-3 text-sm text-[#111827] placeholder-[#9ca3af] focus:border-[#1e3a5f] focus:outline-none focus:ring-1 focus:ring-[#1e3a5f] shadow-sm" autoFocus />
+              className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-card)] px-4 py-3 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:border-[var(--accent)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]" autoFocus />
             <button onClick={() => submitTextStep('sport')} disabled={!textInput.trim()}
-              className="flex items-center gap-2 rounded-xl bg-[#1e3a5f] px-6 py-3 text-sm font-semibold text-white hover:bg-[#162d4a] transition-colors disabled:opacity-40">
+              className="flex items-center gap-2 rounded-xl bg-[var(--accent)] px-6 py-3 text-sm font-semibold text-white hover:bg-[#3730a3] transition-colors disabled:opacity-40">
               Next <ArrowRight size={16} />
             </button>
           </div>
@@ -536,9 +536,9 @@ Do NOT use markdown table separators (|---|---|). Include progression rules and 
           <div className="grid grid-cols-2 gap-3">
             {['Yes', 'No'].map(opt => (
               <button key={opt} onClick={() => selectAndAdvance('event_training', opt)}
-                className={`flex flex-col items-center gap-2 rounded-xl border p-5 min-h-[80px] transition-all ${answers.event_training === opt ? 'border-[#1e3a5f] bg-blue-50 shadow-md' : 'border-[#e5e7eb] bg-white hover:border-[#1e3a5f]/40'}`}>
-                {opt === 'Yes' ? <Clock size={24} className="text-[#1e3a5f]" /> : <ArrowRight size={24} className="text-[#1e3a5f]" />}
-                <span className="text-sm font-semibold text-[#111827]">{opt === 'Yes' ? 'Yes, I have a target date' : 'No, general training'}</span>
+                className={`flex flex-col items-center gap-2 rounded-xl border p-5 min-h-[80px] transition-all ${answers.event_training === opt ? 'border-[var(--accent-light)] bg-[var(--accent)]/10' : 'border-[var(--border)] bg-[var(--bg-card)] hover:border-[var(--accent-light)]/40'}`}>
+                {opt === 'Yes' ? <Clock size={24} className="text-[var(--accent-light)]" /> : <ArrowRight size={24} className="text-[var(--accent-light)]" />}
+                <span className="text-sm font-semibold text-[var(--text-primary)]">{opt === 'Yes' ? 'Yes, I have a target date' : 'No, general training'}</span>
               </button>
             ))}
           </div>
@@ -548,21 +548,21 @@ Do NOT use markdown table separators (|---|---|). Include progression rules and 
         return (
           <div className="space-y-4">
             <div>
-              <label className="block text-xs font-medium text-[#6b7280] mb-1.5">Event Name</label>
+              <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">Event Name</label>
               <input value={eventName} onChange={e => setEventName(e.target.value)}
                 placeholder="e.g. Marathon, Competition, Wedding..."
-                className="w-full rounded-xl border border-[#e5e7eb] bg-white px-4 py-3 text-sm text-[#111827] placeholder-[#9ca3af] focus:border-[#1e3a5f] focus:outline-none focus:ring-1 focus:ring-[#1e3a5f] shadow-sm" autoFocus />
+                className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-card)] px-4 py-3 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:border-[var(--accent)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]" autoFocus />
             </div>
             <div>
-              <label className="block text-xs font-medium text-[#6b7280] mb-1.5">Event Date</label>
+              <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">Event Date</label>
               <input type="date" value={eventDate} onChange={e => setEventDate(e.target.value)}
-                className="w-full rounded-xl border border-[#e5e7eb] bg-white px-4 py-3 text-sm text-[#111827] focus:border-[#1e3a5f] focus:outline-none focus:ring-1 focus:ring-[#1e3a5f] shadow-sm" />
+                className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-card)] px-4 py-3 text-sm text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]" />
             </div>
             <button onClick={() => {
               setAnswers(prev => ({ ...prev, event_name: eventName, event_date: eventDate }));
               goNext();
             }} disabled={!eventName.trim() || !eventDate}
-              className="flex items-center gap-2 rounded-xl bg-[#1e3a5f] px-6 py-3 text-sm font-semibold text-white hover:bg-[#162d4a] transition-colors disabled:opacity-40">
+              className="flex items-center gap-2 rounded-xl bg-[var(--accent)] px-6 py-3 text-sm font-semibold text-white hover:bg-[#3730a3] transition-colors disabled:opacity-40">
               Next <ArrowRight size={16} />
             </button>
           </div>
@@ -573,9 +573,9 @@ Do NOT use markdown table separators (|---|---|). Include progression rules and 
           <div className="grid grid-cols-2 gap-3">
             {['Yes', 'No'].map(opt => (
               <button key={opt} onClick={() => selectAndAdvance('hero_training', opt)}
-                className={`flex flex-col items-center gap-2 rounded-xl border p-5 min-h-[80px] transition-all ${answers.hero_training === opt ? 'border-[#1e3a5f] bg-blue-50 shadow-md' : 'border-[#e5e7eb] bg-white hover:border-[#1e3a5f]/40'}`}>
-                {opt === 'Yes' ? <Trophy size={24} className="text-[#1e3a5f]" /> : <ArrowRight size={24} className="text-[#1e3a5f]" />}
-                <span className="text-sm font-semibold text-[#111827]">{opt === 'Yes' ? 'Yes, inspire me' : 'No thanks'}</span>
+                className={`flex flex-col items-center gap-2 rounded-xl border p-5 min-h-[80px] transition-all ${answers.hero_training === opt ? 'border-[var(--accent-light)] bg-[var(--accent)]/10' : 'border-[var(--border)] bg-[var(--bg-card)] hover:border-[var(--accent-light)]/40'}`}>
+                {opt === 'Yes' ? <Trophy size={24} className="text-[var(--accent-light)]" /> : <ArrowRight size={24} className="text-[var(--accent-light)]" />}
+                <span className="text-sm font-semibold text-[var(--text-primary)]">{opt === 'Yes' ? 'Yes, inspire me' : 'No thanks'}</span>
               </button>
             ))}
           </div>
@@ -587,9 +587,9 @@ Do NOT use markdown table separators (|---|---|). Include progression rules and 
             <input value={textInput} onChange={e => setTextInput(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && textInput.trim() && submitTextStep('hero_athletes')}
               placeholder="e.g. LeBron James, David Goggins, Cristiano Ronaldo..."
-              className="w-full rounded-xl border border-[#e5e7eb] bg-white px-4 py-3 text-sm text-[#111827] placeholder-[#9ca3af] focus:border-[#1e3a5f] focus:outline-none focus:ring-1 focus:ring-[#1e3a5f] shadow-sm" autoFocus />
+              className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-card)] px-4 py-3 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:border-[var(--accent)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]" autoFocus />
             <button onClick={() => submitTextStep('hero_athletes')} disabled={!textInput.trim()}
-              className="flex items-center gap-2 rounded-xl bg-[#1e3a5f] px-6 py-3 text-sm font-semibold text-white hover:bg-[#162d4a] transition-colors disabled:opacity-40">
+              className="flex items-center gap-2 rounded-xl bg-[var(--accent)] px-6 py-3 text-sm font-semibold text-white hover:bg-[#3730a3] transition-colors disabled:opacity-40">
               Next <ArrowRight size={16} />
             </button>
           </div>
@@ -599,22 +599,22 @@ Do NOT use markdown table separators (|---|---|). Include progression rules and 
         return (
           <div className="space-y-6">
             <div className="text-center">
-              <span className="text-6xl font-bold text-[#1e3a5f]">{daysValue}</span>
-              <p className="text-sm text-[#6b7280] mt-1">days per week</p>
+              <span className="text-6xl font-bold text-[var(--accent-light)]">{daysValue}</span>
+              <p className="text-sm text-[var(--text-secondary)] mt-1">days per week</p>
             </div>
             <div className="px-2">
               <input type="range" min={1} max={7} step={1} value={daysValue}
                 onChange={e => setDaysValue(Number(e.target.value))}
                 className="w-full h-2 rounded-full appearance-none cursor-pointer"
-                style={{ background: `linear-gradient(to right, #1e3a5f ${((daysValue - 1) / 6) * 100}%, #e5e7eb ${((daysValue - 1) / 6) * 100}%)` }} />
+                style={{ background: `linear-gradient(to right, var(--accent) ${((daysValue - 1) / 6) * 100}%, var(--bg-deep) ${((daysValue - 1) / 6) * 100}%)` }} />
               <div className="flex justify-between mt-2">
                 {[1, 2, 3, 4, 5, 6, 7].map(n => (
-                  <span key={n} className={`text-xs ${n === daysValue ? 'text-[#1e3a5f] font-bold' : 'text-[#9ca3af]'}`}>{n}</span>
+                  <span key={n} className={`text-xs ${n === daysValue ? 'text-[var(--accent-light)] font-bold' : 'text-[var(--text-tertiary)]'}`}>{n}</span>
                 ))}
               </div>
             </div>
             <button onClick={() => { setAnswers(prev => ({ ...prev, days: String(daysValue) })); goNext(); }}
-              className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#1e3a5f] py-3.5 text-sm font-semibold text-white hover:bg-[#162d4a] transition-colors">
+              className="w-full flex items-center justify-center gap-2 rounded-xl bg-[var(--accent)] py-3.5 text-sm font-semibold text-white hover:bg-[#3730a3] transition-colors">
               Next <ArrowRight size={16} />
             </button>
           </div>
@@ -624,22 +624,22 @@ Do NOT use markdown table separators (|---|---|). Include progression rules and 
         return (
           <div className="space-y-6">
             <div className="text-center">
-              <span className="text-6xl font-bold text-[#1e3a5f]">{durationValue}</span>
-              <p className="text-sm text-[#6b7280] mt-1">minutes per session</p>
+              <span className="text-6xl font-bold text-[var(--accent-light)]">{durationValue}</span>
+              <p className="text-sm text-[var(--text-secondary)] mt-1">minutes per session</p>
             </div>
             <div className="px-2">
               <input type="range" min={20} max={120} step={5} value={durationValue}
                 onChange={e => setDurationValue(Number(e.target.value))}
                 className="w-full h-2 rounded-full appearance-none cursor-pointer"
-                style={{ background: `linear-gradient(to right, #1e3a5f ${((durationValue - 20) / 100) * 100}%, #e5e7eb ${((durationValue - 20) / 100) * 100}%)` }} />
+                style={{ background: `linear-gradient(to right, var(--accent) ${((durationValue - 20) / 100) * 100}%, var(--bg-deep) ${((durationValue - 20) / 100) * 100}%)` }} />
               <div className="flex justify-between mt-2">
                 {[20, 40, 60, 80, 100, 120].map(n => (
-                  <span key={n} className={`text-xs ${n === durationValue ? 'text-[#1e3a5f] font-bold' : 'text-[#9ca3af]'}`}>{n}</span>
+                  <span key={n} className={`text-xs ${n === durationValue ? 'text-[var(--accent-light)] font-bold' : 'text-[var(--text-tertiary)]'}`}>{n}</span>
                 ))}
               </div>
             </div>
             <button onClick={() => { setAnswers(prev => ({ ...prev, duration: `${durationValue} minutes` })); goNext(); }}
-              className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#1e3a5f] py-3.5 text-sm font-semibold text-white hover:bg-[#162d4a] transition-colors">
+              className="w-full flex items-center justify-center gap-2 rounded-xl bg-[var(--accent)] py-3.5 text-sm font-semibold text-white hover:bg-[#3730a3] transition-colors">
               Next <ArrowRight size={16} />
             </button>
           </div>
@@ -651,17 +651,17 @@ Do NOT use markdown table separators (|---|---|). Include progression rules and 
             <div className="mb-3">
               <input ref={scanFileRef} type="file" accept="image/*" capture="environment" onChange={handleScanGym} className="hidden" />
               <button onClick={() => scanFileRef.current?.click()} disabled={scanningGym}
-                className="w-full flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[#1e3a5f]/30 bg-blue-50/50 p-4 text-sm font-semibold text-[#1e3a5f] hover:border-[#1e3a5f]/50 hover:bg-blue-50 transition-colors disabled:opacity-50">
+                className="w-full flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[var(--accent-light)]/30 bg-[var(--accent)]/10 p-4 text-sm font-semibold text-[var(--accent-light)] hover:border-[var(--accent-light)]/50 hover:bg-[var(--accent)]/10 transition-colors disabled:opacity-50">
                 {scanningGym ? (<><Loader2 size={18} className="animate-spin" /> Scanning...</>) : (<><Camera size={18} /> Scan Your Gym</>)}
               </button>
-              <p className="text-xs text-[#9ca3af] text-center mt-1">Take a photo to auto-detect equipment</p>
+              <p className="text-xs text-[var(--text-tertiary)] text-center mt-1">Take a photo to auto-detect equipment</p>
             </div>
             <div className="grid grid-cols-2 gap-3">
               {EQUIPMENT_OPTIONS.map(({ label, value, Icon }) => (
                 <button key={value} onClick={() => selectAndAdvance('equipment', value)}
-                  className={`flex flex-col items-center gap-2 rounded-xl border p-4 min-h-[90px] transition-all ${answers.equipment === value ? 'border-[#1e3a5f] bg-blue-50 shadow-md' : 'border-[#e5e7eb] bg-white hover:border-[#1e3a5f]/40'}`}>
-                  <Icon size={24} className="text-[#1e3a5f]" />
-                  <span className="text-xs font-semibold text-[#111827] text-center leading-tight">{label}</span>
+                  className={`flex flex-col items-center gap-2 rounded-xl border p-4 min-h-[90px] transition-all ${answers.equipment === value ? 'border-[var(--accent-light)] bg-[var(--accent)]/10' : 'border-[var(--border)] bg-[var(--bg-card)] hover:border-[var(--accent-light)]/40'}`}>
+                  <Icon size={24} className="text-[var(--accent-light)]" />
+                  <span className="text-xs font-semibold text-[var(--text-primary)] text-center leading-tight">{label}</span>
                 </button>
               ))}
             </div>
@@ -673,11 +673,11 @@ Do NOT use markdown table separators (|---|---|). Include progression rules and 
           <div className="space-y-3">
             {FITNESS_LEVELS.map(({ label, desc, value, Icon }) => (
               <button key={value} onClick={() => selectAndAdvance('experience', value)}
-                className={`w-full flex items-center gap-4 rounded-xl border p-4 min-h-[64px] transition-all text-left ${answers.experience === value ? 'border-[#1e3a5f] bg-blue-50 shadow-md' : 'border-[#e5e7eb] bg-white hover:border-[#1e3a5f]/40'}`}>
-                <Icon size={24} className="text-[#1e3a5f] shrink-0" />
+                className={`w-full flex items-center gap-4 rounded-xl border p-4 min-h-[64px] transition-all text-left ${answers.experience === value ? 'border-[var(--accent-light)] bg-[var(--accent)]/10' : 'border-[var(--border)] bg-[var(--bg-card)] hover:border-[var(--accent-light)]/40'}`}>
+                <Icon size={24} className="text-[var(--accent-light)] shrink-0" />
                 <div>
-                  <p className="text-sm font-semibold text-[#111827]">{label}</p>
-                  <p className="text-xs text-[#6b7280]">{desc}</p>
+                  <p className="text-sm font-semibold text-[var(--text-primary)]">{label}</p>
+                  <p className="text-xs text-[var(--text-secondary)]">{desc}</p>
                 </div>
               </button>
             ))}
@@ -690,10 +690,10 @@ Do NOT use markdown table separators (|---|---|). Include progression rules and 
             <input value={textInput} onChange={e => setTextInput(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && submitTextStep('injuries')}
               placeholder="e.g. Bad left knee, shoulder impingement..."
-              className="w-full rounded-xl border border-[#e5e7eb] bg-white px-4 py-3 text-sm text-[#111827] placeholder-[#9ca3af] focus:border-[#1e3a5f] focus:outline-none focus:ring-1 focus:ring-[#1e3a5f] shadow-sm" autoFocus />
+              className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-card)] px-4 py-3 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:border-[var(--accent)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]" autoFocus />
             <div className="flex gap-3">
               <button onClick={() => submitTextStep('injuries')}
-                className="flex items-center gap-2 rounded-xl bg-[#1e3a5f] px-6 py-3 text-sm font-semibold text-white hover:bg-[#162d4a] transition-colors">
+                className="flex items-center gap-2 rounded-xl bg-[var(--accent)] px-6 py-3 text-sm font-semibold text-white hover:bg-[#3730a3] transition-colors">
                 {textInput.trim() ? 'Next' : 'Skip'} <ArrowRight size={16} />
               </button>
             </div>
@@ -705,9 +705,9 @@ Do NOT use markdown table separators (|---|---|). Include progression rules and 
           <div className="grid grid-cols-2 gap-3">
             {['Yes', 'No'].map(opt => (
               <button key={opt} onClick={() => selectAndAdvance('recovery', opt)}
-                className={`flex flex-col items-center gap-2 rounded-xl border p-5 min-h-[80px] transition-all ${answers.recovery === opt ? 'border-[#1e3a5f] bg-blue-50 shadow-md' : 'border-[#e5e7eb] bg-white hover:border-[#1e3a5f]/40'}`}>
-                {opt === 'Yes' ? <Heart size={24} className="text-[#1e3a5f]" /> : <ArrowRight size={24} className="text-[#1e3a5f]" />}
-                <span className="text-sm font-semibold text-[#111827]">{opt === 'Yes' ? 'Yes, add recovery days' : 'No, skip recovery'}</span>
+                className={`flex flex-col items-center gap-2 rounded-xl border p-5 min-h-[80px] transition-all ${answers.recovery === opt ? 'border-[var(--accent-light)] bg-[var(--accent)]/10' : 'border-[var(--border)] bg-[var(--bg-card)] hover:border-[var(--accent-light)]/40'}`}>
+                {opt === 'Yes' ? <Heart size={24} className="text-[var(--accent-light)]" /> : <ArrowRight size={24} className="text-[var(--accent-light)]" />}
+                <span className="text-sm font-semibold text-[var(--text-primary)]">{opt === 'Yes' ? 'Yes, add recovery days' : 'No, skip recovery'}</span>
               </button>
             ))}
           </div>
@@ -719,19 +719,19 @@ Do NOT use markdown table separators (|---|---|). Include progression rules and 
             <div className="flex flex-wrap gap-2">
               {RECOVERY_TOOLS.map(tool => (
                 <button key={tool} onClick={() => setMultiSelections(prev => prev.includes(tool) ? prev.filter(t => t !== tool) : [...prev, tool])}
-                  className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${multiSelections.includes(tool) ? 'bg-[#1e3a5f] text-white' : 'bg-white border border-[#e5e7eb] text-[#111827] hover:border-[#1e3a5f]/40'}`}>
+                  className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${multiSelections.includes(tool) ? 'bg-[var(--accent)] text-white' : 'bg-[var(--bg-card)] border border-[var(--border)] text-[var(--text-primary)] hover:border-[var(--accent-light)]/40'}`}>
                   {tool}
                 </button>
               ))}
             </div>
-            <p className="text-xs text-[#6b7280]">Select all that apply</p>
+            <p className="text-xs text-[var(--text-secondary)]">Select all that apply</p>
             <button onClick={() => {
               const val = multiSelections.length > 0 ? multiSelections.join(', ') : 'Bodyweight only';
               setAnswers(prev => ({ ...prev, recovery_equipment: val }));
               setMultiSelections([]);
               goNext();
             }}
-              className="flex items-center gap-2 rounded-xl bg-[#1e3a5f] px-6 py-3 text-sm font-semibold text-white hover:bg-[#162d4a] transition-colors">
+              className="flex items-center gap-2 rounded-xl bg-[var(--accent)] px-6 py-3 text-sm font-semibold text-white hover:bg-[#3730a3] transition-colors">
               Next <ArrowRight size={16} />
             </button>
           </div>
@@ -752,11 +752,11 @@ Do NOT use markdown table separators (|---|---|). Include progression rules and 
         ].filter(Boolean) as { label: string; value: string }[];
         return (
           <div className="space-y-6">
-            <div className="rounded-xl bg-white border border-[#e5e7eb] divide-y divide-[#e5e7eb] shadow-sm overflow-hidden">
+            <div className="rounded-xl bg-[var(--bg-card)] border border-[var(--border)] divide-y divide-[var(--border)] overflow-hidden">
               {summaryItems.map(item => (
                 <div key={item.label} className="flex justify-between px-4 py-3">
-                  <span className="text-sm text-[#6b7280]">{item.label}</span>
-                  <span className="text-sm font-medium text-[#111827] text-right max-w-[60%]">{item.value}</span>
+                  <span className="text-sm text-[var(--text-secondary)]">{item.label}</span>
+                  <span className="text-sm font-medium text-[var(--text-primary)] text-right max-w-[60%]">{item.value}</span>
                 </div>
               ))}
             </div>
@@ -765,11 +765,11 @@ Do NOT use markdown table separators (|---|---|). Include progression rules and 
               if (!answers.duration) setAnswers(prev => ({ ...prev, duration: `${durationValue} minutes` }));
               generateProgram();
             }} disabled={loading}
-              className="w-full rounded-xl bg-[#1e3a5f] py-4 font-bold text-sm text-white hover:bg-[#162d4a] transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+              className="w-full rounded-xl bg-[var(--accent)] py-4 font-bold text-sm text-white hover:bg-[#3730a3] transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
               {loading ? (<><Loader2 size={18} className="animate-spin" /> Generating...</>) : 'Generate My Program'}
             </button>
             <button onClick={() => { setCurrentStepId('goal'); setSlideDir('backward'); setSlideKey(k => k + 1); }}
-              className="w-full text-center text-sm text-[#6b7280] hover:text-[#111827] transition-colors">
+              className="w-full text-center text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">
               Start over
             </button>
           </div>
@@ -789,19 +789,19 @@ Do NOT use markdown table separators (|---|---|). Include progression rules and 
   // Viewing a saved program
   if (viewingProgram) {
     return (
-      <div className="min-h-screen pb-24 bg-[#f8f9fa]">
+      <div className="min-h-screen pb-24 bg-[var(--bg-page)]">
         <DeleteConfirmDialog />
-        <div className="flex items-center gap-3 border-b border-[#e5e7eb] bg-white px-4 py-3">
-          <button onClick={() => { setViewingProgram(null); setView('saved'); }} className="text-[#6b7280] hover:text-[#111827]"><ArrowLeft size={20} /></button>
+        <div className="flex items-center gap-3 border-b border-[var(--border)] bg-[var(--bg-card)] px-4 py-3">
+          <button onClick={() => { setViewingProgram(null); setView('saved'); }} className="text-[var(--text-secondary)] hover:text-[var(--text-primary)]"><ArrowLeft size={20} /></button>
           <div className="flex-1 min-w-0">
-            <h1 className="font-bold text-sm truncate text-[#111827]">{viewingProgram.title}</h1>
-            <p className="text-xs text-[#6b7280]">{formatDate(viewingProgram.createdAt)}</p>
+            <h1 className="font-bold text-sm truncate text-[var(--text-primary)]">{viewingProgram.title}</h1>
+            <p className="text-xs text-[var(--text-secondary)]">{formatDate(viewingProgram.createdAt)}</p>
           </div>
           <button onClick={() => handleSetActive(viewingProgram)}
-            className="flex items-center gap-1.5 rounded-lg bg-[#1e3a5f] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#162d4a] transition-colors">
+            className="flex items-center gap-1.5 rounded-lg bg-[var(--accent)] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#3730a3] transition-colors">
             <Star size={14} /> Set Active
           </button>
-          <button onClick={() => setConfirmDelete(viewingProgram.id)} className="p-1.5 rounded-lg text-[#9ca3af] hover:text-red-500 hover:bg-red-50 transition-colors"><Trash2 size={16} /></button>
+          <button onClick={() => setConfirmDelete(viewingProgram.id)} className="p-1.5 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--danger)] hover:bg-[var(--danger)]/10 transition-colors"><Trash2 size={16} /></button>
         </div>
         <div className="px-4 py-6"><ProgramMarkdown content={viewingProgram.content} /></div>
         <Navigation />
@@ -812,13 +812,13 @@ Do NOT use markdown table separators (|---|---|). Include progression rules and 
   // Result view after generation
   if (view === 'result' && program) {
     return (
-      <div className="min-h-screen pb-24 bg-[#f8f9fa]">
-        <div className="flex items-center gap-3 border-b border-[#e5e7eb] bg-white px-4 py-3">
-          <button onClick={() => { setProgram(null); setView('menu'); setCurrentStepId('goal'); setAnswers({}); }} className="text-[#6b7280] hover:text-[#111827]"><ArrowLeft size={20} /></button>
-          <h1 className="font-bold text-sm flex-1 text-[#111827]">Your Custom Program</h1>
+      <div className="min-h-screen pb-24 bg-[var(--bg-page)]">
+        <div className="flex items-center gap-3 border-b border-[var(--border)] bg-[var(--bg-card)] px-4 py-3">
+          <button onClick={() => { setProgram(null); setView('menu'); setCurrentStepId('goal'); setAnswers({}); }} className="text-[var(--text-secondary)] hover:text-[var(--text-primary)]"><ArrowLeft size={20} /></button>
+          <h1 className="font-bold text-sm flex-1 text-[var(--text-primary)]">Your Custom Program</h1>
           <button onClick={handleSaveProgram} disabled={saveStatus === 'saving' || saveStatus === 'saved'}
             className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition-colors ${
-              saveStatus === 'saved' ? 'bg-green-600' : saveStatus === 'error' ? 'bg-red-500 hover:bg-red-600' : 'bg-green-600 hover:bg-green-700'
+              saveStatus === 'saved' ? 'bg-[var(--success)]' : saveStatus === 'error' ? 'bg-[var(--danger)]/100 hover:bg-[var(--danger)]' : 'bg-[var(--success)] hover:bg-[#16a34a]'
             } disabled:opacity-70`}>
             {saveStatus === 'saving' ? (<><Loader2 size={14} className="animate-spin" /> Saving...</>) :
              saveStatus === 'saved' ? (<><Check size={14} /> Saved!</>) :
@@ -827,20 +827,20 @@ Do NOT use markdown table separators (|---|---|). Include progression rules and 
           </button>
         </div>
         {saveStatus === 'saved' && (
-          <div className="mx-4 mb-2 rounded-lg bg-green-50 border border-green-200 px-4 py-2.5 flex items-center gap-2">
-            <Check size={16} className="text-green-600" />
-            <span className="text-sm text-green-700 font-medium">Program saved and set as your active workout!</span>
+          <div className="mx-4 mb-2 rounded-lg bg-[var(--success)]/10 border border-[var(--success)]/30 px-4 py-2.5 flex items-center gap-2">
+            <Check size={16} className="text-[var(--success)]" />
+            <span className="text-sm text-[var(--success)] font-medium">Program saved and set as your active workout!</span>
           </div>
         )}
         {saveStatus === 'error' && (
-          <div className="mx-4 mb-2 rounded-lg bg-red-50 border border-red-200 px-4 py-2.5">
-            <span className="text-sm text-red-700">Failed to save. Please try again.</span>
+          <div className="mx-4 mb-2 rounded-lg bg-[var(--danger)]/10 border border-[var(--danger)]/30 px-4 py-2.5">
+            <span className="text-sm text-[var(--danger)]">Failed to save. Please try again.</span>
           </div>
         )}
         {splitProgram(program).optionB && (
           <div className="px-4 pt-4 flex gap-2">
-            <button onClick={() => setSelectedOption('A')} className={`flex-1 rounded-xl py-2.5 text-sm font-semibold transition-colors ${selectedOption === 'A' ? 'bg-[#1e3a5f] text-white' : 'bg-white border border-[#e5e7eb] text-[#6b7280]'}`}>Option A</button>
-            <button onClick={() => setSelectedOption('B')} className={`flex-1 rounded-xl py-2.5 text-sm font-semibold transition-colors ${selectedOption === 'B' ? 'bg-[#1e3a5f] text-white' : 'bg-white border border-[#e5e7eb] text-[#6b7280]'}`}>Option B</button>
+            <button onClick={() => setSelectedOption('A')} className={`flex-1 rounded-xl py-2.5 text-sm font-semibold transition-colors ${selectedOption === 'A' ? 'bg-[var(--accent)] text-white' : 'bg-[var(--bg-card)] border border-[var(--border)] text-[var(--text-secondary)]'}`}>Option A</button>
+            <button onClick={() => setSelectedOption('B')} className={`flex-1 rounded-xl py-2.5 text-sm font-semibold transition-colors ${selectedOption === 'B' ? 'bg-[var(--accent)] text-white' : 'bg-[var(--bg-card)] border border-[var(--border)] text-[var(--text-secondary)]'}`}>Option B</button>
           </div>
         )}
         <div className="px-4 py-6">
@@ -854,32 +854,32 @@ Do NOT use markdown table separators (|---|---|). Include progression rules and 
   // Saved programs list
   if (view === 'saved') {
     return (
-      <div className="min-h-screen pb-24 bg-[#f8f9fa]">
+      <div className="min-h-screen pb-24 bg-[var(--bg-page)]">
         <DeleteConfirmDialog />
-        <div className="flex items-center gap-3 border-b border-[#e5e7eb] bg-white px-4 py-3">
-          <button onClick={() => setView('menu')} className="text-[#6b7280] hover:text-[#111827]"><ArrowLeft size={20} /></button>
-          <h1 className="font-bold text-sm text-[#111827]">Saved Programs</h1>
+        <div className="flex items-center gap-3 border-b border-[var(--border)] bg-[var(--bg-card)] px-4 py-3">
+          <button onClick={() => setView('menu')} className="text-[var(--text-secondary)] hover:text-[var(--text-primary)]"><ArrowLeft size={20} /></button>
+          <h1 className="font-bold text-sm text-[var(--text-primary)]">Saved Programs</h1>
         </div>
         <div className="px-4 py-4 space-y-3">
           {savedPrograms.length === 0 ? (
             <div className="text-center py-12">
-              <BookOpen size={40} className="mx-auto text-gray-300 mb-3" />
-              <p className="text-sm text-[#6b7280]">No saved programs yet.</p>
-              <p className="text-xs text-[#9ca3af] mt-1">Generate a program and save it to see it here.</p>
+              <BookOpen size={40} className="mx-auto text-[var(--text-muted)] mb-3" />
+              <p className="text-sm text-[var(--text-secondary)]">No saved programs yet.</p>
+              <p className="text-xs text-[var(--text-tertiary)] mt-1">Generate a program and save it to see it here.</p>
             </div>
           ) : savedPrograms.map((p) => (
-            <div key={p.id} className={`flex items-center gap-3 rounded-xl border ${p.isActive ? 'border-blue-400 bg-blue-50/50' : 'border-[#e5e7eb] bg-white'} p-4 hover:border-blue-300 transition-colors shadow-sm`}>
+            <div key={p.id} className={`flex items-center gap-3 rounded-xl border ${p.isActive ? 'border-[var(--accent-light)] bg-[var(--accent)]/10' : 'border-[var(--border)] bg-[var(--bg-card)]'} p-4 hover:border-[var(--accent-light)]/50 transition-colors`}>
               <button onClick={() => setViewingProgram(p)} className="flex-1 text-left min-w-0">
                 <div className="flex items-center gap-2">
-                  <p className="font-semibold text-sm truncate text-[#111827]">{p.title}</p>
-                  {p.isActive && <span className="shrink-0 text-[10px] font-bold uppercase text-[#1e3a5f] bg-blue-100 px-2 py-0.5 rounded-full">Active</span>}
+                  <p className="font-semibold text-sm truncate text-[var(--text-primary)]">{p.title}</p>
+                  {p.isActive && <span className="shrink-0 text-[10px] font-bold uppercase text-[var(--accent-light)] bg-[var(--accent)]/20 px-2 py-0.5 rounded-full">Active</span>}
                 </div>
-                <div className="flex items-center gap-2 mt-1 text-xs text-[#6b7280]">
+                <div className="flex items-center gap-2 mt-1 text-xs text-[var(--text-secondary)]">
                   <Clock size={10} /><span>{formatDate(p.createdAt)}</span>
                 </div>
               </button>
-              {!p.isActive && <button onClick={() => handleSetActive(p)} className="p-2 rounded-lg text-[#1e3a5f] hover:bg-blue-50 transition-colors" title="Set as active"><Star size={16} /></button>}
-              <button onClick={() => setConfirmDelete(p.id)} className="p-2 rounded-lg text-[#9ca3af] hover:text-red-500 hover:bg-red-50 transition-colors"><Trash2 size={16} /></button>
+              {!p.isActive && <button onClick={() => handleSetActive(p)} className="p-2 rounded-lg text-[var(--accent-light)] hover:bg-[var(--accent)]/10 transition-colors" title="Set as active"><Star size={16} /></button>}
+              <button onClick={() => setConfirmDelete(p.id)} className="p-2 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--danger)] hover:bg-[var(--danger)]/10 transition-colors"><Trash2 size={16} /></button>
             </div>
           ))}
         </div>
@@ -891,19 +891,19 @@ Do NOT use markdown table separators (|---|---|). Include progression rules and 
   // Paste existing workout
   if (view === 'paste') {
     return (
-      <div className="min-h-screen pb-24 bg-[#f8f9fa]">
-        <div className="flex items-center gap-3 border-b border-[#e5e7eb] bg-white px-4 py-3">
-          <button onClick={() => { setView('menu'); setPasteInput(''); }} className="text-[#6b7280] hover:text-[#111827]"><ArrowLeft size={20} /></button>
-          <h1 className="font-bold text-sm text-[#111827]">Add Your Workout</h1>
+      <div className="min-h-screen pb-24 bg-[var(--bg-page)]">
+        <div className="flex items-center gap-3 border-b border-[var(--border)] bg-[var(--bg-card)] px-4 py-3">
+          <button onClick={() => { setView('menu'); setPasteInput(''); }} className="text-[var(--text-secondary)] hover:text-[var(--text-primary)]"><ArrowLeft size={20} /></button>
+          <h1 className="font-bold text-sm text-[var(--text-primary)]">Add Your Workout</h1>
         </div>
         <div className="px-4 py-6">
-          <p className="text-sm text-[#6b7280] mb-4">Paste or type your existing workout plan below. It will be saved as your active program.</p>
+          <p className="text-sm text-[var(--text-secondary)] mb-4">Paste or type your existing workout plan below. It will be saved as your active program.</p>
           <textarea value={pasteInput} onChange={(e) => setPasteInput(e.target.value)}
             placeholder={"Example:\n\nMonday \u2014 Push Day\nBench Press 4x8\nOHP 3x10\nIncline DB Press 3x12\n\nTuesday \u2014 Pull Day\n..."}
             rows={14}
-            className="w-full rounded-xl border border-[#e5e7eb] bg-white px-4 py-3 text-sm text-[#111827] placeholder-[#9ca3af] focus:border-[#1e3a5f] focus:outline-none focus:ring-1 focus:ring-[#1e3a5f] shadow-sm resize-none" />
+            className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-card)] px-4 py-3 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:border-[var(--accent)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)] resize-none" />
           <button onClick={handleSavePastedWorkout} disabled={!pasteInput.trim()}
-            className="w-full mt-4 rounded-xl bg-[#1e3a5f] py-4 font-bold text-sm text-white hover:bg-[#162d4a] transition-colors disabled:opacity-40 flex items-center justify-center gap-2">
+            className="w-full mt-4 rounded-xl bg-[var(--accent)] py-4 font-bold text-sm text-white hover:bg-[#3730a3] transition-colors disabled:opacity-40 flex items-center justify-center gap-2">
             <Save size={18} /> Save as Active Program
           </button>
         </div>
@@ -915,30 +915,28 @@ Do NOT use markdown table separators (|---|---|). Include progression rules and 
   // ── Conversational Intake Flow ──
   if (view === 'intake') {
     return (
-      <div className="min-h-screen bg-[#f8f9fa]">
+      <div className="min-h-screen bg-[var(--bg-page)]">
         <style>{`
           @keyframes slideInRight { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: translateX(0); } }
           @keyframes slideInLeft { from { opacity: 0; transform: translateX(-40px); } to { opacity: 1; transform: translateX(0); } }
           .slide-forward { animation: slideInRight 300ms ease forwards; }
           .slide-backward { animation: slideInLeft 300ms ease forwards; }
           input[type=range] { -webkit-appearance: none; appearance: none; height: 8px; border-radius: 9999px; outline: none; }
-          input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 28px; height: 28px; border-radius: 50%; background: #1e3a5f; cursor: pointer; border: 3px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.15); }
-          input[type=range]::-moz-range-thumb { width: 28px; height: 28px; border-radius: 50%; background: #1e3a5f; cursor: pointer; border: 3px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.15); }
         `}</style>
         {/* Header */}
-        <div className="flex items-center gap-3 border-b border-[#e5e7eb] bg-white px-4 py-3">
+        <div className="flex items-center gap-3 border-b border-[var(--border)] bg-[var(--bg-card)] px-4 py-3">
           <button onClick={() => {
             if (currentStepIndex > 0) { goBack(); }
             else { setView('menu'); setCurrentStepId('goal'); setAnswers({}); setMultiSelections([]); }
-          }} className="text-[#6b7280] hover:text-[#111827]">
+          }} className="text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
             <ArrowLeft size={20} />
           </button>
-          <h1 className="font-bold text-sm text-[#111827] flex-1">Build Your Program</h1>
-          <span className="text-xs text-[#9ca3af]">{currentStepIndex + 1}/{applicableSteps.length}</span>
+          <h1 className="font-bold text-sm text-[var(--text-primary)] flex-1">Build Your Program</h1>
+          <span className="text-xs text-[var(--text-tertiary)]">{currentStepIndex + 1}/{applicableSteps.length}</span>
         </div>
         {/* Progress bar */}
-        <div className="h-1 bg-[#e5e7eb]">
-          <div className="h-full bg-[#1e3a5f] transition-all duration-300 ease-out" style={{ width: `${Math.min(progress, 100)}%` }} />
+        <div className="h-1 bg-[var(--bg-deep)]">
+          <div className="h-full bg-[var(--accent)] transition-all duration-300 ease-out" style={{ width: `${Math.min(progress, 100)}%` }} />
         </div>
         {/* Step content */}
         <div className="px-4 py-6 pb-24">
@@ -954,47 +952,47 @@ Do NOT use markdown table separators (|---|---|). Include progression rules and 
 
   // Menu (default view)
   return (
-    <div className="min-h-screen pb-24 bg-[#f8f9fa]">
+    <div className="min-h-screen pb-24 bg-[var(--bg-page)]">
       <DeleteConfirmDialog />
-      <div className="flex items-center gap-3 border-b border-[#e5e7eb] bg-white px-4 py-3">
-        <Link href="/" className="text-[#6b7280] hover:text-[#111827]"><ArrowLeft size={20} /></Link>
-        <h1 className="font-bold text-sm text-[#111827]">Programs</h1>
+      <div className="flex items-center gap-3 border-b border-[var(--border)] bg-[var(--bg-card)] px-4 py-3">
+        <Link href="/" className="text-[var(--text-secondary)] hover:text-[var(--text-primary)]"><ArrowLeft size={20} /></Link>
+        <h1 className="font-bold text-sm text-[var(--text-primary)]">Programs</h1>
       </div>
       <div className="px-4 py-6 space-y-4">
         <div className="flex gap-3">
           <button onClick={() => { setView('intake'); setCurrentStepId('goal'); setAnswers({}); setMultiSelections([]); setDaysValue(4); setDurationValue(60); setEventName(''); setEventDate(''); setTextInput(''); }}
-            className="flex-1 rounded-xl bg-[#1e3a5f] p-4 text-left text-white hover:bg-[#162d4a] transition-colors shadow-sm">
+            className="flex-1 rounded-xl bg-[var(--accent)] p-4 text-left text-white hover:bg-[#3730a3] transition-colors">
             <Dumbbell size={24} className="mb-2" />
             <h2 className="text-sm font-bold">Generate New</h2>
           </button>
-          <button onClick={() => setView('paste')} className="flex-1 rounded-xl border border-[#e5e7eb] bg-white p-4 text-left hover:border-blue-300 transition-colors shadow-sm">
-            <ClipboardPaste size={24} className="mb-2 text-[#6b7280]" />
-            <h2 className="text-sm font-bold text-[#111827]">Paste Workout</h2>
+          <button onClick={() => setView('paste')} className="flex-1 rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-4 text-left hover:border-[var(--accent-light)]/50 transition-colors">
+            <ClipboardPaste size={24} className="mb-2 text-[var(--text-secondary)]" />
+            <h2 className="text-sm font-bold text-[var(--text-primary)]">Paste Workout</h2>
           </button>
         </div>
         <div>
-          <h2 className="text-xs font-medium uppercase tracking-wider text-[#6b7280] mb-3">Saved Programs</h2>
+          <h2 className="text-xs font-medium uppercase tracking-wider text-[var(--text-secondary)] mb-3">Saved Programs</h2>
           {savedPrograms.length === 0 ? (
-            <div className="text-center py-8 rounded-xl border border-dashed border-[#d1d5db] bg-white">
-              <BookOpen size={32} className="mx-auto text-gray-300 mb-2" />
-              <p className="text-sm text-[#6b7280]">No saved programs yet</p>
-              <p className="text-xs text-[#9ca3af] mt-1">Generate or paste a program to get started</p>
+            <div className="text-center py-8 rounded-xl border border-dashed border-[var(--border)] bg-[var(--bg-card)]">
+              <BookOpen size={32} className="mx-auto text-[var(--text-muted)] mb-2" />
+              <p className="text-sm text-[var(--text-secondary)]">No saved programs yet</p>
+              <p className="text-xs text-[var(--text-tertiary)] mt-1">Generate or paste a program to get started</p>
             </div>
           ) : (
             <div className="space-y-3">
               {savedPrograms.map((p) => (
-                <div key={p.id} className={`flex items-center gap-3 rounded-xl border ${p.isActive ? 'border-blue-400 bg-blue-50/50' : 'border-[#e5e7eb] bg-white'} p-4 hover:border-blue-300 transition-colors shadow-sm`}>
+                <div key={p.id} className={`flex items-center gap-3 rounded-xl border ${p.isActive ? 'border-[var(--accent-light)] bg-[var(--accent)]/10' : 'border-[var(--border)] bg-[var(--bg-card)]'} p-4 hover:border-[var(--accent-light)]/50 transition-colors`}>
                   <button onClick={() => setViewingProgram(p)} className="flex-1 text-left min-w-0">
                     <div className="flex items-center gap-2">
-                      <p className="font-semibold text-sm truncate text-[#111827]">{p.title}</p>
-                      {p.isActive && <span className="shrink-0 text-[10px] font-bold uppercase text-[#1e3a5f] bg-blue-100 px-2 py-0.5 rounded-full">Active</span>}
+                      <p className="font-semibold text-sm truncate text-[var(--text-primary)]">{p.title}</p>
+                      {p.isActive && <span className="shrink-0 text-[10px] font-bold uppercase text-[var(--accent-light)] bg-[var(--accent)]/20 px-2 py-0.5 rounded-full">Active</span>}
                     </div>
-                    <div className="flex items-center gap-2 mt-1 text-xs text-[#6b7280]">
+                    <div className="flex items-center gap-2 mt-1 text-xs text-[var(--text-secondary)]">
                       <Clock size={10} /><span>{formatDate(p.createdAt)}</span>
                     </div>
                   </button>
-                  {!p.isActive && <button onClick={() => handleSetActive(p)} className="p-2 rounded-lg text-[#1e3a5f] hover:bg-blue-50 transition-colors" title="Set as active"><Star size={16} /></button>}
-                  <button onClick={() => setConfirmDelete(p.id)} className="p-2 rounded-lg text-[#9ca3af] hover:text-red-500 hover:bg-red-50 transition-colors"><Trash2 size={16} /></button>
+                  {!p.isActive && <button onClick={() => handleSetActive(p)} className="p-2 rounded-lg text-[var(--accent-light)] hover:bg-[var(--accent)]/10 transition-colors" title="Set as active"><Star size={16} /></button>}
+                  <button onClick={() => setConfirmDelete(p.id)} className="p-2 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--danger)] hover:bg-[var(--danger)]/10 transition-colors"><Trash2 size={16} /></button>
                 </div>
               ))}
             </div>
