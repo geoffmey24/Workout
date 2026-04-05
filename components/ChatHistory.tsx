@@ -36,10 +36,10 @@ export default function ChatHistory({ activeId, onSelect, onNew }: ChatHistoryPr
   if (conversations.length === 0) return null;
 
   return (
-    <div className="border-b border-[#2a2d35]">
+    <div className="border-b border-[#e5e7eb]">
       <button
         onClick={() => setExpanded(!expanded)}
-        className="flex items-center justify-between w-full px-4 py-2 text-xs text-[#9ca3af] hover:text-white"
+        className="flex items-center justify-between w-full px-4 py-2 text-xs text-[#9ca3af] hover:text-[#111827]"
       >
         <span className="flex items-center gap-1.5">
           <Clock size={12} />
@@ -51,7 +51,7 @@ export default function ChatHistory({ activeId, onSelect, onNew }: ChatHistoryPr
         <div className="px-2 pb-2 space-y-1 max-h-48 overflow-y-auto">
           <button
             onClick={onNew}
-            className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-xs text-[#9ca3af] hover:bg-[#22252d] hover:text-white"
+            className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-xs text-[#9ca3af] hover:bg-[#f0f1f3] hover:text-[#111827]"
           >
             <Plus size={12} /> New Chat
           </button>
@@ -61,8 +61,8 @@ export default function ChatHistory({ activeId, onSelect, onNew }: ChatHistoryPr
               onClick={() => onSelect(c)}
               className={`flex items-center gap-2 w-full rounded-lg px-3 py-2 text-xs transition-colors ${
                 activeId === c.id
-                  ? 'bg-[#4f46e5]/10 text-[#a5b4fc] border border-blue-200'
-                  : 'text-[#9ca3af] hover:bg-[#22252d] hover:text-white'
+                  ? 'bg-[#1e3a5f]/10 text-[#1e3a5f] border border-blue-200'
+                  : 'text-[#9ca3af] hover:bg-[#f0f1f3] hover:text-[#111827]'
               }`}
             >
               <span className="flex-1 text-left truncate">{c.title}</span>

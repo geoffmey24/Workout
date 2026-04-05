@@ -92,29 +92,29 @@ export default function SettingsPage() {
 
   const isPro = profile?.is_pro ?? false;
 
-  const inputClasses = 'w-full rounded-lg border border-[#2a2d35] bg-[#0f1219] px-3 py-2.5 text-sm text-white placeholder-[#4b5563] focus:outline-none focus:ring-2 focus:ring-[#4f46e5] focus:border-transparent';
+  const inputClasses = 'w-full rounded-lg border border-[#e5e7eb] bg-[#f8f9fa] px-3 py-2.5 text-sm text-[#111827] placeholder-[#9ca3af] focus:outline-none focus:ring-2 focus:ring-[#1e3a5f] focus:border-transparent';
   const labelClasses = 'block text-xs font-medium text-[#9ca3af] mb-1.5';
 
   return (
-    <div className="min-h-screen pb-24 bg-[#0f1219]">
+    <div className="min-h-screen pb-24 bg-[#f8f9fa]">
       {/* Header */}
-      <div className="flex items-center gap-3 border-b border-[#2a2d35] bg-[#1a1d24] px-4 py-3">
-        <Link href="/" className="text-[#9ca3af] hover:text-white dark:hover:text-white">
+      <div className="flex items-center gap-3 border-b border-[#e5e7eb] bg-white px-4 py-3">
+        <Link href="/" className="text-[#9ca3af] hover:text-[#111827]">
           <ArrowLeft size={20} />
         </Link>
-        <h1 className="font-bold text-sm text-white">Settings</h1>
+        <h1 className="font-bold text-sm text-[#111827]">Settings</h1>
       </div>
 
       <div className="px-4 py-6 space-y-4">
         {/* Account Card */}
-        <div className="rounded-2xl bg-[#1a1d24] border border-[#2a2d35] p-5">
+        <div className="rounded-2xl bg-white border border-[#e5e7eb] p-5">
           <h2 className="text-xs font-medium uppercase tracking-wider text-[#9ca3af] mb-4">Account</h2>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-[#4f46e5] flex items-center justify-center text-white font-bold text-sm">
+            <div className="w-10 h-10 rounded-full bg-[#1e3a5f] flex items-center justify-center text-white font-bold text-sm">
               {user?.email?.[0]?.toUpperCase() || '?'}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-white truncate">{user?.email}</p>
+              <p className="text-sm font-semibold text-[#111827] truncate">{user?.email}</p>
               <p className="text-xs text-[#9ca3af]">
                 Member since {user?.created_at ? new Date(user.created_at).toLocaleDateString([], { month: 'long', year: 'numeric' }) : 'Unknown'}
               </p>
@@ -125,14 +125,14 @@ export default function SettingsPage() {
         {/* Upgrade to Pro */}
         {!isPro && (
           <Link href="/upgrade" className="block">
-            <div className="rounded-2xl border border-amber-300 dark:border-amber-500 bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20 p-5 hover:shadow-md transition-shadow">
+            <div className="rounded-2xl border border-amber-300 bg-gradient-to-r from-amber-50 to-yellow-50 p-5 hover:shadow-md transition-shadow">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-800/40 flex items-center justify-center">
-                  <Crown size={20} className="text-[#f59e0b] dark:text-amber-400" />
+                <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
+                  <Crown size={20} className="text-[#f59e0b]" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-amber-900 dark:text-amber-300">Upgrade to Pro</p>
-                  <p className="text-xs text-[#f59e0b] dark:text-amber-400/80">Unlock voice coaching, coach memory, and more</p>
+                  <p className="text-sm font-semibold text-amber-900">Upgrade to Pro</p>
+                  <p className="text-xs text-[#f59e0b]/80">Unlock voice coaching, coach memory, and more</p>
                 </div>
                 <ChevronRight size={18} className="text-amber-500" />
               </div>
@@ -141,9 +141,9 @@ export default function SettingsPage() {
         )}
 
         {/* My Preferences (Coach Memory) */}
-        <div className="rounded-2xl bg-[#1a1d24] border border-[#2a2d35] p-5">
+        <div className="rounded-2xl bg-white border border-[#e5e7eb] p-5">
           <div className="flex items-center gap-2 mb-5">
-            <User size={16} className="text-[#a5b4fc]" />
+            <User size={16} className="text-[#1e3a5f]" />
             <h2 className="text-xs font-medium uppercase tracking-wider text-[#9ca3af]">My Preferences</h2>
           </div>
 
@@ -269,7 +269,7 @@ export default function SettingsPage() {
             {/* Save Button */}
             <button
               onClick={handleSaveProfile}
-              className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#4f46e5] py-3 text-sm font-semibold text-white hover:bg-[#3730a3] active:scale-[0.98] transition-all"
+              className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#1e3a5f] py-3 text-sm font-semibold text-white hover:bg-[#162d4a] active:scale-[0.98] transition-all"
             >
               <Save size={16} />
               {saving ? 'Saved!' : 'Save Preferences'}
@@ -278,34 +278,34 @@ export default function SettingsPage() {
         </div>
 
         {/* Quick Links */}
-        <div className="rounded-2xl bg-[#1a1d24] border border-[#2a2d35] divide-y divide-[#2a2d35]">
-          <Link href="/body-stats" className="flex items-center gap-3 px-5 py-4 hover:bg-[#22252d] transition-colors">
-            <Scale size={18} className="text-[#a5b4fc]" />
-            <span className="text-sm font-medium text-white flex-1">Body Stats & Measurements</span>
+        <div className="rounded-2xl bg-white border border-[#e5e7eb] divide-y divide-[#e5e7eb]">
+          <Link href="/body-stats" className="flex items-center gap-3 px-5 py-4 hover:bg-[#f0f1f3] transition-colors">
+            <Scale size={18} className="text-[#1e3a5f]" />
+            <span className="text-sm font-medium text-[#111827] flex-1">Body Stats & Measurements</span>
             <ChevronRight size={16} className="text-[#6b7280]" />
           </Link>
           {activeProgram && (
-            <button onClick={handleExportProgram} className="flex items-center gap-3 px-5 py-4 w-full text-left hover:bg-[#22252d] transition-colors">
+            <button onClick={handleExportProgram} className="flex items-center gap-3 px-5 py-4 w-full text-left hover:bg-[#f0f1f3] transition-colors">
               <Download size={18} className="text-[#4ade80]" />
-              <span className="text-sm font-medium text-white flex-1">Export Active Program</span>
+              <span className="text-sm font-medium text-[#111827] flex-1">Export Active Program</span>
               <ChevronRight size={16} className="text-[#6b7280]" />
             </button>
           )}
         </div>
 
         {/* Preferences */}
-        <div className="rounded-2xl bg-[#1a1d24] border border-[#2a2d35] p-5">
+        <div className="rounded-2xl bg-white border border-[#e5e7eb] p-5">
           <h2 className="text-xs font-medium uppercase tracking-wider text-[#9ca3af] mb-4">Preferences</h2>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               {darkMode ? <Moon size={18} className="text-indigo-500" /> : <Sun size={18} className="text-yellow-500" />}
-              <span className="text-sm font-medium text-white">Dark Mode</span>
+              <span className="text-sm font-medium text-[#111827]">Dark Mode</span>
             </div>
             <button
               onClick={toggleDarkMode}
-              className={`relative w-11 h-6 rounded-full transition-colors ${darkMode ? 'bg-[#4f46e5]' : 'bg-gray-300'}`}
+              className={`relative w-11 h-6 rounded-full transition-colors ${darkMode ? 'bg-[#1e3a5f]' : 'bg-gray-300'}`}
             >
-              <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-[#1a1d24] shadow transition-transform ${darkMode ? 'translate-x-5' : ''}`} />
+              <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${darkMode ? 'translate-x-5' : ''}`} />
             </button>
           </div>
         </div>
@@ -313,7 +313,7 @@ export default function SettingsPage() {
         {/* Sign Out */}
         <button
           onClick={signOut}
-          className="w-full flex items-center justify-center gap-2 rounded-xl border border-[#ef4444]/30 bg-[#1a1d24] py-3 text-sm font-medium text-[#ef4444] hover:bg-[#ef4444]/10 transition-colors"
+          className="w-full flex items-center justify-center gap-2 rounded-xl border border-[#ef4444]/30 bg-white py-3 text-sm font-medium text-[#ef4444] hover:bg-[#ef4444]/10 transition-colors"
         >
           <LogOut size={16} /> Sign Out
         </button>

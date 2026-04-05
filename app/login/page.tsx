@@ -50,20 +50,20 @@ export default function LoginPage() {
 
   if (checkEmail) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0f1219] px-4">
+      <div className="min-h-screen flex items-center justify-center bg-[#f8f9fa] px-4">
         <div className="w-full max-w-sm text-center">
-          <h1 className="text-2xl font-extrabold text-white mb-2">
-            ELITE <span className="text-[#a5b4fc]">COACH</span>
+          <h1 className="text-2xl font-extrabold text-[#111827] mb-2">
+            ELITE <span className="text-[#1e3a5f]">COACH</span>
           </h1>
-          <div className="mt-8 rounded-2xl bg-[#1a1d24] border border-[#2a2d35] p-6">
+          <div className="mt-8 rounded-2xl bg-white border border-[#e5e7eb] p-6">
             <div className="text-3xl mb-3">✉️</div>
-            <h2 className="font-bold text-lg text-white mb-2">Check your email</h2>
+            <h2 className="font-bold text-lg text-[#111827] mb-2">Check your email</h2>
             <p className="text-sm text-[#9ca3af]">
               We sent a confirmation link to <strong>{email}</strong>. Click it to activate your account.
             </p>
             <button
               onClick={() => { setCheckEmail(false); setMode('login'); }}
-              className="mt-4 text-sm text-[#a5b4fc] hover:text-blue-500 font-medium"
+              className="mt-4 text-sm text-[#1e3a5f] hover:text-blue-500 font-medium"
             >
               Back to login
             </button>
@@ -74,17 +74,17 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#0f1219] px-4">
+    <div className="min-h-screen flex items-center justify-center bg-[#f8f9fa] px-4">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-extrabold text-white">
-            ELITE <span className="text-[#a5b4fc]">COACH</span>
+          <h1 className="text-3xl font-extrabold text-[#1e3a5f]">
+            ELITE <span className="text-[#1e3a5f]">COACH</span>
           </h1>
           <p className="mt-2 text-sm text-[#9ca3af]">Your AI performance coach</p>
         </div>
 
-        <div className="rounded-2xl bg-[#1a1d24] border border-[#2a2d35] p-6">
-          <h2 className="font-bold text-lg text-white mb-1">
+        <div className="rounded-2xl bg-white border border-[#e5e7eb] p-6">
+          <h2 className="font-bold text-lg text-[#111827] mb-1">
             {mode === 'login' ? 'Welcome back' : 'Create account'}
           </h2>
           <p className="text-sm text-[#9ca3af] mb-6">
@@ -94,7 +94,7 @@ export default function LoginPage() {
           {/* Google Sign In */}
           <button
             onClick={handleGoogleSignIn}
-            className="w-full flex items-center justify-center gap-3 rounded-xl border border-[#2a2d35] bg-[#1a1d24] py-3 text-sm font-medium text-white hover:bg-[#22252d] transition-colors mb-4"
+            className="w-full flex items-center justify-center gap-3 rounded-xl border border-[#e5e7eb] bg-white py-3 text-sm font-medium text-white hover:bg-[#f0f1f3] transition-colors mb-4"
           >
             <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
               <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 01-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
@@ -106,8 +106,8 @@ export default function LoginPage() {
           </button>
 
           <div className="relative my-4">
-            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-[#2a2d35]" /></div>
-            <div className="relative flex justify-center text-xs"><span className="bg-[#1a1d24] px-3 text-[#6b7280]">or</span></div>
+            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-[#e5e7eb]" /></div>
+            <div className="relative flex justify-center text-xs"><span className="bg-white px-3 text-[#6b7280]">or</span></div>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -118,7 +118,7 @@ export default function LoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Email address"
                 required
-                className="w-full rounded-xl border border-[#2a2d35] bg-[#22252d] px-4 py-3 text-sm text-white placeholder-[#4b5563] focus:border-[#4f46e5] focus:outline-none focus:ring-1 focus:ring-[#4f46e5]"
+                className="w-full rounded-xl border border-[#e5e7eb] bg-[#f0f1f3] px-4 py-3 text-sm text-[#111827] placeholder-[#4b5563] focus:border-[#4f46e5] focus:outline-none focus:ring-1 focus:ring-[#4f46e5]"
               />
             </div>
             <div>
@@ -129,7 +129,7 @@ export default function LoginPage() {
                 placeholder="Password"
                 required
                 minLength={6}
-                className="w-full rounded-xl border border-[#2a2d35] bg-[#22252d] px-4 py-3 text-sm text-white placeholder-[#4b5563] focus:border-[#4f46e5] focus:outline-none focus:ring-1 focus:ring-[#4f46e5]"
+                className="w-full rounded-xl border border-[#e5e7eb] bg-[#f0f1f3] px-4 py-3 text-sm text-[#111827] placeholder-[#4b5563] focus:border-[#4f46e5] focus:outline-none focus:ring-1 focus:ring-[#4f46e5]"
               />
             </div>
 
@@ -140,7 +140,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-xl bg-[#4f46e5] py-3 text-sm font-semibold text-white hover:bg-[#3730a3] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              className="w-full rounded-xl bg-[#1e3a5f] py-3 text-sm font-semibold text-white hover:bg-[#162d4a] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {loading && <Loader2 size={16} className="animate-spin" />}
               {mode === 'login' ? 'Sign In' : 'Create Account'}
@@ -151,7 +151,7 @@ export default function LoginPage() {
             {mode === 'login' ? "Don't have an account? " : 'Already have an account? '}
             <button
               onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError(''); }}
-              className="text-[#a5b4fc] font-medium hover:text-blue-500"
+              className="text-[#1e3a5f] font-medium hover:text-blue-500"
             >
               {mode === 'login' ? 'Sign up' : 'Sign in'}
             </button>

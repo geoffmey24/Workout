@@ -12,14 +12,14 @@ interface PipeTableProps {
 
 function PipeTable({ header, rows }: PipeTableProps) {
   return (
-    <div className="mb-4 overflow-x-auto rounded-lg border border-[#2a2d35]">
+    <div className="mb-4 overflow-x-auto rounded-lg border border-[#e5e7eb]">
       <table className="w-full text-sm border-collapse min-w-[360px]">
         <thead>
-          <tr className="bg-[#2a2d35]">
+          <tr className="bg-[#1e3a5f] text-white">
             {header.map((h, i) => (
               <th
                 key={i}
-                className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-white whitespace-nowrap"
+                className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-[#111827] whitespace-nowrap"
               >
                 {h}
               </th>
@@ -30,12 +30,12 @@ function PipeTable({ header, rows }: PipeTableProps) {
           {rows.map((row, ri) => (
             <tr
               key={ri}
-              className={`${ri % 2 === 0 ? 'bg-[#1a1d24]' : 'bg-[#0f1219]'} border-b border-[#2a2d35] last:border-b-0`}
+              className={`${ri % 2 === 0 ? 'bg-white' : 'bg-[#f8f9fa]'} border-b border-[#e5e7eb] last:border-b-0`}
             >
               {row.map((cell, ci) => (
                 <td
                   key={ci}
-                  className={`px-4 py-3 whitespace-nowrap ${ci === 0 ? 'font-medium text-white' : 'text-[#9ca3af]'}`}
+                  className={`px-4 py-3 whitespace-nowrap ${ci === 0 ? 'font-medium text-[#111827]' : 'text-[#9ca3af]'}`}
                 >
                   {ci === 0 ? (() => {
                     const video = getVideoForExercise(cell);
@@ -73,9 +73,9 @@ interface ExerciseCardProps {
 
 function ExerciseCard({ name, details }: ExerciseCardProps) {
   return (
-    <div className="flex items-center justify-between gap-2 rounded-lg border border-[#2a2d35] bg-[#1a1d24] px-3 py-2.5">
+    <div className="flex items-center justify-between gap-2 rounded-lg border border-[#e5e7eb] bg-white px-3 py-2.5">
       <div className="flex items-center gap-2 min-w-0">
-        <span className="font-semibold text-sm text-white truncate">{name}</span>
+        <span className="font-semibold text-sm text-[#111827] truncate">{name}</span>
         <a
           href={getVideoUrl(name)}
           target="_blank"
@@ -94,8 +94,8 @@ function ExerciseCard({ name, details }: ExerciseCardProps) {
               detail.toLowerCase().includes('rpe')
                 ? 'bg-orange-100 text-orange-700'
                 : detail.toLowerCase().includes('rest') || detail.toLowerCase().includes('min') || detail.toLowerCase().includes('s')
-                ? 'bg-[#2a2d35]/20 text-[#a5b4fc]'
-                : 'bg-[#22252d] text-[#9ca3af]'
+                ? 'bg-[#e5e7eb]/20 text-[#1e3a5f]'
+                : 'bg-[#f0f1f3] text-[#9ca3af]'
             }`}
           >
             {detail}

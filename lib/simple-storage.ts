@@ -302,7 +302,7 @@ export function isPro(): boolean {
 // ── Dark Mode ─────────────────────────────────────────────
 
 export function getDarkMode(): boolean {
-  return read<boolean>(DARK_MODE_KEY, true);
+  return read<boolean>(DARK_MODE_KEY, false);
 }
 
 export function setDarkMode(dark: boolean): void {

@@ -29,9 +29,9 @@ const PRO_FEATURES = [
 
 export default function UpgradePage() {
   return (
-    <div className="min-h-screen pb-24 bg-[#0f172a]">
+    <div className="min-h-screen pb-24 bg-[#f8f9fa]">
       {/* Header */}
-      <div className="sticky top-0 z-40 bg-[#0f172a]/95 backdrop-blur-sm border-b border-white/10">
+      <div className="sticky top-0 z-40 bg-[#f8f9fa]/95 backdrop-blur-sm border-b border-white/10">
         <div className="mx-auto max-w-2xl flex items-center gap-3 px-4 py-3">
           <Link
             href="/"

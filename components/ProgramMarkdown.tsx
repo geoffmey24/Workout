@@ -19,27 +19,27 @@ export default function ProgramMarkdown({ content }: { content: string }) {
                 ol: ({ children }) => <ol className="mb-3 pl-5 list-decimal space-y-1">{children}</ol>,
                 ul: ({ children }) => <ul className="mb-3 pl-5 list-disc space-y-1 text-[#9ca3af]">{children}</ul>,
                 li: ({ children }) => <li className="leading-relaxed">{children}</li>,
-                h1: ({ children }) => <h1 className="font-extrabold text-lg mt-6 mb-3 text-white border-b border-[#2a2d35] pb-2">{children}</h1>,
-                h2: ({ children }) => <h2 className="font-bold text-base mt-5 mb-2 text-white">{children}</h2>,
-                h3: ({ children }) => <h3 className="font-semibold text-sm mt-4 mb-2 text-[#1e40af]">{children}</h3>,
-                strong: ({ children }) => <strong className="font-bold text-white">{children}</strong>,
+                h1: ({ children }) => <h1 className="font-extrabold text-lg mt-6 mb-3 text-[#111827] border-b border-[#e5e7eb] pb-2">{children}</h1>,
+                h2: ({ children }) => <h2 className="font-bold text-base mt-5 mb-2 text-[#111827]">{children}</h2>,
+                h3: ({ children }) => <h3 className="font-semibold text-sm mt-4 mb-2 text-[#1e3a5f]">{children}</h3>,
+                strong: ({ children }) => <strong className="font-bold text-[#111827]">{children}</strong>,
                 em: ({ children }) => <em className="text-[#9ca3af]">{children}</em>,
-                hr: () => <hr className="my-4 border-[#2a2d35]" />,
+                hr: () => <hr className="my-4 border-[#e5e7eb]" />,
                 // Fallback for any markdown tables that slip through
                 table: ({ children }) => (
-                  <div className="mb-4 overflow-x-auto rounded-lg border border-[#2a2d35]">
+                  <div className="mb-4 overflow-x-auto rounded-lg border border-[#e5e7eb]">
                     <table className="w-full text-sm border-collapse min-w-[360px]">{children}</table>
                   </div>
                 ),
-                thead: ({ children }) => <thead className="bg-[#4f46e5] text-white">{children}</thead>,
+                thead: ({ children }) => <thead className="bg-[#1e3a5f] text-white">{children}</thead>,
                 tbody: ({ children }) => <tbody>{children}</tbody>,
-                tr: ({ children }) => <tr className="even:bg-[#0f1219] odd:bg-[#1a1d24] border-b border-[#2a2d35] last:border-b-0">{children}</tr>,
+                tr: ({ children }) => <tr className="even:bg-[#f8f9fa] odd:bg-white border-b border-[#e5e7eb] last:border-b-0">{children}</tr>,
                 th: ({ children }) => <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider whitespace-nowrap">{children}</th>,
                 td: ({ children }) => <td className="px-4 py-3 text-[#9ca3af] whitespace-nowrap">{children}</td>,
                 code: ({ children, className }) => {
                   const isBlock = className?.includes('language-');
-                  if (isBlock) return <code className="block bg-[#22252d] rounded-lg p-3 text-xs font-mono overflow-x-auto my-2">{children}</code>;
-                  return <code className="bg-[#22252d] px-1.5 py-0.5 rounded text-xs font-mono">{children}</code>;
+                  if (isBlock) return <code className="block bg-[#f0f1f3] rounded-lg p-3 text-xs font-mono overflow-x-auto my-2">{children}</code>;
+                  return <code className="bg-[#f0f1f3] px-1.5 py-0.5 rounded text-xs font-mono">{children}</code>;
                 },
                 pre: ({ children }) => <>{children}</>,
               }}

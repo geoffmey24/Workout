@@ -106,13 +106,13 @@ function WhoopPageInner() {
   const hasData = whoopData !== null && dataSource !== 'none';
 
   return (
-    <div className="min-h-screen pb-24 bg-[#0f1219]">
+    <div className="min-h-screen pb-24 bg-[#f8f9fa]">
       {/* Header */}
-      <div className="flex items-center gap-3 border-b border-[#2a2d35] bg-[#1a1d24] px-4 py-3">
-        <Link href="/" className="text-[#9ca3af] hover:text-white">
+      <div className="flex items-center gap-3 border-b border-[#e5e7eb] bg-white px-4 py-3">
+        <Link href="/" className="text-[#9ca3af] hover:text-[#111827]">
           <ArrowLeft size={20} />
         </Link>
-        <h1 className="font-bold text-sm text-white">Recovery Dashboard</h1>
+        <h1 className="font-bold text-sm text-[#111827]">Recovery Dashboard</h1>
         <div className="ml-auto flex items-center gap-2">
           {hasData ? (
             <span className="flex items-center gap-1 text-xs text-[#4ade80]">
@@ -143,13 +143,13 @@ function WhoopPageInner() {
         <h2 className="text-xs font-medium uppercase tracking-wider text-[#9ca3af] mb-3">Health Sources</h2>
         <div className="grid grid-cols-2 gap-2">
           {sources.map((source) => (
-            <div key={source.id} className="rounded-xl bg-[#1a1d24] border border-[#2a2d35] p-3">
+            <div key={source.id} className="rounded-xl bg-white border border-[#e5e7eb] p-3">
               <div className="flex items-center gap-2 mb-2">
                 <div className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-bold" style={{ backgroundColor: source.color }}>
                   {source.icon}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-semibold text-white truncate">{source.name}</p>
+                  <p className="text-xs font-semibold text-[#111827] truncate">{source.name}</p>
                 </div>
               </div>
               <p className="text-[10px] text-[#9ca3af] mb-2 line-clamp-1">{source.description}</p>
@@ -163,7 +163,7 @@ function WhoopPageInner() {
               ) : (
                 <a
                   href={source.authUrl}
-                  className="flex items-center justify-center gap-1 w-full rounded-lg border border-[#2a2d35] bg-[#22252d] py-1.5 text-[10px] font-medium text-white hover:bg-[#22252d] transition-colors"
+                  className="flex items-center justify-center gap-1 w-full rounded-lg border border-[#e5e7eb] bg-[#f0f1f3] py-1.5 text-[10px] font-medium text-[#111827] hover:bg-[#f0f1f3] transition-colors"
                 >
                   <Link2 size={10} /> Connect
                 </a>
@@ -175,15 +175,15 @@ function WhoopPageInner() {
 
       {loading ? (
         <div className="flex items-center justify-center py-20">
-          <Loader2 size={32} className="animate-spin text-[#a5b4fc]" />
+          <Loader2 size={32} className="animate-spin text-[#1e3a5f]" />
         </div>
       ) : !hasData ? (
         /* Empty state — no device connected */
         <div className="px-4 py-12 text-center">
-          <div className="w-16 h-16 rounded-full bg-[#22252d] flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 rounded-full bg-[#f0f1f3] flex items-center justify-center mx-auto mb-4">
             <Activity size={32} className="text-[#6b7280]" />
           </div>
-          <h2 className="text-lg font-bold text-white mb-2">Connect a device to see your recovery data</h2>
+          <h2 className="text-lg font-bold text-[#111827] mb-2">Connect a device to see your recovery data</h2>
           <p className="text-sm text-[#9ca3af] max-w-xs mx-auto">
             Link your WHOOP or Oura Ring above. Your coach will use recovery data to personalize your training.
           </p>
@@ -191,7 +191,7 @@ function WhoopPageInner() {
       ) : (
         <div className="px-4 py-6">
           {/* Today's Stats */}
-          <div className="rounded-2xl border border-[#2a2d35] bg-[#1a1d24] p-5 mb-6">
+          <div className="rounded-2xl border border-[#e5e7eb] bg-white p-5 mb-6">
             <h2 className="text-xs font-medium uppercase tracking-wider text-[#9ca3af] mb-3">Today&apos;s Recovery</h2>
             <div className="flex items-center gap-4 mb-4">
               <span className="text-5xl font-extrabold" style={{ color: recoveryColors[whoopData!.today.color] }}>
@@ -208,35 +208,35 @@ function WhoopPageInner() {
                 { label: 'SpO2', value: `${whoopData!.today.spo2}%` },
                 { label: 'Skin Temp', value: `${whoopData!.today.skin_temp}°C` },
               ].map((stat) => (
-                <div key={stat.label} className="rounded-lg bg-[#0f1219] p-3">
+                <div key={stat.label} className="rounded-lg bg-[#f8f9fa] p-3">
                   <p className="text-xs text-[#9ca3af]">{stat.label}</p>
-                  <p className="text-sm font-bold mt-0.5 text-white">{stat.value}</p>
+                  <p className="text-sm font-bold mt-0.5 text-[#111827]">{stat.value}</p>
                 </div>
               ))}
             </div>
           </div>
 
           {/* Recovery Chart */}
-          <div className="rounded-2xl border border-[#2a2d35] bg-[#1a1d24] p-5 mb-6">
+          <div className="rounded-2xl border border-[#e5e7eb] bg-white p-5 mb-6">
             <h2 className="text-xs font-medium uppercase tracking-wider text-[#9ca3af] mb-4">7-Day Recovery</h2>
             <ResponsiveContainer width="100%" height={180}>
               <BarChart data={whoopData!.recovery.map(d => ({ ...d, fill: recoveryColors[d.color] }))}>
                 <XAxis dataKey="date" tick={{ fill: '#6b7280', fontSize: 11 }} axisLine={false} tickLine={false} />
                 <YAxis domain={[0, 100]} tick={{ fill: '#6b7280', fontSize: 11 }} axisLine={false} tickLine={false} width={30} />
-                <Tooltip contentStyle={{ background: '#1a1d24', border: '1px solid #2a2d35', borderRadius: 8, fontSize: 12 }} labelStyle={{ color: '#9ca3af' }} />
+                <Tooltip contentStyle={{ background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: 8, fontSize: 12 }} labelStyle={{ color: '#9ca3af' }} />
                 <Bar dataKey="score" radius={[4, 4, 0, 0]} fill="#2563eb" />
               </BarChart>
             </ResponsiveContainer>
           </div>
 
           {/* Sleep Chart */}
-          <div className="rounded-2xl border border-[#2a2d35] bg-[#1a1d24] p-5 mb-6">
+          <div className="rounded-2xl border border-[#e5e7eb] bg-white p-5 mb-6">
             <h2 className="text-xs font-medium uppercase tracking-wider text-[#9ca3af] mb-4">Sleep Duration (hrs)</h2>
             <ResponsiveContainer width="100%" height={180}>
               <BarChart data={whoopData!.sleep}>
                 <XAxis dataKey="date" tick={{ fill: '#6b7280', fontSize: 11 }} axisLine={false} tickLine={false} />
                 <YAxis domain={[0, 10]} tick={{ fill: '#6b7280', fontSize: 11 }} axisLine={false} tickLine={false} width={30} />
-                <Tooltip contentStyle={{ background: '#1a1d24', border: '1px solid #2a2d35', borderRadius: 8, fontSize: 12 }} labelStyle={{ color: '#9ca3af' }} />
+                <Tooltip contentStyle={{ background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: 8, fontSize: 12 }} labelStyle={{ color: '#9ca3af' }} />
                 <Bar dataKey="deep" stackId="a" fill="#3b82f6" radius={[0, 0, 0, 0]} name="Deep" />
                 <Bar dataKey="rem" stackId="a" fill="#8b5cf6" name="REM" />
                 <Bar dataKey="light" stackId="a" fill="#d1d5db" radius={[4, 4, 0, 0]} name="Light" />
@@ -257,14 +257,14 @@ function WhoopPageInner() {
           </div>
 
           {/* Strain Chart */}
-          <div className="rounded-2xl border border-[#2a2d35] bg-[#1a1d24] p-5">
+          <div className="rounded-2xl border border-[#e5e7eb] bg-white p-5">
             <h2 className="text-xs font-medium uppercase tracking-wider text-[#9ca3af] mb-4">Daily Strain</h2>
             <ResponsiveContainer width="100%" height={180}>
               <LineChart data={whoopData!.strain}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#2a2d35" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                 <XAxis dataKey="date" tick={{ fill: '#6b7280', fontSize: 11 }} axisLine={false} tickLine={false} />
                 <YAxis domain={[0, 21]} tick={{ fill: '#6b7280', fontSize: 11 }} axisLine={false} tickLine={false} width={30} />
-                <Tooltip contentStyle={{ background: '#1a1d24', border: '1px solid #2a2d35', borderRadius: 8, fontSize: 12 }} labelStyle={{ color: '#9ca3af' }} />
+                <Tooltip contentStyle={{ background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: 8, fontSize: 12 }} labelStyle={{ color: '#9ca3af' }} />
                 <Line type="monotone" dataKey="strain" stroke="#2563eb" strokeWidth={2} dot={{ fill: '#2563eb', r: 4 }} />
               </LineChart>
             </ResponsiveContainer>

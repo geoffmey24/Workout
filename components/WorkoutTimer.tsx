@@ -51,13 +51,13 @@ export default function WorkoutTimer({ compact }: WorkoutTimerProps) {
   if (compact) {
     return (
       <div className="flex items-center gap-2">
-        <Timer size={14} className="text-[#a5b4fc]" />
-        <span className={`text-sm font-mono font-bold ${isFinished ? 'text-[#4ade80] animate-pulse' : 'text-white'}`}>
+        <Timer size={14} className="text-[#1e3a5f]" />
+        <span className={`text-sm font-mono font-bold ${isFinished ? 'text-[#4ade80] animate-pulse' : 'text-[#111827]'}`}>
           {format(seconds)}
         </span>
         <button
           onClick={() => isRunning ? setIsRunning(false) : (mode === 'stopwatch' ? (setIsRunning(true)) : startRest(restPreset))}
-          className="p-1 rounded bg-[#22252d] hover:bg-gray-200"
+          className="p-1 rounded bg-[#f0f1f3] hover:bg-gray-200"
         >
           {isRunning ? <Pause size={12} /> : <Play size={12} />}
         </button>
@@ -66,7 +66,7 @@ export default function WorkoutTimer({ compact }: WorkoutTimerProps) {
   }
 
   return (
-    <div className="rounded-2xl border border-[#2a2d35] bg-[#1a1d24] p-5">
+    <div className="rounded-2xl border border-[#e5e7eb] bg-white p-5">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xs font-medium uppercase tracking-wider text-[#9ca3af]">
           {mode === 'rest' ? 'Rest Timer' : 'Stopwatch'}
@@ -74,20 +74,20 @@ export default function WorkoutTimer({ compact }: WorkoutTimerProps) {
         <div className="flex gap-1">
           <button
             onClick={() => { setMode('stopwatch'); setSeconds(0); setIsRunning(false); }}
-            className={`px-2 py-1 rounded text-xs font-medium ${mode === 'stopwatch' ? 'bg-[#4f46e5] text-white' : 'bg-[#22252d] text-[#9ca3af]'}`}
+            className={`px-2 py-1 rounded text-xs font-medium ${mode === 'stopwatch' ? 'bg-[#1e3a5f] text-white' : 'bg-[#f0f1f3] text-[#9ca3af]'}`}
           >
             Stopwatch
           </button>
           <button
             onClick={() => { setMode('rest'); setSeconds(restPreset); setIsRunning(false); }}
-            className={`px-2 py-1 rounded text-xs font-medium ${mode === 'rest' ? 'bg-[#4f46e5] text-white' : 'bg-[#22252d] text-[#9ca3af]'}`}
+            className={`px-2 py-1 rounded text-xs font-medium ${mode === 'rest' ? 'bg-[#1e3a5f] text-white' : 'bg-[#f0f1f3] text-[#9ca3af]'}`}
           >
             Rest
           </button>
         </div>
       </div>
 
-      <div className={`text-center text-5xl font-mono font-extrabold mb-4 ${isFinished ? 'text-[#4ade80] animate-pulse' : 'text-white'}`}>
+      <div className={`text-center text-5xl font-mono font-extrabold mb-4 ${isFinished ? 'text-[#4ade80] animate-pulse' : 'text-[#111827]'}`}>
         {format(seconds)}
       </div>
 
@@ -98,14 +98,14 @@ export default function WorkoutTimer({ compact }: WorkoutTimerProps) {
       <div className="flex gap-2 justify-center mb-4">
         <button
           onClick={() => setIsRunning(!isRunning)}
-          className="flex items-center gap-2 rounded-xl bg-[#4f46e5] px-6 py-2.5 text-sm font-semibold text-white hover:bg-[#3730a3] transition-colors"
+          className="flex items-center gap-2 rounded-xl bg-[#1e3a5f] px-6 py-2.5 text-sm font-semibold text-white hover:bg-[#162d4a] transition-colors"
         >
           {isRunning ? <Pause size={16} /> : <Play size={16} />}
           {isRunning ? 'Pause' : 'Start'}
         </button>
         <button
           onClick={reset}
-          className="rounded-xl bg-[#22252d] p-2.5 hover:bg-gray-200 transition-colors text-[#9ca3af]"
+          className="rounded-xl bg-[#f0f1f3] p-2.5 hover:bg-gray-200 transition-colors text-[#9ca3af]"
         >
           <RotateCcw size={16} />
         </button>
@@ -118,7 +118,7 @@ export default function WorkoutTimer({ compact }: WorkoutTimerProps) {
               key={s}
               onClick={() => startRest(s)}
               className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
-                restPreset === s && !isRunning ? 'bg-[#4f46e5] text-white' : 'bg-[#22252d] text-[#9ca3af] hover:bg-gray-200'
+                restPreset === s && !isRunning ? 'bg-[#1e3a5f] text-white' : 'bg-[#f0f1f3] text-[#9ca3af] hover:bg-gray-200'
               }`}
             >
               {s < 60 ? `${s}s` : `${s / 60}m`}

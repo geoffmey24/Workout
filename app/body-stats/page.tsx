@@ -54,52 +54,52 @@ export default function BodyStatsPage() {
   const weightChange = latestWeight && firstWeight ? latestWeight - firstWeight : null;
 
   return (
-    <div className="min-h-screen pb-24 bg-[#0f1219]">
-      <div className="flex items-center gap-3 border-b border-[#2a2d35] bg-[#1a1d24] px-4 py-3">
-        <Link href="/settings" className="text-[#9ca3af] hover:text-white"><ArrowLeft size={20} /></Link>
-        <h1 className="font-bold text-sm text-white">Body Stats</h1>
-        <button onClick={() => setShowForm(!showForm)} className="ml-auto p-1.5 rounded-lg bg-[#4f46e5] text-white hover:bg-[#3730a3]">
+    <div className="min-h-screen pb-24 bg-[#f8f9fa]">
+      <div className="flex items-center gap-3 border-b border-[#e5e7eb] bg-white px-4 py-3">
+        <Link href="/settings" className="text-[#9ca3af] hover:text-[#111827]"><ArrowLeft size={20} /></Link>
+        <h1 className="font-bold text-sm text-[#111827]">Body Stats</h1>
+        <button onClick={() => setShowForm(!showForm)} className="ml-auto p-1.5 rounded-lg bg-[#1e3a5f] text-white hover:bg-[#162d4a]">
           <Plus size={16} />
         </button>
       </div>
 
       {/* Add Entry Form */}
       {showForm && (
-        <div className="px-4 py-4 bg-[#1a1d24] border-b border-[#2a2d35]">
+        <div className="px-4 py-4 bg-white border-b border-[#e5e7eb]">
           <div className="space-y-3">
             <div>
               <label className="text-xs text-[#9ca3af] mb-1 block">Date</label>
-              <input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full rounded-lg border border-[#2a2d35] px-3 py-2 text-sm" />
+              <input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-sm" />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-xs text-[#9ca3af] mb-1 block">Weight (lbs)</label>
-                <input type="number" step="0.1" value={weight} onChange={e => setWeight(e.target.value)} placeholder="185" className="w-full rounded-lg border border-[#2a2d35] px-3 py-2 text-sm" />
+                <input type="number" step="0.1" value={weight} onChange={e => setWeight(e.target.value)} placeholder="185" className="w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-sm" />
               </div>
               <div>
                 <label className="text-xs text-[#9ca3af] mb-1 block">Body Fat %</label>
-                <input type="number" step="0.1" value={bodyFat} onChange={e => setBodyFat(e.target.value)} placeholder="15" className="w-full rounded-lg border border-[#2a2d35] px-3 py-2 text-sm" />
+                <input type="number" step="0.1" value={bodyFat} onChange={e => setBodyFat(e.target.value)} placeholder="15" className="w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-sm" />
               </div>
             </div>
             <div className="grid grid-cols-3 gap-3">
               <div>
                 <label className="text-xs text-[#9ca3af] mb-1 block">Waist (in)</label>
-                <input type="number" step="0.1" value={waist} onChange={e => setWaist(e.target.value)} className="w-full rounded-lg border border-[#2a2d35] px-3 py-2 text-sm" />
+                <input type="number" step="0.1" value={waist} onChange={e => setWaist(e.target.value)} className="w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-sm" />
               </div>
               <div>
                 <label className="text-xs text-[#9ca3af] mb-1 block">Chest (in)</label>
-                <input type="number" step="0.1" value={chest} onChange={e => setChest(e.target.value)} className="w-full rounded-lg border border-[#2a2d35] px-3 py-2 text-sm" />
+                <input type="number" step="0.1" value={chest} onChange={e => setChest(e.target.value)} className="w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-sm" />
               </div>
               <div>
                 <label className="text-xs text-[#9ca3af] mb-1 block">Arms (in)</label>
-                <input type="number" step="0.1" value={arms} onChange={e => setArms(e.target.value)} className="w-full rounded-lg border border-[#2a2d35] px-3 py-2 text-sm" />
+                <input type="number" step="0.1" value={arms} onChange={e => setArms(e.target.value)} className="w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-sm" />
               </div>
             </div>
             <div>
               <label className="text-xs text-[#9ca3af] mb-1 block">Notes</label>
-              <textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="Doctor visit, blood work results, how you're feeling..." rows={2} className="w-full rounded-lg border border-[#2a2d35] px-3 py-2 text-sm resize-none" />
+              <textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="Doctor visit, blood work results, how you're feeling..." rows={2} className="w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-sm resize-none" />
             </div>
-            <button onClick={handleSave} className="w-full rounded-xl bg-[#4f46e5] py-3 text-sm font-semibold text-white hover:bg-[#3730a3] transition-colors">
+            <button onClick={handleSave} className="w-full rounded-xl bg-[#1e3a5f] py-3 text-sm font-semibold text-white hover:bg-[#162d4a] transition-colors">
               Save Entry
             </button>
           </div>
@@ -109,9 +109,9 @@ export default function BodyStatsPage() {
       {/* Weight Chart */}
       {weightEntries.length > 1 && (
         <div className="px-4 pt-4">
-          <div className="rounded-xl bg-[#1a1d24] border border-[#2a2d35] p-4">
+          <div className="rounded-xl bg-white border border-[#e5e7eb] p-4">
             <div className="flex items-center gap-2 mb-3">
-              <TrendingUp size={16} className="text-[#a5b4fc]" />
+              <TrendingUp size={16} className="text-[#1e3a5f]" />
               <h2 className="text-xs font-medium uppercase tracking-wider text-[#9ca3af]">Weight Trend</h2>
               {weightChange !== null && (
                 <span className={`ml-auto text-xs font-semibold ${weightChange > 0 ? 'text-orange-600' : weightChange < 0 ? 'text-[#4ade80]' : 'text-[#9ca3af]'}`}>
@@ -128,7 +128,7 @@ export default function BodyStatsPage() {
                 return weightEntries.map((e, i) => (
                   <div key={i} className="flex-1 flex flex-col items-center gap-1">
                     <div
-                      className="w-full bg-[#4f46e5]/100 rounded-t-sm min-h-[4px]"
+                      className="w-full bg-[#1e3a5f]/100 rounded-t-sm min-h-[4px]"
                       style={{ height: `${((e.weight! - min) / range) * 60 + 16}px` }}
                       title={`${e.date}: ${e.weight} lbs`}
                     />
@@ -144,7 +144,7 @@ export default function BodyStatsPage() {
       {/* Body Fat Chart */}
       {fatEntries.length > 1 && (
         <div className="px-4 pt-3">
-          <div className="rounded-xl bg-[#1a1d24] border border-[#2a2d35] p-4">
+          <div className="rounded-xl bg-white border border-[#e5e7eb] p-4">
             <div className="flex items-center gap-2 mb-3">
               <Scale size={16} className="text-[#4ade80]" />
               <h2 className="text-xs font-medium uppercase tracking-wider text-[#9ca3af]">Body Fat %</h2>
@@ -175,22 +175,22 @@ export default function BodyStatsPage() {
       {entries.length > 0 && (
         <div className="px-4 pt-3 flex gap-3">
           {latestWeight && (
-            <div className="flex-1 rounded-xl bg-[#1a1d24] border border-[#2a2d35] p-3 text-center">
+            <div className="flex-1 rounded-xl bg-white border border-[#e5e7eb] p-3 text-center">
               <Scale size={14} className="mx-auto text-blue-500 mb-1" />
-              <p className="text-lg font-bold text-white">{latestWeight}</p>
+              <p className="text-lg font-bold text-[#111827]">{latestWeight}</p>
               <p className="text-[10px] text-[#9ca3af] uppercase">Current lbs</p>
             </div>
           )}
           {fatEntries.length > 0 && (
-            <div className="flex-1 rounded-xl bg-[#1a1d24] border border-[#2a2d35] p-3 text-center">
+            <div className="flex-1 rounded-xl bg-white border border-[#e5e7eb] p-3 text-center">
               <Ruler size={14} className="mx-auto text-green-500 mb-1" />
-              <p className="text-lg font-bold text-white">{fatEntries[fatEntries.length - 1].bodyFat}%</p>
+              <p className="text-lg font-bold text-[#111827]">{fatEntries[fatEntries.length - 1].bodyFat}%</p>
               <p className="text-[10px] text-[#9ca3af] uppercase">Body Fat</p>
             </div>
           )}
-          <div className="flex-1 rounded-xl bg-[#1a1d24] border border-[#2a2d35] p-3 text-center">
+          <div className="flex-1 rounded-xl bg-white border border-[#e5e7eb] p-3 text-center">
             <TrendingUp size={14} className="mx-auto text-purple-500 mb-1" />
-            <p className="text-lg font-bold text-white">{entries.length}</p>
+            <p className="text-lg font-bold text-[#111827]">{entries.length}</p>
             <p className="text-[10px] text-[#9ca3af] uppercase">Entries</p>
           </div>
         </div>
@@ -206,15 +206,15 @@ export default function BodyStatsPage() {
             <p className="text-xs text-[#6b7280] mt-1">Tap + to add your first body stats entry</p>
           </div>
         ) : [...entries].reverse().map((e) => (
-          <div key={e.date} className="rounded-xl bg-[#1a1d24] border border-[#2a2d35] p-3">
+          <div key={e.date} className="rounded-xl bg-white border border-[#e5e7eb] p-3">
             <div className="flex items-center justify-between mb-1">
-              <span className="text-xs font-medium text-white">{new Date(e.date).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })}</span>
+              <span className="text-xs font-medium text-[#111827]">{new Date(e.date).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })}</span>
               <button onClick={() => handleDelete(e.date)} className="text-[#6b7280] hover:text-[#ef4444]"><Trash2 size={12} /></button>
             </div>
             <div className="flex gap-4 text-xs text-[#9ca3af]">
-              {e.weight && <span>Weight: <strong className="text-white">{e.weight} lbs</strong></span>}
-              {e.bodyFat && <span>BF: <strong className="text-white">{e.bodyFat}%</strong></span>}
-              {e.measurements?.waist && <span>Waist: <strong className="text-white">{e.measurements.waist}"</strong></span>}
+              {e.weight && <span>Weight: <strong className="text-[#111827]">{e.weight} lbs</strong></span>}
+              {e.bodyFat && <span>BF: <strong className="text-[#111827]">{e.bodyFat}%</strong></span>}
+              {e.measurements?.waist && <span>Waist: <strong className="text-[#111827]">{e.measurements.waist}"</strong></span>}
             </div>
             {e.notes && <p className="text-xs text-[#6b7280] mt-1 italic">{e.notes}</p>}
           </div>

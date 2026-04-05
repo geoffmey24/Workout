@@ -181,28 +181,28 @@ function ChatPageInner() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-[#0f1219]">
+    <div className="flex flex-col h-screen bg-[#f8f9fa]">
       {/* Header */}
-      <div className="flex items-center gap-3 border-b border-[#2a2d35] bg-[#1a1d24] px-4 py-3">
-        <Link href="/" className="text-[#9ca3af] hover:text-white"><ArrowLeft size={20} /></Link>
+      <div className="flex items-center gap-3 border-b border-[#e5e7eb] bg-white px-4 py-3">
+        <Link href="/" className="text-[#9ca3af] hover:text-[#111827]"><ArrowLeft size={20} /></Link>
         <div>
-          <h1 className="font-bold text-sm text-white">ELITE <span className="text-[#a5b4fc]">COACH</span></h1>
+          <h1 className="font-bold text-sm text-[#111827]">ELITE <span className="text-[#1e3a5f]">COACH</span></h1>
         </div>
         <div className="ml-auto flex items-center gap-3">
-          <button onClick={startNewChat} className="p-1.5 rounded-lg bg-[#22252d] text-[#9ca3af] hover:text-white hover:bg-gray-200 transition-colors" title="New Chat"><Plus size={16} /></button>
-          <button onClick={() => setHistoryOpen(!historyOpen)} className="text-xs text-[#a5b4fc] font-medium">{historyOpen ? 'Close' : `History (${conversations.length})`}</button>
-          <Link href="/settings" className="text-[#9ca3af] hover:text-white"><Settings size={16} /></Link>
+          <button onClick={startNewChat} className="p-1.5 rounded-lg bg-[#f0f1f3] text-[#9ca3af] hover:text-[#111827] hover:bg-gray-200 transition-colors" title="New Chat"><Plus size={16} /></button>
+          <button onClick={() => setHistoryOpen(!historyOpen)} className="text-xs text-[#1e3a5f] font-medium">{historyOpen ? 'Close' : `History (${conversations.length})`}</button>
+          <Link href="/settings" className="text-[#9ca3af] hover:text-[#111827]"><Settings size={16} /></Link>
         </div>
       </div>
 
       {/* History Panel */}
       {historyOpen && (
-        <div className="border-b border-[#2a2d35] bg-[#1a1d24] px-4 py-3 max-h-48 overflow-y-auto">
+        <div className="border-b border-[#e5e7eb] bg-white px-4 py-3 max-h-48 overflow-y-auto">
           {conversations.length === 0 ? (
             <p className="text-xs text-[#6b7280] text-center py-2">No past conversations</p>
           ) : conversations.map(c => (
-            <div key={c.id} className={`flex items-center gap-2 py-1.5 ${c.id === convoId ? 'text-[#a5b4fc]' : 'text-[#9ca3af]'}`}>
-              <button onClick={() => loadConversation(c)} className="flex-1 text-left text-xs truncate hover:text-white">{c.title}</button>
+            <div key={c.id} className={`flex items-center gap-2 py-1.5 ${c.id === convoId ? 'text-[#1e3a5f]' : 'text-[#9ca3af]'}`}>
+              <button onClick={() => loadConversation(c)} className="flex-1 text-left text-xs truncate hover:text-[#111827]">{c.title}</button>
               <button onClick={() => handleDeleteConvo(c.id)} className="text-[#6b7280] hover:text-[#ef4444] p-0.5"><Trash2 size={12} /></button>
             </div>
           ))}
@@ -213,11 +213,11 @@ function ChatPageInner() {
       <div className="flex-1 overflow-y-auto px-4 py-4">
         {messages.length === 0 && !loading && (
           <div className="flex flex-col items-center justify-center h-full text-center">
-            <h2 className="text-lg font-bold mb-2 text-white">ELITE <span className="text-[#a5b4fc]">COACH</span></h2>
+            <h2 className="text-lg font-bold mb-2 text-[#111827]">ELITE <span className="text-[#1e3a5f]">COACH</span></h2>
             <p className="text-sm text-[#9ca3af] mb-6 max-w-xs">Ask about training, nutrition, recovery, form — or upload a photo for analysis.</p>
             <div className="flex flex-wrap gap-2 justify-center max-w-sm">
               {SUGGESTIONS.map(s => (
-                <button key={s} onClick={() => handleSend(s)} className="rounded-full border border-[#2a2d35] bg-[#1a1d24] px-3 py-1.5 text-xs text-[#9ca3af] hover:border-[#a5b4fc]/50 hover:text-[#a5b4fc] transition-colors">{s}</button>
+                <button key={s} onClick={() => handleSend(s)} className="rounded-full border border-[#e5e7eb] bg-white px-3 py-1.5 text-xs text-[#9ca3af] hover:border-[#1e3a5f]/50 hover:text-[#1e3a5f] transition-colors">{s}</button>
               ))}
             </div>
           </div>
