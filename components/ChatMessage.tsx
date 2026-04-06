@@ -18,19 +18,19 @@ function MarkdownContent({ text }: { text: string }) {
         strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
         em: ({ children }) => <em>{children}</em>,
         table: ({ children }) => (
-          <div className="mb-3 overflow-x-auto rounded-lg border border-[#e5e7eb]">
+          <div className="mb-3 overflow-x-auto rounded-xl border border-outline-variant">
             <table className="w-full text-sm border-collapse min-w-[350px]">{children}</table>
           </div>
         ),
-        thead: ({ children }) => <thead className="bg-[#1e3a5f] text-white">{children}</thead>,
+        thead: ({ children }) => <thead className="bg-primary text-white">{children}</thead>,
         tbody: ({ children }) => <tbody>{children}</tbody>,
-        tr: ({ children }) => <tr className="even:bg-[#f8f9fa] odd:bg-white border-b border-[#e5e7eb] last:border-b-0">{children}</tr>,
+        tr: ({ children }) => <tr className="even:bg-surface odd:bg-surface-container-lowest border-b border-outline-variant last:border-b-0">{children}</tr>,
         th: ({ children }) => <th className="px-3 py-2.5 text-left text-xs font-bold uppercase tracking-wider whitespace-nowrap">{children}</th>,
-        td: ({ children }) => <td className="px-3 py-2 text-[#9ca3af] whitespace-nowrap">{children}</td>,
+        td: ({ children }) => <td className="px-3 py-2 text-secondary whitespace-nowrap">{children}</td>,
         code: ({ children, className }) => {
           const isBlock = className?.includes('language-');
-          if (isBlock) return <code className="block bg-[#f0f1f3] rounded-lg p-3 text-xs font-mono overflow-x-auto my-2">{children}</code>;
-          return <code className="bg-[#f0f1f3] px-1 py-0.5 rounded text-xs font-mono">{children}</code>;
+          if (isBlock) return <code className="block bg-surface-container-low rounded-xl p-3 text-xs font-mono overflow-x-auto my-2">{children}</code>;
+          return <code className="bg-surface-container-low px-1 py-0.5 rounded text-xs font-mono">{children}</code>;
         },
         pre: ({ children }) => <>{children}</>,
       }}
@@ -46,17 +46,17 @@ export default function ChatMessage({ message }: { message: Message }) {
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-4`}>
       <div
-        className={`max-w-[85%] rounded-2xl px-4 py-3 ${
+        className={`max-w-[85%] rounded-xl px-4 py-3 ${
           isUser
-            ? 'bg-[#1e3a5f] text-white'
-            : 'bg-[#f0f1f3] border border-[#e5e7eb] text-[#111827]'
+            ? 'bg-surface-container-high text-on-surface'
+            : 'bg-primary text-white'
         }`}
       >
         {message.image && (
           <img
             src={`data:${message.imageType};base64,${message.image}`}
             alt="Uploaded"
-            className="mb-2 max-h-48 rounded-lg object-cover"
+            className="mb-2 max-h-48 rounded-xl object-cover"
           />
         )}
         {isUser ? (

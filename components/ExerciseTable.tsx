@@ -1,6 +1,6 @@
 'use client';
 
-import { Play } from 'lucide-react';
+import MaterialIcon from './MaterialIcon';
 import { getVideoUrl, getVideoForExercise } from '@/lib/exercise-videos';
 
 // ── Styled HTML Table (primary renderer for pipe-separated data) ──
@@ -12,14 +12,14 @@ interface PipeTableProps {
 
 function PipeTable({ header, rows }: PipeTableProps) {
   return (
-    <div className="mb-4 overflow-x-auto rounded-lg border border-[#e5e7eb]">
+    <div className="mb-4 overflow-x-auto rounded-xl border border-outline-variant">
       <table className="w-full text-sm border-collapse min-w-[360px]">
         <thead>
-          <tr className="bg-[#1e3a5f] text-white">
+          <tr className="bg-primary text-white">
             {header.map((h, i) => (
               <th
                 key={i}
-                className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-[#111827] whitespace-nowrap"
+                className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider whitespace-nowrap"
               >
                 {h}
               </th>
@@ -30,12 +30,12 @@ function PipeTable({ header, rows }: PipeTableProps) {
           {rows.map((row, ri) => (
             <tr
               key={ri}
-              className={`${ri % 2 === 0 ? 'bg-white' : 'bg-[#f8f9fa]'} border-b border-[#e5e7eb] last:border-b-0`}
+              className={`${ri % 2 === 0 ? 'bg-surface-container-lowest' : 'bg-surface'} border-b border-outline-variant last:border-b-0`}
             >
               {row.map((cell, ci) => (
                 <td
                   key={ci}
-                  className={`px-4 py-3 whitespace-nowrap ${ci === 0 ? 'font-medium text-[#111827]' : 'text-[#9ca3af]'}`}
+                  className={`px-4 py-3 whitespace-nowrap ${ci === 0 ? 'font-medium text-on-surface' : 'text-secondary'}`}
                 >
                   {ci === 0 ? (() => {
                     const video = getVideoForExercise(cell);
@@ -46,10 +46,10 @@ function PipeTable({ header, rows }: PipeTableProps) {
                           href={getVideoUrl(cell)}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-[#ef4444] hover:text-[#ef4444] shrink-0"
+                          className="text-red-500 hover:text-red-600 shrink-0"
                           title={video ? `Watch on ${video.channel}` : 'Search on YouTube'}
                         >
-                          <Play size={11} fill="currentColor" />
+                          <MaterialIcon icon="play_circle" size={14} />
                         </a>
                       </span>
                     );
@@ -73,29 +73,29 @@ interface ExerciseCardProps {
 
 function ExerciseCard({ name, details }: ExerciseCardProps) {
   return (
-    <div className="flex items-center justify-between gap-2 rounded-lg border border-[#e5e7eb] bg-white px-3 py-2.5">
+    <div className="flex items-center justify-between gap-2 rounded-xl border border-outline-variant bg-surface-container-lowest px-3 py-2.5">
       <div className="flex items-center gap-2 min-w-0">
-        <span className="font-semibold text-sm text-[#111827] truncate">{name}</span>
+        <span className="font-semibold text-sm text-on-surface truncate">{name}</span>
         <a
           href={getVideoUrl(name)}
           target="_blank"
           rel="noopener noreferrer"
-          className="shrink-0 text-[#ef4444] hover:text-[#ef4444]"
+          className="shrink-0 text-red-500 hover:text-red-600"
           title={getVideoForExercise(name) ? `Watch on ${getVideoForExercise(name)!.channel}` : 'Search on YouTube'}
         >
-          <Play size={12} fill="currentColor" />
+          <MaterialIcon icon="play_circle" size={14} />
         </a>
       </div>
       <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
         {details.map((detail, i) => (
           <span
             key={i}
-            className={`inline-block rounded-full px-2 py-0.5 text-[11px] font-medium whitespace-nowrap ${
+            className={`inline-block rounded-xl px-2 py-0.5 text-[11px] font-medium whitespace-nowrap ${
               detail.toLowerCase().includes('rpe')
                 ? 'bg-orange-100 text-orange-700'
                 : detail.toLowerCase().includes('rest') || detail.toLowerCase().includes('min') || detail.toLowerCase().includes('s')
-                ? 'bg-[#e5e7eb]/20 text-[#1e3a5f]'
-                : 'bg-[#f0f1f3] text-[#9ca3af]'
+                ? 'bg-blue-50 text-primary'
+                : 'bg-surface-container-low text-secondary'
             }`}
           >
             {detail}
@@ -131,14 +131,12 @@ export function parseExerciseContent(text: string): ParsedPart[] {
 
   function flushPipeTable() {
     if (pipeBuffer.length < 2) {
-      // Not enough for header+row, push as text
       if (pipeBuffer.length > 0) textBuffer.push(...pipeBuffer);
       pipeBuffer = [];
       return;
     }
     flushText();
 
-    // Filter out markdown separator lines like |---|---|
     const dataLines = pipeBuffer.filter(l => !/^\s*\|?\s*[-:]+(\s*\|\s*[-:]+)+\s*\|?\s*$/.test(l));
     if (dataLines.length < 2) {
       textBuffer.push(...pipeBuffer);
@@ -157,29 +155,23 @@ export function parseExerciseContent(text: string): ParsedPart[] {
 
   const hasPipe = (line: string) => {
     const trimmed = line.trim();
-    // Must have at least one | that isn't just a markdown separator
     return trimmed.includes('|') && !/^[-:|s]+$/.test(trimmed) && !trimmed.startsWith('#') && !trimmed.startsWith('[');
   };
 
-  // Numbered exercise pattern: "1. Exercise Name — 4 x 8 — RPE 7 — Rest 3 min"
   const numberedExercisePattern = /^\d+\.\s+(.+?)\s*[\u2014\u2013\-]\s+(.+)$/;
 
   for (const line of lines) {
     const trimmed = line.trim();
 
-    // Check for pipe-separated line
     if (hasPipe(trimmed)) {
-      // If we were accumulating text, keep going
       pipeBuffer.push(trimmed);
       continue;
     }
 
-    // If we were in a pipe section and hit a non-pipe line, flush the table
     if (pipeBuffer.length > 0) {
       flushPipeTable();
     }
 
-    // Check for numbered exercise line (fallback card format)
     const numberedMatch = trimmed.match(numberedExercisePattern);
     if (numberedMatch) {
       flushText();
@@ -193,7 +185,6 @@ export function parseExerciseContent(text: string): ParsedPart[] {
     textBuffer.push(line);
   }
 
-  // Flush remaining
   if (pipeBuffer.length > 0) flushPipeTable();
   flushText();
 
@@ -212,7 +203,7 @@ export function ExerciseRenderer({ parts }: { parts: ParsedPart[] }) {
       {parts.map((part, i) => {
         if (part.type === 'table') return <PipeTable key={i} header={part.header} rows={part.rows} />;
         if (part.type === 'card') return <ExerciseCard key={i} name={part.name} details={part.details} />;
-        return null; // text parts handled separately
+        return null;
       })}
     </>
   );

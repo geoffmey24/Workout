@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { Send, Image, X } from 'lucide-react';
+import MaterialIcon from './MaterialIcon';
 
 interface ChatInputProps {
   onSend: (text: string, image?: string, imageType?: string) => void;
@@ -43,29 +43,29 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
   };
 
   return (
-    <div className="border-t border-[#e5e7eb] bg-white p-3">
+    <div className="bg-slate-50/80 backdrop-blur-md border-t border-outline-variant/10 p-3">
       {image && (
         <div className="mb-2 flex items-center gap-2">
           <img
             src={`data:${imageType};base64,${image}`}
             alt="Preview"
-            className="h-16 w-16 rounded-lg object-cover"
+            className="h-16 w-16 rounded-xl object-cover"
           />
           <button
             onClick={() => { setImage(null); setImageType(''); }}
-            className="rounded-full bg-[#f0f1f3] p-1 hover:bg-gray-200"
+            className="rounded-xl bg-surface-container-low p-1 hover:bg-surface-container-high"
           >
-            <X size={14} />
+            <MaterialIcon icon="close" size={14} />
           </button>
         </div>
       )}
       <div className="flex items-end gap-2">
         <button
           onClick={() => fileRef.current?.click()}
-          className="rounded-lg bg-[#f0f1f3] p-2.5 text-[#9ca3af] hover:text-[#111827] hover:bg-gray-200 transition-colors"
+          className="rounded-xl bg-surface-container-low p-2.5 text-secondary hover:text-on-surface hover:bg-surface-container-high transition-colors"
           disabled={disabled}
         >
-          <Image size={20} />
+          <MaterialIcon icon="image" size={20} />
         </button>
         <input
           ref={fileRef}
@@ -81,14 +81,14 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
           placeholder="Ask your coach..."
           rows={1}
           disabled={disabled}
-          className="flex-1 resize-none rounded-xl border border-[#e5e7eb] bg-[#f0f1f3] px-4 py-2.5 text-sm text-[#111827] placeholder-[#4b5563] focus:border-[#1e3a5f] focus:outline-none focus:ring-1 focus:ring-[#1e3a5f] disabled:opacity-50"
+          className="flex-1 resize-none rounded-xl border border-outline-variant bg-surface-container-low px-4 py-2.5 text-sm text-on-surface placeholder-on-surface-variant focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-50"
         />
         <button
           onClick={handleSend}
           disabled={disabled || (!text.trim() && !image)}
-          className="rounded-lg bg-[#1e3a5f] p-2.5 text-white transition-colors hover:bg-[#162d4a] disabled:opacity-40"
+          className="rounded-xl bg-primary p-2.5 text-white transition-colors hover:bg-primary-container disabled:opacity-40"
         >
-          <Send size={20} />
+          <MaterialIcon icon="send" size={20} />
         </button>
       </div>
     </div>

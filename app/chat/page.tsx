@@ -2,8 +2,8 @@
 
 import { useState, useRef, useEffect, Suspense, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { ArrowLeft, Plus, Trash2, Settings } from 'lucide-react';
 import Link from 'next/link';
+import MaterialIcon from '@/components/MaterialIcon';
 import ChatMessage from '@/components/ChatMessage';
 import ChatInput from '@/components/ChatInput';
 import LoadingDots from '@/components/LoadingDots';
@@ -42,7 +42,6 @@ function ChatPageInner() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
 
-  // Migrate old data and load conversations on mount
   useEffect(() => {
     migrateOldData();
     const loaded = getConversations();
@@ -50,7 +49,6 @@ function ChatPageInner() {
     setConversations(loaded);
   }, []);
 
-  // Save conversation after every message change
   useEffect(() => {
     if (messages.length === 0) return;
     const title = messages.find(m => m.role === 'user')?.content.slice(0, 50) || 'New Chat';
@@ -181,29 +179,40 @@ function ChatPageInner() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-[#f8f9fa]">
-      {/* Header */}
-      <div className="flex items-center gap-3 border-b border-[#e5e7eb] bg-white px-4 py-3">
-        <Link href="/" className="text-[#9ca3af] hover:text-[#111827]"><ArrowLeft size={20} /></Link>
+    <div className="flex flex-col h-screen bg-surface">
+      {/* Header — glass morphism */}
+      <div className="fixed top-0 w-full z-50 h-16 bg-slate-50/80 backdrop-blur-md flex items-center gap-3 px-4 border-b border-outline-variant/10">
+        <Link href="/" className="text-secondary hover:text-on-surface">
+          <MaterialIcon icon="arrow_back" size={20} />
+        </Link>
         <div>
-          <h1 className="font-bold text-sm text-[#111827]">ELITE <span className="text-[#1e3a5f]">COACH</span></h1>
+          <h1 className="font-bold text-sm font-headline text-on-surface">ELITE <span className="text-primary">COACH</span></h1>
         </div>
         <div className="ml-auto flex items-center gap-3">
-          <button onClick={startNewChat} className="p-1.5 rounded-lg bg-[#f0f1f3] text-[#9ca3af] hover:text-[#111827] hover:bg-gray-200 transition-colors" title="New Chat"><Plus size={16} /></button>
-          <button onClick={() => setHistoryOpen(!historyOpen)} className="text-xs text-[#1e3a5f] font-medium">{historyOpen ? 'Close' : `History (${conversations.length})`}</button>
-          <Link href="/settings" className="text-[#9ca3af] hover:text-[#111827]"><Settings size={16} /></Link>
+          <button onClick={startNewChat} className="p-1.5 rounded-xl bg-surface-container-low text-secondary hover:text-on-surface hover:bg-surface-container-high transition-colors" title="New Chat">
+            <MaterialIcon icon="add" size={16} />
+          </button>
+          <button onClick={() => setHistoryOpen(!historyOpen)} className="text-xs text-primary font-medium font-label">{historyOpen ? 'Close' : `History (${conversations.length})`}</button>
+          <Link href="/settings" className="text-secondary hover:text-on-surface">
+            <MaterialIcon icon="settings" size={16} />
+          </Link>
         </div>
       </div>
 
+      {/* Spacer for fixed header */}
+      <div className="h-16" />
+
       {/* History Panel */}
       {historyOpen && (
-        <div className="border-b border-[#e5e7eb] bg-white px-4 py-3 max-h-48 overflow-y-auto">
+        <div className="border-b border-outline-variant/10 bg-surface-container-lowest px-4 py-3 max-h-48 overflow-y-auto">
           {conversations.length === 0 ? (
-            <p className="text-xs text-[#6b7280] text-center py-2">No past conversations</p>
+            <p className="text-xs text-secondary text-center py-2">No past conversations</p>
           ) : conversations.map(c => (
-            <div key={c.id} className={`flex items-center gap-2 py-1.5 ${c.id === convoId ? 'text-[#1e3a5f]' : 'text-[#9ca3af]'}`}>
-              <button onClick={() => loadConversation(c)} className="flex-1 text-left text-xs truncate hover:text-[#111827]">{c.title}</button>
-              <button onClick={() => handleDeleteConvo(c.id)} className="text-[#6b7280] hover:text-[#ef4444] p-0.5"><Trash2 size={12} /></button>
+            <div key={c.id} className={`flex items-center gap-2 py-1.5 ${c.id === convoId ? 'text-primary' : 'text-secondary'}`}>
+              <button onClick={() => loadConversation(c)} className="flex-1 text-left text-xs truncate hover:text-on-surface">{c.title}</button>
+              <button onClick={() => handleDeleteConvo(c.id)} className="text-on-surface-variant hover:text-red-500 p-0.5">
+                <MaterialIcon icon="delete" size={12} />
+              </button>
             </div>
           ))}
         </div>
@@ -213,11 +222,11 @@ function ChatPageInner() {
       <div className="flex-1 overflow-y-auto px-4 py-4">
         {messages.length === 0 && !loading && (
           <div className="flex flex-col items-center justify-center h-full text-center">
-            <h2 className="text-lg font-bold mb-2 text-[#111827]">ELITE <span className="text-[#1e3a5f]">COACH</span></h2>
-            <p className="text-sm text-[#9ca3af] mb-6 max-w-xs">Ask about training, nutrition, recovery, form — or upload a photo for analysis.</p>
+            <h2 className="text-lg font-bold font-headline mb-2 text-on-surface">ELITE <span className="text-primary">COACH</span></h2>
+            <p className="text-sm text-secondary mb-6 max-w-xs">Ask about training, nutrition, recovery, form — or upload a photo for analysis.</p>
             <div className="flex flex-wrap gap-2 justify-center max-w-sm">
               {SUGGESTIONS.map(s => (
-                <button key={s} onClick={() => handleSend(s)} className="rounded-full border border-[#e5e7eb] bg-white px-3 py-1.5 text-xs text-[#9ca3af] hover:border-[#1e3a5f]/50 hover:text-[#1e3a5f] transition-colors">{s}</button>
+                <button key={s} onClick={() => handleSend(s)} className="rounded-xl border border-outline-variant bg-surface-container-lowest px-3 py-1.5 text-xs text-secondary hover:border-primary/50 hover:text-primary transition-colors">{s}</button>
               ))}
             </div>
           </div>
@@ -234,7 +243,7 @@ function ChatPageInner() {
 
 export default function ChatPage() {
   return (
-    <Suspense fallback={<div className="flex items-center justify-center h-screen text-[#9ca3af]">Loading...</div>}>
+    <Suspense fallback={<div className="flex items-center justify-center h-screen text-secondary">Loading...</div>}>
       <ChatPageInner />
     </Suspense>
   );

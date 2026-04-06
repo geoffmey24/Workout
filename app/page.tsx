@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Flame, Calendar, Dumbbell, Heart, Check, Target, ChevronRight } from 'lucide-react';
+import MaterialIcon from '@/components/MaterialIcon';
 import Navigation from '@/components/Navigation';
 import ProgramMarkdown from '@/components/ProgramMarkdown';
 import { useAuth } from '@/components/AuthProvider';
@@ -144,14 +144,12 @@ export default function HomePage() {
     setProfile(p);
     if (!p || !p.onboardingComplete) setShowOnboarding(true);
     if (isTodayCompleted()) setWorkoutDone(true);
-    // Check if diagnostic is needed: has active program, no logs, no diagnostic
     const prog = getActiveProgram();
     const diag = getDiagnostic();
     const skipData = getDiagnosticSkipped();
     if (prog && getWorkoutLogs().length === 0 && !diag && !skipData.skipped) {
       setNeedsDiagnostic(true);
     }
-    // Check if we should show a periodic reminder (once per week max)
     if (prog && !diag && skipData.skipped) {
       const lastReminder = skipData.lastReminder;
       if (lastReminder) {
@@ -177,11 +175,9 @@ export default function HomePage() {
     setShowOnboarding(false);
   };
 
-  // Parse program days
   const programDays = activeProgram ? parseProgramDays(activeProgram.content) : [];
   const selectedDay = programDays[selectedDayIdx] || programDays[0] || null;
 
-  // Restore selected day from storage
   useEffect(() => {
     if (programDays.length === 0) return;
     const savedIdx = getSelectedDayIdx();
@@ -220,75 +216,95 @@ export default function HomePage() {
     refreshStats();
   };
 
-  // Exercises for the selected day
   const exercises = selectedDay && !selectedDay.isRecovery ? parseExercisesFromContent(selectedDay.content) : [];
 
   return (
-    <div className="min-h-screen pb-24 bg-[#f8f9fa]">
+    <div className="min-h-screen pb-24 bg-surface">
       {/* Onboarding */}
       {showOnboarding && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-          <div className="bg-white rounded-2xl p-6 max-w-sm w-full text-center shadow-lg">
-            <Dumbbell size={40} className="mx-auto text-[#1e3a5f] mb-3" />
-            <h2 className="text-xl font-bold text-[#111827] mb-1">Welcome to ELITE COACH</h2>
-            <p className="text-sm text-[#6b7280] mb-6">What should I call you?</p>
+          <div className="bg-surface-container-lowest rounded-xl p-6 max-w-sm w-full text-center shadow-lg">
+            <MaterialIcon icon="fitness_center" size={40} className="text-primary mx-auto mb-3" />
+            <h2 className="text-xl font-bold font-headline text-on-surface mb-1">Welcome to ELITE COACH</h2>
+            <p className="text-sm text-secondary mb-6">What should I call you?</p>
             <div className="mb-6">
               <input
                 value={onboardingName}
                 onChange={e => setOnboardingName(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && handleOnboardingComplete()}
                 placeholder="Your name"
-                className="w-full rounded-xl border border-[#e5e7eb] bg-[#f8f9fa] px-4 py-3 text-sm text-center text-[#111827] focus:outline-none focus:ring-2 focus:ring-[#1e3a5f]/30"
+                className="w-full rounded-xl border border-outline-variant bg-surface px-4 py-3 text-sm text-center text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30"
                 autoFocus
               />
             </div>
-            <button onClick={handleOnboardingComplete} className="w-full rounded-xl bg-[#1e3a5f] py-3 text-sm font-bold text-white hover:bg-[#162d4a] transition-colors">
+            <button onClick={handleOnboardingComplete} className="w-full rounded-xl bg-primary py-3 text-sm font-bold text-white hover:bg-primary-container transition-colors">
               Let&apos;s Go
             </button>
           </div>
         </div>
       )}
 
-      {/* Header */}
-      <div className="px-4 pt-12 pb-4 flex items-center justify-between">
-        <h1 className="text-2xl font-extrabold tracking-tight text-[#1e3a5f]">
+      {/* Header — glass morphism */}
+      <div className="fixed top-0 w-full z-50 h-16 bg-slate-50/80 backdrop-blur-md flex items-center justify-between px-4">
+        <h1 className="text-lg font-extrabold font-headline tracking-tight text-primary">
           ELITE COACH
         </h1>
-        <Link href="/settings" className="flex items-center justify-center w-9 h-9 rounded-full bg-[#1e3a5f] text-white text-sm font-bold">
+        <Link href="/settings" className="flex items-center justify-center w-9 h-9 rounded-xl bg-primary text-white text-sm font-bold">
           {profile?.name ? profile.name.charAt(0).toUpperCase() : 'A'}
         </Link>
       </div>
 
+      {/* Spacer for fixed header */}
+      <div className="h-16" />
+
+      {/* Streak Card */}
+      {totalWorkouts > 0 && (
+        <div className="px-4 pt-4 mb-4">
+          <div className="rounded-xl bg-gradient-to-r from-primary to-primary-container p-5 text-white shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[10px] font-label font-bold uppercase tracking-widest text-white/60">Current Streak</p>
+                <p className="text-3xl font-extrabold font-headline mt-1">{streak} <span className="text-base font-normal text-white/70">day{streak !== 1 ? 's' : ''}</span></p>
+              </div>
+              <div className="text-right">
+                <p className="text-[10px] font-label font-bold uppercase tracking-widest text-white/60">This Week</p>
+                <p className="text-3xl font-extrabold font-headline mt-1">{weekCompletionCount}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Hero Workout Card */}
-      <div className="px-4 mb-5">
+      <div className="px-4 mb-4">
         {activeProgram && selectedDay ? (
-          <div className="rounded-2xl bg-[#1e3a5f] p-5 text-white shadow-md">
-            <p className="text-xs font-medium text-white/60 uppercase tracking-wider mb-1">
+          <div className="rounded-xl bg-surface-container-lowest p-6 shadow-sm border border-outline-variant/5">
+            <p className="text-[10px] font-label font-bold uppercase tracking-widest text-secondary mb-2">
               Today&apos;s Workout
             </p>
-            <h2 className="text-xl font-bold mb-1">{selectedDay.header}</h2>
-            <p className="text-sm text-white/70">
+            <h2 className="text-xl font-bold font-headline text-on-surface mb-1">{selectedDay.header}</h2>
+            <p className="text-sm text-secondary">
               {activeProgram.title}
             </p>
             {selectedDay.isRecovery && (
-              <div className="mt-3 flex items-center gap-2 text-emerald-300">
-                <Heart size={16} />
+              <div className="mt-3 flex items-center gap-2 text-emerald-600">
+                <MaterialIcon icon="self_improvement" size={18} />
                 <span className="text-sm font-medium">Recovery Day</span>
               </div>
             )}
             {workoutDone && (
-              <div className="mt-3 flex items-center gap-2 text-emerald-300">
-                <Check size={16} />
+              <div className="mt-3 flex items-center gap-2 text-emerald-600">
+                <MaterialIcon icon="check_circle" filled size={18} />
                 <span className="text-sm font-medium">Completed</span>
               </div>
             )}
           </div>
         ) : (
           <Link href="/program">
-            <div className="rounded-2xl border-2 border-dashed border-[#1e3a5f]/20 bg-white p-8 text-center hover:border-[#1e3a5f]/40 transition-colors">
-              <Dumbbell size={36} className="mx-auto text-[#1e3a5f]/40 mb-3" />
-              <h2 className="text-lg font-bold text-[#111827] mb-1">Create Your First Program</h2>
-              <p className="text-sm text-[#6b7280]">Generate a personalized training plan to get started.</p>
+            <div className="rounded-xl border-2 border-dashed border-primary/20 bg-surface-container-lowest p-8 text-center hover:border-primary/40 transition-colors">
+              <MaterialIcon icon="fitness_center" size={36} className="text-primary/40 mx-auto mb-3" />
+              <h2 className="text-lg font-bold font-headline text-on-surface mb-1">Create Your First Program</h2>
+              <p className="text-sm text-secondary">Generate a personalized training plan to get started.</p>
             </div>
           </Link>
         )}
@@ -296,23 +312,23 @@ export default function HomePage() {
 
       {/* Strength Diagnostic Card */}
       {needsDiagnostic && activeProgram && (
-        <div className="px-4 mb-5">
-          <div className="rounded-2xl bg-white border border-[#e5e7eb] p-5 shadow-sm">
+        <div className="px-4 mb-4">
+          <div className="rounded-xl bg-surface-container-lowest border border-outline-variant/5 p-5 shadow-sm">
             <div className="flex items-center gap-2 mb-2">
-              <Target size={18} className="text-[#1e3a5f]" />
-              <h3 className="font-bold text-sm text-[#111827]">Let&apos;s find your starting weights</h3>
+              <MaterialIcon icon="target" size={18} className="text-primary" />
+              <h3 className="font-bold text-sm text-on-surface">Let&apos;s find your starting weights</h3>
             </div>
-            <p className="text-sm text-[#6b7280] mb-4">
+            <p className="text-sm text-secondary mb-4">
               A quick strength test so your program has real numbers, not guesses. Takes about 15 minutes.
             </p>
             <Link href="/diagnostic"
-              className="w-full rounded-xl bg-[#1e3a5f] py-3 text-sm font-bold text-white hover:bg-[#162d4a] transition-colors flex items-center justify-center gap-2"
+              className="w-full rounded-xl bg-gradient-to-r from-primary to-primary-container py-3 text-sm font-bold text-white hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
             >
-              Start Assessment <ChevronRight size={16} />
+              Start Assessment <MaterialIcon icon="chevron_right" size={18} />
             </Link>
             <button
               onClick={() => { setDiagnosticSkipped(); setNeedsDiagnostic(false); }}
-              className="w-full mt-2 text-center text-xs text-[#9ca3af] hover:text-[#6b7280] transition-colors py-1"
+              className="w-full mt-2 text-center text-xs text-secondary hover:text-on-surface-variant transition-colors py-1"
             >
               Skip for now
             </button>
@@ -320,24 +336,24 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* Periodic Reminder Card (for users who skipped) */}
+      {/* Periodic Reminder Card */}
       {showReminder && !needsDiagnostic && activeProgram && (
-        <div className="px-4 mb-5">
-          <div className="rounded-2xl bg-white border border-[#e5e7eb] p-4 shadow-sm">
+        <div className="px-4 mb-4">
+          <div className="rounded-xl bg-surface-container-lowest border border-outline-variant/5 p-4 shadow-sm">
             <div className="flex items-center justify-between">
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-[#111827]">Want more precise weights?</p>
-                <p className="text-xs text-[#6b7280] mt-0.5">Take the strength assessment for exact prescriptions.</p>
+                <p className="text-sm font-medium text-on-surface">Want more precise weights?</p>
+                <p className="text-xs text-secondary mt-0.5">Take the strength assessment for exact prescriptions.</p>
               </div>
               <Link href="/diagnostic"
-                className="shrink-0 ml-3 rounded-xl bg-[#1e3a5f] px-4 py-2 text-xs font-semibold text-white hover:bg-[#162d4a] transition-colors"
+                className="shrink-0 ml-3 rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white hover:bg-primary-container transition-colors"
               >
                 Take Assessment
               </Link>
             </div>
             <button
               onClick={() => { updateDiagnosticReminderDate(); setShowReminder(false); }}
-              className="w-full mt-2 text-center text-[10px] text-[#9ca3af] hover:text-[#6b7280] transition-colors"
+              className="w-full mt-2 text-center text-[10px] text-secondary hover:text-on-surface-variant transition-colors"
             >
               Dismiss
             </button>
@@ -345,30 +361,14 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* Stats Row */}
-      {totalWorkouts > 0 && (
-        <div className="px-4 mb-5 flex gap-3">
-          <div className="flex-1 rounded-2xl bg-white border border-[#e5e7eb] p-3 text-center shadow-sm">
-            <Flame size={16} className="mx-auto text-orange-500 mb-1" />
-            <p className="text-lg font-bold text-[#111827]">{streak}</p>
-            <p className="text-[10px] text-[#9ca3af] uppercase tracking-wide">Day Streak</p>
-          </div>
-          <div className="flex-1 rounded-2xl bg-white border border-[#e5e7eb] p-3 text-center shadow-sm">
-            <Calendar size={16} className="mx-auto text-[#1e3a5f] mb-1" />
-            <p className="text-lg font-bold text-[#111827]">{weekCompletionCount}</p>
-            <p className="text-[10px] text-[#9ca3af] uppercase tracking-wide">This Week</p>
-          </div>
-        </div>
-      )}
-
       {/* Exercise List with Logging */}
       {activeProgram && selectedDay && !selectedDay.isRecovery && exercises.length > 0 && (
-        <div className="px-4 mb-5">
-          <div className="rounded-2xl bg-white border border-[#e5e7eb] overflow-hidden shadow-sm">
-            <div className="px-4 py-3 border-b border-[#e5e7eb]">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-[#9ca3af]">Exercises</h3>
+        <div className="px-4 mb-4">
+          <div className="rounded-xl bg-surface-container-lowest border border-outline-variant/5 overflow-hidden shadow-sm">
+            <div className="px-4 py-3 border-b border-outline-variant/10">
+              <h3 className="text-[10px] font-label font-bold uppercase tracking-widest text-secondary">Exercises</h3>
             </div>
-            <div className="divide-y divide-[#e5e7eb]">
+            <div className="divide-y divide-outline-variant/10">
               {exercises.map((ex, idx) => {
                 const key = ex.name.toLowerCase();
                 const input = exerciseInputs[key] || { weight: '', reps: '', sets: '' };
@@ -386,9 +386,9 @@ export default function HomePage() {
                 return (
                   <div key={idx} className="px-4 py-3">
                     <div className="flex items-center justify-between mb-1">
-                      <p className="font-medium text-sm text-[#111827]">{ex.name}</p>
+                      <p className="font-medium text-sm text-on-surface">{ex.name}</p>
                       {setsReps && (
-                        <span className="text-xs font-medium text-[#1e3a5f] bg-[#eef2ff] px-2 py-0.5 rounded-full">{setsReps}</span>
+                        <span className="text-xs font-medium text-primary bg-blue-50 px-2 py-0.5 rounded-xl">{setsReps}</span>
                       )}
                     </div>
                     {(() => {
@@ -397,45 +397,45 @@ export default function HomePage() {
                       return (
                         <>
                           {prescribed && (
-                            <p className="text-[10px] text-[#1e3a5f] font-medium mb-0.5">
+                            <p className="text-[10px] text-primary font-medium mb-0.5">
                               {diagData!.source === 'diagnostic' ? 'Prescribed' : 'Last time'}: {prescribed} {lastLog ? `x ${lastLog.reps}r` : ''}
                             </p>
                           )}
                           {lastLog && diagData?.source !== 'log' && (
-                            <p className="text-[10px] text-[#6b7280] mb-0.5">Last: {lastLog.weight}lbs x {lastLog.reps}r | 1RM: {last1RM}lbs</p>
+                            <p className="text-[10px] text-on-surface-variant mb-0.5">Last: {lastLog.weight}lbs x {lastLog.reps}r | 1RM: {last1RM}lbs</p>
                           )}
                           {lastLog && diagData?.source === 'log' && (
-                            <p className="text-[10px] text-[#6b7280] mb-0.5">1RM: {last1RM}lbs</p>
+                            <p className="text-[10px] text-on-surface-variant mb-0.5">1RM: {last1RM}lbs</p>
                           )}
                         </>
                       );
                     })()}
                     {isLogged ? (
-                      <p className="text-xs text-emerald-600 font-medium flex items-center gap-1 bg-[#f0fdf4] px-2 py-1 rounded-lg w-fit">
-                        <Check size={12} /> Logged
+                      <p className="text-xs text-emerald-600 font-medium flex items-center gap-1 bg-emerald-50 px-2 py-1 rounded-xl w-fit">
+                        <MaterialIcon icon="check" size={14} /> Logged
                       </p>
                     ) : (
                       <>
                         <div className="flex gap-1.5">
                           <input type="number" inputMode="decimal" placeholder="lbs" value={input.weight}
                             onChange={e => setExerciseInputs(prev => ({ ...prev, [key]: { ...input, weight: e.target.value } }))}
-                            className="flex-1 rounded-lg border border-[#e5e7eb] bg-[#f8f9fa] px-2 py-2 text-sm text-center text-[#111827] focus:outline-none focus:ring-1 focus:ring-[#1e3a5f]/30" />
+                            className="flex-1 rounded-xl border border-outline-variant bg-surface px-2 py-2 text-sm text-center text-on-surface focus:outline-none focus:ring-1 focus:ring-primary/30" />
                           <input type="number" inputMode="numeric" placeholder="reps" value={input.reps}
                             onChange={e => setExerciseInputs(prev => ({ ...prev, [key]: { ...input, reps: e.target.value } }))}
-                            className="w-16 rounded-lg border border-[#e5e7eb] bg-[#f8f9fa] px-2 py-2 text-sm text-center text-[#111827] focus:outline-none focus:ring-1 focus:ring-[#1e3a5f]/30" />
+                            className="w-16 rounded-xl border border-outline-variant bg-surface px-2 py-2 text-sm text-center text-on-surface focus:outline-none focus:ring-1 focus:ring-primary/30" />
                           <input type="number" inputMode="numeric" placeholder="sets" value={input.sets}
                             onChange={e => setExerciseInputs(prev => ({ ...prev, [key]: { ...input, sets: e.target.value } }))}
-                            className="w-16 rounded-lg border border-[#e5e7eb] bg-[#f8f9fa] px-2 py-2 text-sm text-center text-[#111827] focus:outline-none focus:ring-1 focus:ring-[#1e3a5f]/30" />
+                            className="w-16 rounded-xl border border-outline-variant bg-surface px-2 py-2 text-sm text-center text-on-surface focus:outline-none focus:ring-1 focus:ring-primary/30" />
                           <button onClick={() => handleLogSet(ex.name)}
                             disabled={!input.weight || !input.reps}
-                            className="rounded-lg bg-[#1e3a5f] px-3 py-2 text-xs font-semibold text-white hover:bg-[#162d4a] disabled:opacity-40 transition-colors">
+                            className="rounded-xl bg-primary px-3 py-2 text-xs font-semibold text-white hover:bg-primary-container disabled:opacity-40 transition-colors">
                             Log
                           </button>
                         </div>
                         {current1RM > 0 && (
                           <div className="flex items-center gap-2 mt-1">
-                            <span className="text-[10px] text-[#1e3a5f] font-medium">Est. 1RM: {current1RM} lbs</span>
-                            {isNewPR && <span className="text-[10px] bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded-full font-bold animate-pulse">NEW PR!</span>}
+                            <span className="text-[10px] text-primary font-medium">Est. 1RM: {current1RM} lbs</span>
+                            {isNewPR && <span className="text-[10px] bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded-xl font-bold animate-pulse">NEW PR!</span>}
                           </div>
                         )}
                       </>
@@ -450,14 +450,14 @@ export default function HomePage() {
               {!workoutDone ? (
                 <button onClick={handleCompleteWorkout}
                   className="w-full rounded-xl bg-emerald-600 py-3 text-sm font-bold text-white hover:bg-emerald-700 transition-colors flex items-center justify-center gap-2">
-                  <Check size={18} /> Complete Workout
+                  <MaterialIcon icon="check_circle" size={18} /> Complete Workout
                 </button>
               ) : (
-                <div className="rounded-xl bg-[#f0fdf4] border border-emerald-200 p-3 text-center">
+                <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-3 text-center">
                   <p className="font-bold text-sm text-emerald-700 flex items-center justify-center gap-1">
-                    <Check size={16} /> Workout Complete!
+                    <MaterialIcon icon="check_circle" filled size={16} /> Workout Complete!
                   </p>
-                  <p className="text-xs text-[#6b7280] mt-0.5">Streak: {streak} day{streak !== 1 ? 's' : ''}</p>
+                  <p className="text-xs text-secondary mt-0.5">Streak: {streak} day{streak !== 1 ? 's' : ''}</p>
                 </div>
               )}
             </div>
@@ -467,8 +467,8 @@ export default function HomePage() {
 
       {/* Recovery day content */}
       {activeProgram && selectedDay && selectedDay.isRecovery && (
-        <div className="px-4 mb-5">
-          <div className="rounded-2xl bg-white border border-[#e5e7eb] p-4 shadow-sm">
+        <div className="px-4 mb-4">
+          <div className="rounded-xl bg-surface-container-lowest border border-outline-variant/5 p-4 shadow-sm">
             <ProgramMarkdown content={selectedDay.content} />
           </div>
         </div>

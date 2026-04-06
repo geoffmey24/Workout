@@ -2,12 +2,12 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Lock, Crown, X } from 'lucide-react';
+import MaterialIcon from './MaterialIcon';
 
 export function ProBadge({ className = '' }: { className?: string }) {
   return (
-    <span className={`inline-flex items-center gap-0.5 rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[#f59e0b] ${className}`}>
-      <Crown size={8} /> PRO
+    <span className={`inline-flex items-center gap-0.5 rounded-xl bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-amber-600 ${className}`}>
+      <MaterialIcon icon="workspace_premium" size={8} /> PRO
     </span>
   );
 }
@@ -19,29 +19,29 @@ export function ProLockButton({ label, className = '' }: { label: string; classN
     <>
       <button
         onClick={() => setShowModal(true)}
-        className={`flex items-center gap-1.5 text-[#6b7280] ${className}`}
+        className={`flex items-center gap-1.5 text-on-surface-variant ${className}`}
       >
-        <Lock size={12} />
+        <MaterialIcon icon="lock" size={12} />
         <span className="text-xs">{label}</span>
         <ProBadge />
       </button>
 
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 px-4 pb-4" onClick={() => setShowModal(false)}>
-          <div className="bg-white rounded-2xl p-6 max-w-sm w-full" onClick={e => e.stopPropagation()}>
+          <div className="bg-surface-container-lowest rounded-xl p-6 max-w-sm w-full shadow-lg" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center">
-                  <Crown size={16} className="text-[#f59e0b]" />
+                <div className="w-8 h-8 rounded-xl bg-amber-100 flex items-center justify-center">
+                  <MaterialIcon icon="workspace_premium" size={16} className="text-amber-600" />
                 </div>
-                <h3 className="font-bold text-[#111827]">Pro Feature</h3>
+                <h3 className="font-bold font-headline text-on-surface">Pro Feature</h3>
               </div>
-              <button onClick={() => setShowModal(false)} className="text-[#6b7280] hover:text-[#9ca3af]">
-                <X size={18} />
+              <button onClick={() => setShowModal(false)} className="text-on-surface-variant hover:text-secondary">
+                <MaterialIcon icon="close" size={18} />
               </button>
             </div>
-            <p className="text-sm text-[#9ca3af] mb-6">
-              Upgrade to <strong className="text-[#111827]">Elite Coach Pro</strong> to unlock {label.toLowerCase()} and 12+ more premium features.
+            <p className="text-sm text-secondary mb-6">
+              Upgrade to <strong className="text-on-surface">Elite Coach Pro</strong> to unlock {label.toLowerCase()} and 12+ more premium features.
             </p>
             <Link
               href="/upgrade"
@@ -52,7 +52,7 @@ export function ProLockButton({ label, className = '' }: { label: string; classN
             </Link>
             <button
               onClick={() => setShowModal(false)}
-              className="block w-full text-center mt-2 py-2 text-xs text-[#6b7280]"
+              className="block w-full text-center mt-2 py-2 text-xs text-on-surface-variant"
             >
               Maybe later
             </button>

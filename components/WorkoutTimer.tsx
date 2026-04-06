@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Play, Pause, RotateCcw, Timer } from 'lucide-react';
+import MaterialIcon from './MaterialIcon';
 
 interface WorkoutTimerProps {
   compact?: boolean;
@@ -51,63 +51,63 @@ export default function WorkoutTimer({ compact }: WorkoutTimerProps) {
   if (compact) {
     return (
       <div className="flex items-center gap-2">
-        <Timer size={14} className="text-[#1e3a5f]" />
-        <span className={`text-sm font-mono font-bold ${isFinished ? 'text-[#4ade80] animate-pulse' : 'text-[#111827]'}`}>
+        <MaterialIcon icon="timer" size={14} className="text-primary" />
+        <span className={`text-sm font-mono font-bold ${isFinished ? 'text-emerald-500 animate-pulse' : 'text-on-surface'}`}>
           {format(seconds)}
         </span>
         <button
           onClick={() => isRunning ? setIsRunning(false) : (mode === 'stopwatch' ? (setIsRunning(true)) : startRest(restPreset))}
-          className="p-1 rounded bg-[#f0f1f3] hover:bg-gray-200"
+          className="p-1 rounded-xl bg-surface-container-low hover:bg-surface-container-high"
         >
-          {isRunning ? <Pause size={12} /> : <Play size={12} />}
+          <MaterialIcon icon={isRunning ? 'pause' : 'play_arrow'} size={12} />
         </button>
       </div>
     );
   }
 
   return (
-    <div className="rounded-2xl border border-[#e5e7eb] bg-white p-5">
+    <div className="rounded-xl border border-outline-variant/5 bg-surface-container-lowest p-5 shadow-sm">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xs font-medium uppercase tracking-wider text-[#9ca3af]">
+        <h2 className="text-[10px] font-label font-bold uppercase tracking-widest text-secondary">
           {mode === 'rest' ? 'Rest Timer' : 'Stopwatch'}
         </h2>
         <div className="flex gap-1">
           <button
             onClick={() => { setMode('stopwatch'); setSeconds(0); setIsRunning(false); }}
-            className={`px-2 py-1 rounded text-xs font-medium ${mode === 'stopwatch' ? 'bg-[#1e3a5f] text-white' : 'bg-[#f0f1f3] text-[#9ca3af]'}`}
+            className={`px-2 py-1 rounded-xl text-xs font-medium ${mode === 'stopwatch' ? 'bg-primary text-white' : 'bg-surface-container-low text-secondary'}`}
           >
             Stopwatch
           </button>
           <button
             onClick={() => { setMode('rest'); setSeconds(restPreset); setIsRunning(false); }}
-            className={`px-2 py-1 rounded text-xs font-medium ${mode === 'rest' ? 'bg-[#1e3a5f] text-white' : 'bg-[#f0f1f3] text-[#9ca3af]'}`}
+            className={`px-2 py-1 rounded-xl text-xs font-medium ${mode === 'rest' ? 'bg-primary text-white' : 'bg-surface-container-low text-secondary'}`}
           >
             Rest
           </button>
         </div>
       </div>
 
-      <div className={`text-center text-5xl font-mono font-extrabold mb-4 ${isFinished ? 'text-[#4ade80] animate-pulse' : 'text-[#111827]'}`}>
+      <div className={`text-center text-5xl font-mono font-extrabold mb-4 ${isFinished ? 'text-emerald-500 animate-pulse' : 'text-on-surface'}`}>
         {format(seconds)}
       </div>
 
       {isFinished && (
-        <p className="text-center text-sm text-[#4ade80] mb-3 font-semibold">Time to work!</p>
+        <p className="text-center text-sm text-emerald-500 mb-3 font-semibold">Time to work!</p>
       )}
 
       <div className="flex gap-2 justify-center mb-4">
         <button
           onClick={() => setIsRunning(!isRunning)}
-          className="flex items-center gap-2 rounded-xl bg-[#1e3a5f] px-6 py-2.5 text-sm font-semibold text-white hover:bg-[#162d4a] transition-colors"
+          className="flex items-center gap-2 rounded-xl bg-primary px-6 py-2.5 text-sm font-semibold text-white hover:bg-primary-container transition-colors"
         >
-          {isRunning ? <Pause size={16} /> : <Play size={16} />}
+          <MaterialIcon icon={isRunning ? 'pause' : 'play_arrow'} size={16} />
           {isRunning ? 'Pause' : 'Start'}
         </button>
         <button
           onClick={reset}
-          className="rounded-xl bg-[#f0f1f3] p-2.5 hover:bg-gray-200 transition-colors text-[#9ca3af]"
+          className="rounded-xl bg-surface-container-low p-2.5 hover:bg-surface-container-high transition-colors text-secondary"
         >
-          <RotateCcw size={16} />
+          <MaterialIcon icon="refresh" size={16} />
         </button>
       </div>
 
@@ -117,8 +117,8 @@ export default function WorkoutTimer({ compact }: WorkoutTimerProps) {
             <button
               key={s}
               onClick={() => startRest(s)}
-              className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
-                restPreset === s && !isRunning ? 'bg-[#1e3a5f] text-white' : 'bg-[#f0f1f3] text-[#9ca3af] hover:bg-gray-200'
+              className={`rounded-xl px-3 py-1.5 text-xs font-medium transition-colors ${
+                restPreset === s && !isRunning ? 'bg-primary text-white' : 'bg-surface-container-low text-secondary hover:bg-surface-container-high'
               }`}
             >
               {s < 60 ? `${s}s` : `${s / 60}m`}
