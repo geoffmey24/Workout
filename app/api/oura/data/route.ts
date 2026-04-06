@@ -11,8 +11,14 @@ import {
 } from '@/lib/oura-api';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
+import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
+import { getClientIp, verifyOrigin, rateLimitResponse, errorResponse } from '@/lib/security';
 
 export async function GET(req: NextRequest) {
+  if (!verifyOrigin(req)) return errorResponse(403);
+  const rl = checkRateLimit(getClientIp(req), RATE_LIMITS.health);
+  if (!rl.allowed) return rateLimitResponse(rl);
+
   // Get user from Supabase
   const cookieStore = cookies();
   const supabase = createServerClient(
@@ -21,8 +27,8 @@ export async function GET(req: NextRequest) {
     {
       cookies: {
         get(name: string) { return cookieStore.get(name)?.value; },
-        set(name: string, value: string, options: any) { try { cookieStore.set({ name, value, ...options }); } catch {} },
-        remove(name: string, options: any) { try { cookieStore.set({ name, value: '', ...options }); } catch {} },
+        set(name: string, value: string, options: Record<string, unknown>) { try { cookieStore.set({ name, value, ...options }); } catch {} },
+        remove(name: string, options: Record<string, unknown>) { try { cookieStore.set({ name, value: '', ...options }); } catch {} },
       },
     }
   );

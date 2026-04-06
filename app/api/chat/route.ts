@@ -1,19 +1,89 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { SYSTEM_PROMPT } from '@/lib/system-prompt';
 import { ApiMessage } from '@/types';
+import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
+import {
+  getClientIp, verifyOrigin, rateLimitResponse,
+  parseJsonBody, sanitizeMessageContent, errorResponse,
+} from '@/lib/security';
+
+const MAX_MESSAGES = 100;
+const MAX_MESSAGE_LENGTH = 50_000;
+const MAX_SYSTEM_PROMPT_LENGTH = 10_000;
+
+function validateMessages(messages: unknown): messages is ApiMessage[] {
+  if (!Array.isArray(messages) || messages.length === 0) return false;
+  if (messages.length > MAX_MESSAGES) return false;
+  for (const msg of messages) {
+    if (typeof msg !== 'object' || msg === null) return false;
+    const m = msg as Record<string, unknown>;
+    if (m.role !== 'user' && m.role !== 'assistant') return false;
+    if (typeof m.content === 'string') {
+      if (m.content.length > MAX_MESSAGE_LENGTH) return false;
+    } else if (Array.isArray(m.content)) {
+      for (const block of m.content) {
+        if (typeof block !== 'object' || block === null) return false;
+        const b = block as Record<string, unknown>;
+        if (b.type === 'text' && typeof b.text === 'string' && b.text.length > MAX_MESSAGE_LENGTH) return false;
+      }
+    } else {
+      return false;
+    }
+  }
+  return true;
+}
 
 export async function POST(req: NextRequest) {
   try {
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) {
-      return NextResponse.json(
-        { error: 'ANTHROPIC_API_KEY not configured' },
-        { status: 500 }
-      );
+    // 1. Origin check
+    if (!verifyOrigin(req)) {
+      return errorResponse(403, 'Forbidden');
     }
 
-    const { messages, stream, systemPrompt } = (await req.json()) as { messages: ApiMessage[]; stream?: boolean; systemPrompt?: string };
+    // 2. Rate limiting
+    const ip = getClientIp(req);
+    const rl = checkRateLimit(ip, RATE_LIMITS.chat);
+    if (!rl.allowed) {
+      return rateLimitResponse(rl);
+    }
 
+    // 3. Parse and validate body
+    const { data, error: parseError } = await parseJsonBody(req);
+    if (parseError || !data) {
+      return errorResponse(400, parseError || 'Invalid request');
+    }
+
+    const body = data as Record<string, unknown>;
+
+    // 4. Validate API key
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) {
+      console.error('ANTHROPIC_API_KEY not configured');
+      return errorResponse(500);
+    }
+
+    // 5. Validate messages
+    if (!validateMessages(body.messages)) {
+      return errorResponse(400, 'Invalid messages format');
+    }
+
+    // 6. Validate optional fields
+    const stream = typeof body.stream === 'boolean' ? body.stream : false;
+    let systemPrompt = SYSTEM_PROMPT;
+    if (typeof body.systemPrompt === 'string') {
+      if (body.systemPrompt.length > MAX_SYSTEM_PROMPT_LENGTH) {
+        return errorResponse(400, 'System prompt too long');
+      }
+      systemPrompt = body.systemPrompt;
+    }
+
+    // 7. Sanitize message content
+    const sanitizedMessages = (body.messages as ApiMessage[]).map(msg => ({
+      ...msg,
+      content: sanitizeMessageContent(msg.content),
+    }));
+
+    // 8. Call Anthropic API
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -24,32 +94,29 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 4096,
-        system: systemPrompt || SYSTEM_PROMPT,
-        messages,
-        stream: !!stream,
+        system: systemPrompt,
+        messages: sanitizedMessages,
+        stream,
       }),
     });
 
     if (!response.ok) {
-      const errorData = await response.text();
-      console.error('Anthropic API error:', response.status, errorData);
-      return NextResponse.json(
-        { error: `API error: ${response.status}` },
-        { status: response.status }
-      );
+      const errorText = await response.text();
+      console.error('Anthropic API error:', response.status, errorText);
+      return errorResponse(response.status >= 500 ? 502 : response.status);
     }
 
-    // Non-streaming: return full response
+    // Non-streaming response
     if (!stream) {
-      const data = await response.json();
-      const text = data.content
+      const responseData = await response.json();
+      const text = responseData.content
         ?.filter((block: { type: string }) => block.type === 'text')
         .map((block: { text: string }) => block.text)
         .join('');
       return NextResponse.json({ response: text });
     }
 
-    // Streaming: pipe SSE events to client
+    // Streaming response
     const encoder = new TextEncoder();
     const readable = new ReadableStream({
       async start(controller) {
@@ -97,11 +164,8 @@ export async function POST(req: NextRequest) {
         Connection: 'keep-alive',
       },
     });
-  } catch (error) {
-    console.error('Chat API error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+  } catch (err) {
+    console.error('Chat API error:', err);
+    return errorResponse(500);
   }
 }

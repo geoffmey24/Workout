@@ -67,7 +67,9 @@ alter table public.health_connections enable row level security;
 
 -- Profiles policies
 create policy "Users can view own profile" on public.profiles for select using (auth.uid() = id);
+create policy "Users can insert own profile" on public.profiles for insert with check (auth.uid() = id);
 create policy "Users can update own profile" on public.profiles for update using (auth.uid() = id);
+create policy "Users can delete own profile" on public.profiles for delete using (auth.uid() = id);
 
 -- Saved programs policies
 create policy "Users can view own programs" on public.saved_programs for select using (auth.uid() = user_id);
@@ -85,6 +87,7 @@ create policy "Users can delete own conversations" on public.chat_conversations 
 create policy "Users can view own stats" on public.workout_stats for select using (auth.uid() = user_id);
 create policy "Users can insert own stats" on public.workout_stats for insert with check (auth.uid() = user_id);
 create policy "Users can update own stats" on public.workout_stats for update using (auth.uid() = user_id);
+create policy "Users can delete own stats" on public.workout_stats for delete using (auth.uid() = user_id);
 
 -- Health connections policies
 create policy "Users can view own connections" on public.health_connections for select using (auth.uid() = user_id);

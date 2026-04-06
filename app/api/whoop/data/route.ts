@@ -8,8 +8,14 @@ import {
 } from '@/lib/whoop-api';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
+import { checkRateLimit, RATE_LIMITS } from '@/lib/rate-limit';
+import { getClientIp, verifyOrigin, rateLimitResponse, errorResponse } from '@/lib/security';
 
 export async function GET(req: NextRequest) {
+  if (!verifyOrigin(req)) return errorResponse(403);
+  const rl = checkRateLimit(getClientIp(req), RATE_LIMITS.health);
+  if (!rl.allowed) return rateLimitResponse(rl);
+
   // Get user from Supabase
   const cookieStore = cookies();
   const supabase = createServerClient(
