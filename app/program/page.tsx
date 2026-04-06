@@ -761,7 +761,7 @@ Do NOT use markdown table separators (|---|---|). Include progression rules and 
               {loading ? (<><MaterialIcon icon="progress_activity" size={18} className="animate-spin" /> Generating...</>) : 'Generate My Program'}
             </button>
             <button onClick={() => { setCurrentStepId('goal'); setSlideDir('backward'); setSlideKey(k => k + 1); }}
-              className="w-full text-center text-sm text-secondary hover:text-white transition-colors">
+              className="w-full text-center text-sm text-secondary hover:text-on-surface transition-colors">
               Start over
             </button>
           </div>
@@ -795,6 +795,7 @@ Do NOT use markdown table separators (|---|---|). Include progression rules and 
           </button>
           <button onClick={() => setConfirmDelete(viewingProgram.id)} className="p-1.5 rounded-lg text-on-surface-variant hover:text-[#ef4444] hover:bg-[#ef4444]/10 transition-colors"><MaterialIcon icon="delete" size={16} /></button>
         </div>
+        <div className="h-16" />
         <div className="px-4 py-6"><ProgramMarkdown content={viewingProgram.content} /></div>
         <Navigation />
       </div>
@@ -807,7 +808,7 @@ Do NOT use markdown table separators (|---|---|). Include progression rules and 
       <div className="min-h-screen pb-24 bg-surface">
         <div className="fixed top-0 w-full z-50 h-16 bg-slate-50/80 backdrop-blur-md flex items-center gap-3 px-4">
           <button onClick={() => { setProgram(null); setView('menu'); setCurrentStepId('goal'); setAnswers({}); }} className="text-secondary hover:text-on-surface"><MaterialIcon icon="arrow_back" size={20} /></button>
-          <h1 className="font-bold text-sm flex-1 text-on-surface">Your Custom Program</h1>
+          <h1 className="font-bold text-sm font-headline flex-1 text-on-surface">Your Custom Program</h1>
           <button onClick={handleSaveProgram} disabled={saveStatus === 'saving' || saveStatus === 'saved'}
             className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition-colors ${
               saveStatus === 'saved' ? 'bg-[#4ade80]' : saveStatus === 'error' ? 'bg-[#ef4444]/100 hover:bg-[#ef4444]' : 'bg-[#4ade80] hover:bg-[#16a34a]'
@@ -818,6 +819,7 @@ Do NOT use markdown table separators (|---|---|). Include progression rules and 
              (<><MaterialIcon icon="save" size={14} /> Save</>)}
           </button>
         </div>
+        <div className="h-16" />
         {saveStatus === 'saved' && (
           <div className="mx-4 mb-2 rounded-lg bg-[#4ade80]/10 border border-[#4ade80]/30 px-4 py-2.5 flex items-center gap-2">
             <MaterialIcon icon="check" size={16} className="text-[#4ade80]" />
@@ -850,8 +852,9 @@ Do NOT use markdown table separators (|---|---|). Include progression rules and 
         <DeleteConfirmDialog />
         <div className="fixed top-0 w-full z-50 h-16 bg-slate-50/80 backdrop-blur-md flex items-center gap-3 px-4">
           <button onClick={() => setView('menu')} className="text-secondary hover:text-on-surface"><MaterialIcon icon="arrow_back" size={20} /></button>
-          <h1 className="font-bold text-sm text-on-surface">Saved Programs</h1>
+          <h1 className="font-bold text-sm font-headline text-on-surface">Saved Programs</h1>
         </div>
+        <div className="h-16" />
         <div className="px-4 py-4 space-y-3">
           {savedPrograms.length === 0 ? (
             <div className="text-center py-12">
@@ -886,8 +889,9 @@ Do NOT use markdown table separators (|---|---|). Include progression rules and 
       <div className="min-h-screen pb-24 bg-surface">
         <div className="fixed top-0 w-full z-50 h-16 bg-slate-50/80 backdrop-blur-md flex items-center gap-3 px-4">
           <button onClick={() => { setView('menu'); setPasteInput(''); }} className="text-secondary hover:text-on-surface"><MaterialIcon icon="arrow_back" size={20} /></button>
-          <h1 className="font-bold text-sm text-on-surface">Add Your Workout</h1>
+          <h1 className="font-bold text-sm font-headline text-on-surface">Add Your Workout</h1>
         </div>
+        <div className="h-16" />
         <div className="px-4 py-6">
           <p className="text-sm text-secondary mb-4">Paste or type your existing workout plan below. It will be saved as your active program.</p>
           <textarea value={pasteInput} onChange={(e) => setPasteInput(e.target.value)}
@@ -923,9 +927,10 @@ Do NOT use markdown table separators (|---|---|). Include progression rules and 
           }} className="text-secondary hover:text-on-surface">
             <MaterialIcon icon="arrow_back" size={20} />
           </button>
-          <h1 className="font-bold text-sm text-white flex-1">Build Your Program</h1>
+          <h1 className="font-bold text-sm font-headline text-on-surface flex-1">Build Your Program</h1>
           <span className="text-xs text-on-surface-variant">{currentStepIndex + 1}/{applicableSteps.length}</span>
         </div>
+        <div className="h-16" />
         {/* Progress bar */}
         <div className="h-1 bg-outline-variant">
           <div className="h-full bg-primary transition-all duration-300 ease-out" style={{ width: `${Math.min(progress, 100)}%` }} />
@@ -948,8 +953,9 @@ Do NOT use markdown table separators (|---|---|). Include progression rules and 
       <DeleteConfirmDialog />
       <div className="fixed top-0 w-full z-50 h-16 bg-slate-50/80 backdrop-blur-md flex items-center gap-3 px-4">
         <Link href="/" className="text-secondary hover:text-on-surface"><MaterialIcon icon="arrow_back" size={20} /></Link>
-        <h1 className="font-bold text-sm text-white">Programs</h1>
+        <h1 className="font-bold text-sm font-headline text-on-surface">Programs</h1>
       </div>
+      <div className="h-16" />
       <div className="px-4 py-6 space-y-4">
         <div className="flex gap-3">
           <button onClick={() => { setView('intake'); setCurrentStepId('goal'); setAnswers({}); setMultiSelections([]); setDaysValue(4); setDurationValue(60); setEventName(''); setEventDate(''); setTextInput(''); }}
@@ -959,7 +965,7 @@ Do NOT use markdown table separators (|---|---|). Include progression rules and 
           </button>
           <button onClick={() => setView('paste')} className="flex-1 rounded-xl border border-outline-variant bg-surface-container-lowest p-4 text-left hover:border-primary/50 transition-colors">
             <MaterialIcon icon="content_paste" size={24} className="mb-2 text-secondary" />
-            <h2 className="text-sm font-bold text-white">Paste Workout</h2>
+            <h2 className="text-sm font-bold text-on-surface">Paste Workout</h2>
           </button>
         </div>
         <div>

@@ -328,8 +328,9 @@ export default function DiagnosticPage() {
       <div className="min-h-screen bg-surface">
         <div className="fixed top-0 w-full z-50 h-16 bg-slate-50/80 backdrop-blur-md flex items-center gap-3 px-4">
           <button onClick={() => router.push('/')} className="text-secondary hover:text-on-surface"><MaterialIcon icon="arrow_back" size={20} /></button>
-          <h1 className="font-bold text-sm text-on-surface">Strength Assessment</h1>
+          <h1 className="font-bold text-sm font-headline text-on-surface">Strength Assessment</h1>
         </div>
+        <div className="h-16" />
         <div className="px-4 py-6">
           <CoachBubble message="Bodyweight programs don't need weight prescriptions. You're all set!" />
           <button onClick={() => router.push('/')}
@@ -367,6 +368,7 @@ export default function DiagnosticPage() {
           </span>
         )}
       </div>
+      <div className="h-16" />
 
       {/* Progress bar */}
       <div className="h-1 bg-outline-variant">
