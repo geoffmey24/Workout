@@ -72,15 +72,15 @@ const GOALS = [
   { label: 'Athletic Performance', value: 'Athletic Performance', icon: 'bolt' },
   { label: 'General Fitness', value: 'General Fitness', icon: 'favorite' },
   { label: 'Sport-Specific', value: 'Sport-Specific', icon: 'emoji_events' },
-  { label: 'Rehabilitation', value: 'Rehabilitation', icon: 'shield' },
+  { label: 'Rehabilitation', value: 'Rehabilitation', icon: 'health_and_safety' },
   { label: 'Strength', value: 'Strength (Powerlifting)', icon: 'military_tech' },
-  { label: 'Endurance', value: 'Endurance', icon: 'monitoring' },
+  { label: 'Endurance', value: 'Endurance', icon: 'show_chart' },
 ];
 
 const EQUIPMENT_OPTIONS = [
   { label: 'Full Commercial Gym', value: 'Full Commercial Gym', icon: 'apartment' },
   { label: 'Barbell + Rack + Bench', value: 'Home Gym (barbell + rack + bench)', icon: 'fitness_center' },
-  { label: 'Dumbbells + Bands', value: 'Home Gym (basic \u2014 dumbbells, bands)', icon: 'monitoring' },
+  { label: 'Dumbbells + Bands', value: 'Home Gym (basic \u2014 dumbbells, bands)', icon: 'show_chart' },
   { label: 'Dumbbells Only', value: 'Dumbbells Only', icon: 'military_tech' },
   { label: 'Bodyweight Only', value: 'Bodyweight Only', icon: 'person' },
   { label: 'Outdoor / Park', value: 'Outdoor / Park Equipment', icon: 'park' },
@@ -88,8 +88,8 @@ const EQUIPMENT_OPTIONS = [
 
 const FITNESS_LEVELS = [
   { label: 'Beginner', desc: 'New or less than 1 year training', value: 'Beginner (< 1 year)' , icon: 'trending_up' },
-  { label: 'Intermediate', desc: '1-3 years consistent training', value: 'Intermediate (1-3 years)', icon: 'monitoring' },
-  { label: 'Advanced', desc: '3-5 years dedicated training', value: 'Advanced (3-5 years)', icon: 'landscape' },
+  { label: 'Intermediate', desc: '1-3 years consistent training', value: 'Intermediate (1-3 years)', icon: 'show_chart' },
+  { label: 'Advanced', desc: '3-5 years dedicated training', value: 'Advanced (3-5 years)', icon: 'signal_cellular_alt' },
   { label: 'Elite', desc: '5+ years serious training', value: 'Elite (5+ years)', icon: 'workspace_premium' },
 ];
 

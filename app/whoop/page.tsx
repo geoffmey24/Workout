@@ -200,8 +200,8 @@ function WhoopPageInner() {
             <div className="grid grid-cols-2 gap-3">
               {[
                 { label: 'Resting HR', value: `${whoopData!.today.resting_hr} bpm`, icon: 'favorite' },
-                { label: 'HRV', value: `${whoopData!.today.hrv} ms`, icon: 'monitoring' },
-                { label: 'SpO2', value: `${whoopData!.today.spo2}%`, icon: 'spo2' },
+                { label: 'HRV', value: `${whoopData!.today.hrv} ms`, icon: 'show_chart' },
+                { label: 'SpO2', value: `${whoopData!.today.spo2}%`, icon: 'air' },
                 { label: 'Skin Temp', value: `${whoopData!.today.skin_temp}°C`, icon: 'thermostat' },
               ].map((stat) => (
                 <div key={stat.label} className="rounded-xl bg-surface p-3">

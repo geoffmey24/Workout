@@ -315,7 +315,7 @@ export default function HomePage() {
         <div className="px-4 mb-4">
           <div className="rounded-xl bg-surface-container-lowest border border-outline-variant/5 p-5 shadow-sm">
             <div className="flex items-center gap-2 mb-2">
-              <MaterialIcon icon="target" size={18} className="text-primary" />
+              <MaterialIcon icon="adjust" size={18} className="text-primary" />
               <h3 className="font-bold text-sm text-on-surface">Let&apos;s find your starting weights</h3>
             </div>
             <p className="text-sm text-secondary mb-4">

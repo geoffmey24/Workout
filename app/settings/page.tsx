@@ -102,7 +102,7 @@ export default function SettingsPage() {
         {/* Strength Assessment */}
         <div className="rounded-xl bg-surface-container-lowest border border-outline-variant/5 p-5 shadow-sm">
           <div className="flex items-center gap-2 mb-3">
-            <MaterialIcon icon="target" size={16} className="text-primary" />
+            <MaterialIcon icon="adjust" size={16} className="text-primary" />
             <h2 className="text-[10px] font-label font-bold uppercase tracking-widest text-secondary">Strength Assessment</h2>
           </div>
           {diagnostic ? (
@@ -143,7 +143,7 @@ export default function SettingsPage() {
                 onClick={() => { clearDiagnostic(); clearDiagnosticSkipped(); setDiagnosticState(null); }}
                 className="w-full flex items-center justify-center gap-2 rounded-xl border border-primary/20 bg-surface py-2.5 text-sm font-medium text-primary hover:bg-blue-50 transition-colors"
               >
-                <MaterialIcon icon="target" size={14} /> Re-test Strength
+                <MaterialIcon icon="adjust" size={14} /> Re-test Strength
               </Link>
               <p className="text-[10px] text-secondary mt-1.5 text-center">Suggest re-testing every 6-8 weeks to track progress.</p>
             </div>
@@ -151,7 +151,7 @@ export default function SettingsPage() {
             <div>
               <p className="text-sm text-secondary mb-2">No assessment completed yet.</p>
               <Link href="/diagnostic" className="w-full flex items-center justify-center gap-2 rounded-xl bg-primary py-2.5 text-sm font-semibold text-white hover:bg-primary-container transition-colors">
-                <MaterialIcon icon="target" size={14} /> Take Assessment
+                <MaterialIcon icon="adjust" size={14} /> Take Assessment
               </Link>
             </div>
           )}
