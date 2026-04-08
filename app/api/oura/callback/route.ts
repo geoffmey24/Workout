@@ -4,15 +4,15 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
 export async function GET(req: NextRequest) {
-  const code = req.nextUrl.searchParams.get('code');
-  const state = req.nextUrl.searchParams.get('state');
-  const storedState = req.cookies.get('oura_oauth_state')?.value;
-
-  if (!code || !state || state !== storedState) {
-    return NextResponse.redirect(new URL('/whoop?error=oura_auth_failed', req.url));
-  }
-
   try {
+    const code = req.nextUrl.searchParams.get('code');
+    const state = req.nextUrl.searchParams.get('state');
+    const storedState = req.cookies.get('oura_oauth_state')?.value;
+
+    if (!code || !state || state !== storedState) {
+      return NextResponse.redirect(new URL('/connect-error', req.url));
+    }
+
     const tokens = await exchangeOuraCodeForToken(code);
 
     const cookieStore = cookies();
@@ -45,6 +45,6 @@ export async function GET(req: NextRequest) {
     return response;
   } catch (error) {
     console.error('Oura OAuth error:', error);
-    return NextResponse.redirect(new URL('/whoop?error=oura_token_failed', req.url));
+    return NextResponse.redirect(new URL('/connect-error', req.url));
   }
 }

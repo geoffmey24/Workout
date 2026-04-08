@@ -4,18 +4,17 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
 export async function GET(req: NextRequest) {
-  const code = req.nextUrl.searchParams.get('code');
-  const state = req.nextUrl.searchParams.get('state');
-  const storedState = req.cookies.get('whoop_oauth_state')?.value;
-
-  if (!code || !state || state !== storedState) {
-    return NextResponse.redirect(new URL('/whoop?error=auth_failed', req.url));
-  }
-
   try {
+    const code = req.nextUrl.searchParams.get('code');
+    const state = req.nextUrl.searchParams.get('state');
+    const storedState = req.cookies.get('whoop_oauth_state')?.value;
+
+    if (!code || !state || state !== storedState) {
+      return NextResponse.redirect(new URL('/connect-error', req.url));
+    }
+
     const tokens = await exchangeCodeForToken(code);
 
-    // Get authenticated user from Supabase
     const cookieStore = cookies();
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -32,7 +31,6 @@ export async function GET(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
 
     if (user) {
-      // Save tokens to database
       const expiresAt = new Date(Date.now() + tokens.expires_in * 1000).toISOString();
       await supabase.from('health_connections').upsert({
         user_id: user.id,
@@ -47,7 +45,7 @@ export async function GET(req: NextRequest) {
     response.cookies.delete('whoop_oauth_state');
     return response;
   } catch (error) {
-    console.error('WHOOP OAuth error:', error);
-    return NextResponse.redirect(new URL('/whoop?error=token_failed', req.url));
+    console.error('Whoop OAuth error:', error);
+    return NextResponse.redirect(new URL('/connect-error', req.url));
   }
 }

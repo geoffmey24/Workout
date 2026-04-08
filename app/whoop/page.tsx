@@ -45,12 +45,14 @@ function WhoopPageInner() {
   const [whoopData, setWhoopData] = useState<WhoopData | null>(null);
   const [dataSource, setDataSource] = useState<string>('none');
   const [loading, setLoading] = useState(true);
+  const [configuredProviders, setConfiguredProviders] = useState<Record<string, boolean>>({});
   const [sources, setSources] = useState<HealthSource[]>([
     { id: 'whoop', name: 'WHOOP', icon: 'W', description: 'Recovery, strain, sleep tracking', authUrl: '/api/whoop/auth', dataUrl: '/api/whoop/data', disconnectUrl: '/api/whoop/disconnect', color: '#16a34a', connected: false },
     { id: 'oura', name: 'Oura Ring', icon: 'O', description: 'Readiness, sleep stages, HRV', authUrl: '/api/oura/auth', dataUrl: '/api/oura/data', disconnectUrl: '/api/oura/disconnect', color: '#a855f7', connected: false },
   ]);
 
   useEffect(() => {
+    fetch('/api/health-status').then(r => r.json()).then(setConfiguredProviders).catch(() => {});
     fetchAllData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -158,12 +160,17 @@ function WhoopPageInner() {
                   <MaterialIcon icon="link_off" size={12} /> Disconnect
                 </button>
               ) : (
-                <a
-                  href={source.authUrl}
-                  className="flex items-center justify-center gap-1 w-full rounded-xl border border-outline-variant bg-surface-container-low py-1.5 text-[10px] font-medium text-on-surface hover:bg-surface-container-high transition-colors"
-                >
-                  <MaterialIcon icon="link" size={12} /> Connect
-                </a>
+                <div>
+                  <a
+                    href={source.authUrl}
+                    className="flex items-center justify-center gap-1 w-full rounded-xl border border-outline-variant bg-surface-container-low py-1.5 text-[10px] font-medium text-on-surface hover:bg-surface-container-high transition-colors"
+                  >
+                    <MaterialIcon icon="link" size={12} /> Connect
+                  </a>
+                  {configuredProviders[source.id] === false && (
+                    <p className="text-[9px] text-secondary text-center mt-1">Device connections coming soon</p>
+                  )}
+                </div>
               )}
             </div>
           ))}
